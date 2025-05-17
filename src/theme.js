@@ -1,4 +1,4 @@
-import { BorderColor } from '@mui/icons-material'
+import { BorderColor, Height } from '@mui/icons-material'
 import { cyan, deepOrange, teal, orange } from '@mui/material/colors'
 import { experimental_extendTheme as extendTheme } from '@mui/material/styles'
 
@@ -23,6 +23,7 @@ const theme = extendTheme({
     }
   },
   components: {
+    // Button
     MuiButton: {
       styleOverrides: {
         root: {
@@ -57,6 +58,23 @@ const theme = extendTheme({
             borderWidth: '1px !important'
           }
         })
+      }
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          '*::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px'
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: '#bdc3c7',
+            borderRadius: '8px'
+          },
+          '*::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: '#00b894'
+          }
+        }
       }
     }
   }
