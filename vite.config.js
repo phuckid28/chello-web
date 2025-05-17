@@ -7,5 +7,10 @@ export default defineConfig({
   // base: './'
   optimizeDeps: {
     exclude: ['js-big-decimal']
+  },
+  resolve: {
+    alias: [
+      { find: '~', replacement: '/src' }
+    ]
   }
 })
