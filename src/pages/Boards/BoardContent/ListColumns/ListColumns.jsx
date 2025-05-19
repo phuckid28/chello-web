@@ -3,7 +3,7 @@ import Columns from './Columns/Columns'
 import Button from '@mui/material/Button'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 
-function ListColumns() {
+function ListColumns({ columns }) {
 
 
   return (
@@ -16,9 +16,9 @@ function ListColumns() {
       overflowY: 'hidden',
       '&::-webkit-scrollbar-track': { m: 2 }
     }}>
-      <Columns />
-      <Columns />
-      <Columns />
+      {/* Tim hieu ve truyen du lieu xuong */}
+      {columns?.map(column => <Columns key={column._id} column={column}/>)}
+
 
       {/* Box add new column */}
       <Box sx={{
