@@ -23,7 +23,8 @@ function Card({ card }) {
     // Nếu sự dụng CSS.Transform sẽ làm lỗi kéo dãn nên đổi sang translate
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : undefined
+    opacity: isDragging ? 0.5 : undefined,
+    border: isDragging ? '1px solid #2ecc71' : undefined
   }
 
   const shouldShowCardActions = () => {
