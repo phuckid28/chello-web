@@ -13,9 +13,9 @@ import {
   defaultDropAnimationSideEffects,
   closestCorners,
   pointerWithin,
-  rectIntersection,
-  getFirstCollision,
-  closestCenter
+  // rectIntersection,
+  getFirstCollision
+  // closestCenter
 
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
@@ -297,24 +297,29 @@ function BoardContent({ board }) {
       return closestCorners({ ...args })
     }
 
-    // Tìm các điểm giao nhau, va chạm - intersection vs con trỏ
+    // Tìm các điểm giao nhau, va chạm, trả về 1 mảng va chạm - intersection vs con trỏ
     const pointerIntersections = pointerWithin(args)
 
-    // Thuật toán phát hiện va chạm sẽ trả về 1 mảng các va chạm
-    const intersections =
-        !!pointerIntersections?.length
-          ? pointerIntersections
-          : rectIntersection(args)
+    // Nếu pointerIntersections là mảng rỗng, return không làm gì
+    // Fix trường hợp flickering của dnd-kit trong trg hợp: Kéo 1 card có image cover lớn và kéo lên phía trên cùng ra khỏi khu vực kéo thả
+    if (!pointerIntersections?.length) return
 
-    // Tìm overId đầu tiên trong intersections ở trên
-    let overId = getFirstCollision(intersections, 'id')
+    // // Thuật toán phát hiện va chạm sẽ trả về 1 mảng các va chạm
+    // // Không cần nữa
+    // const intersections =
+    //     !!pointerIntersections?.length
+    //       ? pointerIntersections
+    //       : rectIntersection(args)
+
+    // Tìm overId đầu tiên trong pointerIntersections ở trên
+    let overId = getFirstCollision(pointerIntersections, 'id')
     if (overId) {
 
-      // Nếu over dg là column thì sẽ tìm tới cardId gần nhất bên trong khu vực va chạm đó dựa vào thuật toán phát triển va chạm closestCenter đều đc, closestCenter có vẻ mượt hơn
+      // Nếu over dg là column thì sẽ tìm tới cardId gần nhất bên trong khu vực va chạm đó dựa vào thuật toán phát triển va chạm closestCenter đều đc, closestCorners có vẻ mượt hơn
       const checkColumn = orderedColumns.find(column => column._id === overId)
       if (checkColumn) {
         // console.log('over before: ', overId)
-        overId = closestCenter ({
+        overId = closestCorners ({
           ...args,
           droppableContainers: args.droppableContainers.filter(container => {
             return (container.id !== overId) && (checkColumn?.cardOrderIds?.includes(container.id))
@@ -329,7 +334,7 @@ function BoardContent({ board }) {
     // Nếu overId là null thì trả về mảng rỗng
     return lastOverId.current ? [{ id: lastOverId.current }] : []
 
-  }, [activeDragItemType])
+  }, [activeDragItemType, orderedColumns])
 
   return (
     <DndContext
