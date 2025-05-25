@@ -102,7 +102,6 @@ function BoardContent({ board }) {
 
         // Thêm PlaceholderCar nếu column rỗng
         if (isEmpty(nextActiveColumn.cards)) {
-          console.log('card cuoi bi keo di')
           nextActiveColumn.cards = [generatePlaceholderCard(nextActiveColumn)]
         }
         // Cập nhật lại mảng cardOrderIds cho chuẩn dữ liệu
