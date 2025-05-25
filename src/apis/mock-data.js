@@ -54,6 +54,24 @@ export const mockData = {
           { _id: 'card-id-12', boardId: 'board-id-01', columnId: 'column-id-03', title: 'Title of card 12', description: null, cover: null, memberIds: [], comments: [], attachments: [] },
           { _id: 'card-id-13', boardId: 'board-id-01', columnId: 'column-id-03', title: 'Title of card 13', description: null, cover: null, memberIds: [], comments: [], attachments: [] }
         ]
+      },
+      {
+        _id: 'column-id-04',
+        boardId: 'board-id-01',
+        title: 'Empty Column 04',
+        // Phía FE sẽ tự tạo ra 1 card đặc biệt: Placeholder Card, ko liên quan tới BE
+        // Card đặc biệt này sẽ được ẩn ở UI user
+        // Cấu trúc Id của card này để unique rất đơn giản, ko cần random
+        // "columnId-placeholder-card" (mỗi column chỉ có thể có tối đa 1 PlaceholderCard)
+        // Khi tạo phải đầy đủ: (_id, boardId, columnId, FE_PlaceholderCard)
+        cardOrderIds: ['column-id-04-placeholder-card'],
+        cards: [
+          { _id: 'column-id-04-placeholder-card',
+            boardId: 'board-id-01',
+            columnId: 'column-id-04',
+            FE_PlaceholderCard: true
+          }
+        ]
       }
     ]
   }
