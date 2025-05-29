@@ -158,7 +158,7 @@ function Columns({ column }) {
           overflow: 'unset'
         }}>
           {!openNewCardForm
-            ? <Box  sx={{
+            ? <Box sx={{
               height: '100%',
               display: 'flex',
               alignItems: 'center',
@@ -181,6 +181,7 @@ function Columns({ column }) {
                 size='small'
                 variant='outlined'
                 autoFocus
+                data-no-dnd="true"
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 sx={{
@@ -207,6 +208,7 @@ function Columns({ column }) {
               }}>
                 <Button
                   onClick={addNewCard}
+                  data-no-dnd="true"
                   variant='contained' color='success' size='small'
                   sx={{
                     boxShadow: 'none',
