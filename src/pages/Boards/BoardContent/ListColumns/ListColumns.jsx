@@ -3,9 +3,28 @@ import Columns from './Columns/Columns'
 import Button from '@mui/material/Button'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+import { useState } from 'react'
+import TextField from '@mui/material/TextField'
+import CloseIcon from '@mui/icons-material/Close'
 
 function ListColumns({ columns }) {
-/**
+  const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
+  const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
+
+  const [newColumnTitle, setNewColumnTitle] = useState('')
+  const addNewColumn = () => {
+    if (!newColumnTitle) {
+      // console.error('Please enter title')
+      return
+    }
+    // console.log(newColumnTitle)
+    // Gọi API
+
+    // Đóng trạng thái thêm Column mới và clear input
+    toggleOpenNewColumnForm()
+    setNewColumnTitle('')
+  }
+  /**
  * SortableContext yêu cầu items là 1 mảng dạng ['id-1', 'id-2'] chứ không phải [{id: 'id-1}, {id: 'id-2'}]
  * Nếu ko đúng thì vẫn kéo thả dc nhg ko có animation
  * https://github.com/clauderic/dnd-kit/issues183#issuecomment-812569512
@@ -27,27 +46,89 @@ function ListColumns({ columns }) {
 
 
         {/* Box add new column */}
-        <Box sx={{
-          minWidth: '200px',
-          maxWidth: '200px',
-          mx: 2,
-          borderRadius: '6px',
-          height: 'fit-content',
-          bgcolor: '#ffffff3d'
-        }}>
-          <Button
-            startIcon={<NoteAddIcon />}
-            sx={{
-              color: 'white',
-              width: '100%',
-              justifyContent: 'flex-start',
-              pl: 2.5,
-              py: 1
-            }}
+        {!openNewColumnForm
+          ? <Box onClick = {toggleOpenNewColumnForm} sx={{
+            minWidth: '250px',
+            maxWidth: '250px',
+            mx: 2,
+            borderRadius: '6px',
+            height: 'fit-content',
+            bgcolor: '#ffffff3d'
+          }}>
+            <Button
+              startIcon={<NoteAddIcon />}
+              sx={{
+                color: 'white',
+                width: '100%',
+                justifyContent: 'flex-start',
+                pl: 2.5,
+                py: 1
+              }}
+            >
+              Add new column
+            </Button>
+          </Box>
+          : <Box sx={{
+            minWidth: '250px',
+            maxWidth: '250px',
+            mx: 2,
+            p: 1,
+            borderRadius: '6px',
+            height: 'fit-content',
+            bgcolor: '#ffffff3d',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1
+          }}
           >
-            Add new column
-          </Button>
-        </Box>
+            <TextField
+              label="Enter column title..."
+              type="text"
+              size='small'
+              variant='outlined'
+              autoFocus
+              value={newColumnTitle}
+              onChange={(e) => setNewColumnTitle(e.target.value)}
+
+              sx={{
+                '& label': { color: 'white' },
+                '& input': { color: 'white' },
+                '& label.Mui-focused': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: 'white' },
+                  '&:hover fieldset': { borderColor: 'white' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                }
+              }}
+            />
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <Button
+                onClick={addNewColumn}
+                variant='contained' color='success' size='small'
+                sx={{
+                  boxShadow: 'none',
+                  border: '0.5px solid',
+                  borderColor: (theme) => theme.palette.success.main,
+                  '&:hover': { bgcolor: (theme) => theme.palette.success.main }
+                }}
+              >Add Column</Button>
+              <CloseIcon
+                fontSize='small'
+                sx={{
+                  color: 'white',
+                  cursor: 'pointer',
+                  '&:hover' : { color: (theme) => theme.palette.warning.main }
+                }}
+                onClick={toggleOpenNewColumnForm}
+
+              />
+            </Box>
+          </Box>
+        }
 
       </Box>
     </SortableContext>
