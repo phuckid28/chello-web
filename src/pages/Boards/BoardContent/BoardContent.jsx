@@ -5,8 +5,8 @@ import { mapOrder } from '~/utils/sort'
 import {
   DndContext,
   // PointerSensor,
-  MouseSensor,
-  TouchSensor,
+  // MouseSensor,
+  // TouchSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -18,6 +18,7 @@ import {
   // closestCenter
 
 } from '@dnd-kit/core'
+import { MouseSensor, TouchSensor } from '~/customLibaries/DndKitSensors'
 import { arrayMove } from '@dnd-kit/sortable'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
