@@ -25,7 +25,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'react-toastify'
 
-function Columns({ column }) {
+function Columns({ column, createNewCard }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
     data: { ...column }
@@ -55,13 +55,20 @@ function Columns({ column }) {
   const toggleOpenNewCardForm = () => setOpenNewCardForm(!openNewCardForm)
 
   const [newCardTitle, setNewCardTitle] = useState('')
-  const addNewCard = () => {
+  const addNewCard = async () => {
     if (!newCardTitle) {
-      toast.error('Please enter title', {position: 'bottom-right'})
+      toast.error('Please enter title', { position: 'bottom-right' })
       return
     }
-    // console.log(newCardTitle)
-    // Gọi API
+    // Tạo dữ liệu Card để gọi API
+    const newCardData = {
+      title: newCardTitle,
+      columnId: column._id
+    }
+
+    // Gọi lên props function createNewColumn nằm ở component cha cao nhất (boards/_id.jsx)
+    // Có thể sử dụng redux để đưa dữ liệu ra ngoài để có thể gọi luôn API thay vì lần lượt gọi ngược lên những component cha phía trên
+    await createNewCard(newCardData)
 
     // Đóng trạng thái thêm Card mới và clear input
     toggleOpenNewCardForm()
