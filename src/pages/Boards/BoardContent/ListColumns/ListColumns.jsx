@@ -8,7 +8,7 @@ import { toast } from 'react-toastify'
 import TextField from '@mui/material/TextField'
 import CloseIcon from '@mui/icons-material/Close'
 
-function ListColumns({ columns, createNewColumn, createNewCard }) {
+function ListColumns({ columns, createNewColumn, createNewCard, deleteColumnDetails }) {
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
   const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
 
@@ -50,7 +50,12 @@ function ListColumns({ columns, createNewColumn, createNewCard }) {
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
         {/* Tim hieu ve truyen du lieu xuong */}
-        {columns?.map(column => <Columns key={column._id} column={column} createNewCard={createNewCard}/>)}
+        {columns?.map(column => <Columns
+          key={column._id}
+          column={column}
+          createNewCard={createNewCard}
+          deleteColumnDetails={deleteColumnDetails}
+        />)}
 
 
         {/* Box add new column */}
