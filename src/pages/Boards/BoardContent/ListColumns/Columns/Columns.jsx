@@ -23,8 +23,9 @@ import CloseIcon from '@mui/icons-material/Close'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'react-toastify'
+import { useConfirm } from 'material-ui-confirm'
 
-function Columns({ column, createNewCard }) {
+function Columns({ column, createNewCard, deleteColumnDetails }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
     data: { ...column }
@@ -75,6 +76,31 @@ function Columns({ column, createNewCard }) {
     setNewCardTitle('')
   }
 
+  // Xử lý xoá 1 column và cards bên trong nó
+  const confirmDeleteColumn = useConfirm()
+  const handleDeleteColumn = () => {
+    confirmDeleteColumn({
+      title: 'Delete Column?',
+      description: 'This action will permantly delete this Column and its card, are you sure?',
+      // content: 'test'
+      confirmationText: 'Confirm',
+      cancellationText: 'Cancel'
+
+      // allowClose: false,
+      // dialogProps: { maxWidth: 'xs' },
+      // confirmationButtonProps: { color: 'secondary', variant: 'outlined'},
+      // cancellationButtonProps: { color: 'inherit' },
+
+      // description: 'This action will permantly delete this Column and its card, are you sure? Type Confirm',
+      // confirmationKeyword: 'confirm',
+
+    }).then(() => {
+    // Gọi lên props function deleteColumnDetails nằm ở component cha cao nhất (boards/_id.jsx)
+    // Có thể sử dụng redux để đưa dữ liệu ra ngoài để có thể gọi luôn API thay vì lần lượt gọi ngược lên những component cha phía trên
+      deleteColumnDetails(column._id)
+    }).catch(() => {})
+  }
+
   return (
     // Bọc div để tránh vấn đề flickering liên quan đến chiều cao của column
     <div ref={setNodeRef} style={dndKitColumnStyle} {...attributes}>
@@ -123,12 +149,21 @@ function Columns({ column, createNewCard }) {
               anchorEl={anchorEl}
               open={open}
               onClose={handleClose}
+              onClick={handleClose}
               MenuListProps={{
                 'aria-labelledby': 'basic-column-dropdown'
               }}
             >
-              <MenuItem>
-                <ListItemIcon><AddCardIcon fontSize="small" /></ListItemIcon>
+              <MenuItem
+                onClick={toggleOpenNewCardForm}
+                sx={{
+                  '&:hover': {
+                    color: 'success.light',
+                    '& .add-card-icon': { color: 'success.light' }
+                  }
+                }}
+              >
+                <ListItemIcon><AddCardIcon className='add-card-icon' fontSize="small" /></ListItemIcon>
                 <ListItemText>Add new card</ListItemText>
               </MenuItem>
               <MenuItem>
@@ -144,9 +179,17 @@ function Columns({ column, createNewCard }) {
                 <ListItemText>Cut</ListItemText>
               </MenuItem>
               <Divider />
-              <MenuItem>
-                <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Remove this column</ListItemText>
+              <MenuItem
+                onClick = {handleDeleteColumn}
+                sx={{
+                  '&:hover': {
+                    color: 'warning.dark',
+                    '& .delete-forever-icon': { color: 'warning.dark' }
+                  }
+                }}
+              >
+                <ListItemIcon><DeleteForeverIcon className='delete-forever-icon' fontSize="small" /></ListItemIcon>
+                <ListItemText>Delete this column</ListItemText>
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><Cloud fontSize="small" /></ListItemIcon>
