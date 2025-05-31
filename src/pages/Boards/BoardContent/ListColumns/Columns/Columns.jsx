@@ -17,7 +17,6 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import AddCardIcon from '@mui/icons-material/AddCard'
 import DragHandleIcon from '@mui/icons-material/DragHandle'
 import ListCards from './ListCards/ListCards'
-import { mapOrder } from '~/utils/sort'
 import TextField from '@mui/material/TextField'
 import CloseIcon from '@mui/icons-material/Close'
 
@@ -49,13 +48,14 @@ function Columns({ column, createNewCard }) {
     setAnchorEl(null)
   }
 
-  const orrderedCards = mapOrder(column?.cards, column?.cardOrderIds, '_id')
+  // Cards đã được sắp xếp ở component cha cao nhất (boards/_id.jsx)
+  const orrderedCards = column.cards
 
   const [openNewCardForm, setOpenNewCardForm] = useState(false)
   const toggleOpenNewCardForm = () => setOpenNewCardForm(!openNewCardForm)
 
   const [newCardTitle, setNewCardTitle] = useState('')
-  const addNewCard = async () => {
+  const addNewCard = () => {
     if (!newCardTitle) {
       toast.error('Please enter title', { position: 'bottom-right' })
       return
@@ -68,7 +68,7 @@ function Columns({ column, createNewCard }) {
 
     // Gọi lên props function createNewColumn nằm ở component cha cao nhất (boards/_id.jsx)
     // Có thể sử dụng redux để đưa dữ liệu ra ngoài để có thể gọi luôn API thay vì lần lượt gọi ngược lên những component cha phía trên
-    await createNewCard(newCardData)
+    createNewCard(newCardData)
 
     // Đóng trạng thái thêm Card mới và clear input
     toggleOpenNewCardForm()
