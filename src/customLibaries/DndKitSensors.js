@@ -2,6 +2,7 @@ import {
   MouseSensor as DndKitMouseSensor,
   TouchSensor as DndKitTouchSensor
 } from '@dnd-kit/core'
+// eslint-disable-next-line no-unused-vars
 import { MouseEvent, TouchEvent } from 'react'
 
 // Block DnD event propagation if element have "data-no-dnd" attribute
