@@ -49,7 +49,6 @@ function ListColumns({ columns, createNewColumn, createNewCard, deleteColumnDeta
         overflowY: 'hidden',
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
-        {/* Tim hieu ve truyen du lieu xuong */}
         {columns?.map(column => <Columns
           key={column._id}
           column={column}

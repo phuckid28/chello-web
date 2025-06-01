@@ -1,10 +1,10 @@
 {
-  "name": "vite-trello-web-base-project",
+  "name": "vite-chello-project",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "author": "Phuckid28",
-  "description": "",
+  "author": "Dao Thanh Phuc",
+  "description": "A Trello clone project",
   "engines": {
     "node": ">=18.x"
   },
