@@ -7,13 +7,24 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import TextField from '@mui/material/TextField'
 import CloseIcon from '@mui/icons-material/Close'
+import { createNewColumnAPI } from '~/apis'
+import { generatePlaceholderCard } from '~/utils/formatters'
+import {
+  updateCurrentActiveBoard,
+  selectCurrentSctiveBoard
+} from '~/redux/activeBoard/activeBoardSlice'
+import { cloneDeep } from 'lodash'
+import { useDispatch, useSelector } from 'react-redux'
 
-function ListColumns({ columns, createNewColumn, createNewCard, deleteColumnDetails }) {
+function ListColumns({ columns }) {
+  const dispatch = useDispatch()
+  const board = useSelector(selectCurrentSctiveBoard)
+
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
   const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
 
   const [newColumnTitle, setNewColumnTitle] = useState('')
-  const addNewColumn = () => {
+  const addNewColumn = async () => {
     if (!newColumnTitle) {
       toast.error('Please enter title')
       return
@@ -24,9 +35,33 @@ function ListColumns({ columns, createNewColumn, createNewCard, deleteColumnDeta
 
     }
 
-    // Gọi lên props function createNewColumn nằm ở component cha cao nhất (boards/_id.jsx)
-    // Có thể sử dụng redux để đưa dữ liệu ra ngoài để có thể gọi luôn API thay vì lần lượt gọi ngược lên những component cha phía trên
-    createNewColumn(newColumnData)
+    // Gọi API tạo mới column và làm lại dữ liệu state
+    const createdColumn = await createNewColumnAPI({
+      ...newColumnData,
+      boardId: board._id
+    })
+
+    // Tạo card rỗng khi tạo column
+    createdColumn.cards = [generatePlaceholderCard(createdColumn)]
+    createdColumn.cardOrderIds = [generatePlaceholderCard(createdColumn)._id]
+
+    // Cập nhật state board
+    // FE tự làm mới state data board thay vì phải gọi lại fetchBoarddetailsAPI
+    // Code sex bị dính lỗi obj is not extensible vì dù đã copy/clone ra giá trị newBoard nhg bản chất của spread operator là shallow copy/clone, nên dính rules Immutability trrong redux toolkit không dùng được hàm PUSH (sứa gtri mảng trực tiếp)
+    // C1: dùng deep copy/clone toàn bộ board cho ngắn gọn
+    // const newBoard = { ...board }
+
+    const newBoard = cloneDeep(board)
+    newBoard.columns.push(createdColumn)
+    newBoard.columnOrderIds.push(createdColumn._id)
+
+    // C2: có thể dùng array.concat thay cho push như docs của redux toolkit ở trên vì push như đã đề cập sẽ thay đổi gtri mảng trực tiếp, còn concat thì merge - ghép mảng lại và tạo ra 1 mảng mới để gán lại giá trị
+    // const newBoard = { ...board }
+    // newBoard.columns = newBoard.columns.concat([createdColumn])
+    // newBoard.columnOrderIds = newBoard.columnOrderIds.concat([createdColumn._id])
+
+    // Cập nhật dữ liệu Board vào Redux Store
+    dispatch(updateCurrentActiveBoard(newBoard))
 
     // Đóng trạng thái thêm Column mới và clear input
     toggleOpenNewColumnForm()
@@ -49,12 +84,8 @@ function ListColumns({ columns, createNewColumn, createNewCard, deleteColumnDeta
         overflowY: 'hidden',
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
-        {columns?.map(column => <Columns
-          key={column._id}
-          column={column}
-          createNewCard={createNewCard}
-          deleteColumnDetails={deleteColumnDetails}
-        />)}
+        {columns?.map(column =>
+          <Columns key={column._id} column={column} />)}
 
 
         {/* Box add new column */}
