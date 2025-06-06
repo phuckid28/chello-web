@@ -20,6 +20,7 @@ import {
   selectCurrentSctiveBoard
 } from '~/redux/activeBoard/activeBoardSlice'
 import { useDispatch, useSelector } from 'react-redux'
+import { useParams } from 'react-router-dom'
 
 function Board() {
   const dispatch = useDispatch()
@@ -27,12 +28,13 @@ function Board() {
   // const [board, setBoard] = useState(null)
   const board = useSelector(selectCurrentSctiveBoard)
 
+  const { boardId } = useParams()
+  console.log('🚀 ~ Board ~ boardId:', boardId)
+
   useEffect(() => {
-    // Tạm hời fix cứng Id
-    const boardId = '683802ed26942f2c2cc289fa'
     // Call API
     dispatch(fetchBoardDetailsAPI(boardId))
-  }, [dispatch])
+  }, [dispatch, boardId])
 
   // Gọi API xử lý khi kéo thả Column xong
   // Gọi API để cập nhật mảng columnOrderIds của Board chứa nó (thay đổi vị trí trong board)
