@@ -29,7 +29,6 @@ function Board() {
   const board = useSelector(selectCurrentSctiveBoard)
 
   const { boardId } = useParams()
-  console.log('🚀 ~ Board ~ boardId:', boardId)
 
   useEffect(() => {
     // Call API
