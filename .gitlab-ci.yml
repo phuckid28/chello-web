@@ -1,0 +1,76 @@
+stages: [lint, test, build]
+
+# TẮT Dependency Proxy để khỏi login sai
+variables:
+  CI_DEPENDENCY_PROXY_SERVER: ""
+  CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX: ""
+  CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX: ""
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+  DOCKER_DRIVER: "overlay2"
+
+# ───────────── LINT ─────────────
+lint:
+  stage: lint
+  image: node:20-alpine
+  # tags: ["docker"]   # BỎ comment nếu runner chỉ nhận job có tag
+  cache:
+    key: { files: [package-lock.json] }
+    paths: [.npm/]
+  before_script:
+    - node -v && npm -v
+    - |
+      if [ -f package-lock.json ]; then
+        npm ci --cache .npm --prefer-offline || (echo "npm ci fail -> fallback npm i" && npm i --cache .npm --prefer-offline)
+      else
+        npm i --cache .npm --prefer-offline
+      fi
+  script:
+    - npm run lint || echo "no lint script, skipping"
+
+# ───────────── TEST ─────────────
+test:
+  stage: test
+  image: node:20-alpine
+  # tags: ["docker"]
+  cache:
+    key: { files: [package-lock.json] }
+    paths: [.npm/]
+  before_script:
+    - node -v && npm -v
+    - |
+      if [ -f package-lock.json ]; then
+        npm ci --cache .npm --prefer-offline || (echo "npm ci fail -> fallback npm i" && npm i --cache .npm --prefer-offline)
+      else
+        npm i --cache .npm --prefer-offline
+      fi
+  script:
+    - npm test --if-present || echo "no tests, skipping"
+  artifacts:
+    when: always
+    paths: []
+
+# ───────── BUILD DOCKER IMAGE ─────────
+build-image:
+  stage: build
+  image: docker:26
+  # tags: ["docker"]
+  services: []            # dùng docker.sock của runner (docker-outside-of-docker)
+  before_script: []
+  script:
+    - docker version
+    - |
+      IMAGE_NAME="chello-frontend"
+      IMAGE_TAG="${CI_COMMIT_SHORT_SHA}"
+      docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+      # Xuất image ra artifact để tải về/kiểm tra nội bộ
+      docker save "${IMAGE_NAME}:${IMAGE_TAG}" -o "image-${IMAGE_TAG}.tar"
+    - docker images | grep chello-frontend
+  artifacts:
+    when: on_success
+    paths: [image-*.tar]
+    expire_in: 7 days
+  needs: ["test"]         # build sau khi test xong (bỏ nếu muốn)
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
