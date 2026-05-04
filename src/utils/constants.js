@@ -5,7 +5,8 @@ if (process.env.BUILD_MODE === 'dev') {
 }
 
 if (process.env.BUILD_MODE === 'production') {
-  apiRoot = 'https://chello-api-iwkg.onrender.com'
+  // apiRoot = 'https://chello-api-iwkg.onrender.com'
+  apiRoot = 'https://chello-api.vercel.app'
 }
 
 export const API_ROOT = apiRoot
