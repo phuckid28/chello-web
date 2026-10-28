@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import CircularProgress from '@mui/material/CircularProgress'
 
-
 function PageLoadingSpinner({ caption }) {
   return (
     <Box sx={{

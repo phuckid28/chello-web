@@ -12,10 +12,10 @@ function ListCards({ cards }) {
         flexDirection: 'column',
         gap: 1,
         overflowX: 'hidden',
-        msOverflowY: 'auto',
-        maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - 
-          ${theme.spacing(5)} - 
-          ${theme.trello.columnHeaderHeight} - 
+        overflowY: 'auto',
+        maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} -
+          ${theme.spacing(5)} -
+          ${theme.trello.columnHeaderHeight} -
           ${theme.trello.columnFooterHeight}
           )`,
         '&::-webkit-scrollbar-thumb': {

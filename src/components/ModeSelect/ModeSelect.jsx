@@ -1,6 +1,4 @@
 import {
-  // Experimental_CssVarsProvider as CssVarsProvider,
-  // experimental_extendTheme as extendTheme,
   useColorScheme
 } from '@mui/material/styles'
 import InputLabel from '@mui/material/InputLabel'
@@ -12,7 +10,6 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness'
 import Box from '@mui/material/Box'
 
-
 function ModeSelect() {
   const { mode, setMode } = useColorScheme()
   const handleChange = (event) => {
@@ -21,7 +18,7 @@ function ModeSelect() {
   }
 
   return (
-    <FormControl size='small' sx={{ minWidth: '120px' }} >
+    <FormControl size='small' sx={{ minWidth: '120px' }}>
       <InputLabel
         id="label-select-dark-light-mode"
         sx={{
@@ -31,7 +28,7 @@ function ModeSelect() {
           }
         }}
       >
-          Mode
+        Mode
       </InputLabel>
       <Select
         labelId="label-select-dark-light-mode"
