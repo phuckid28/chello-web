@@ -14,11 +14,13 @@ import DoneIcon from '@mui/icons-material/Done'
 import NotInterestedIcon from '@mui/icons-material/NotInterested'
 import { useDispatch, useSelector } from 'react-redux'
 import {
+  addNotification,
   fetchInvitationsAPI,
   selectCurrentNotifications,
   updateBoardInvitationAPI
 } from '~/redux/notifications/notificationsSlice'
-import { BOARD_INVITATION_STATUS } from '~/utils/constants'
+import { selectCurrentUser } from '~/redux/user/userSlice'
+import { API_ROOT, BOARD_INVITATION_STATUS } from '~/utils/constants'
 import { useNavigate } from 'react-router-dom'
 
 function Notifications() {
@@ -34,10 +36,35 @@ function Notifications() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const notifications = useSelector(selectCurrentNotifications)
+  const currentUser = useSelector(selectCurrentUser)
 
   useEffect(() => {
     dispatch(fetchInvitationsAPI())
-  }, [dispatch])
+
+    if (!currentUser?._id || typeof EventSource === 'undefined') return undefined
+
+    const eventSource = new EventSource(`${API_ROOT}/v1/invitations/stream`, {
+      withCredentials: true
+    })
+
+    const onReceiveNewInvitation = (event) => {
+      try {
+        const invitation = JSON.parse(event.data)
+        if (String(invitation?.inviteeId) === String(currentUser._id)) {
+          dispatch(addNotification(invitation))
+        }
+      } catch (error) {
+        // Ignore malformed SSE payload
+      }
+    }
+
+    eventSource.addEventListener('BE_USER_INVITED_TO_BOARD', onReceiveNewInvitation)
+
+    return () => {
+      eventSource.removeEventListener('BE_USER_INVITED_TO_BOARD', onReceiveNewInvitation)
+      eventSource.close()
+    }
+  }, [dispatch, currentUser?._id])
 
   const hasPendingNotifications = notifications?.some(
     n => n.boardInvitation?.status === BOARD_INVITATION_STATUS.PENDING
