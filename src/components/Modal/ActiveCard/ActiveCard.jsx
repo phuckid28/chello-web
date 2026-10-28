@@ -42,6 +42,7 @@ import { selectCurrentUser } from '~/redux/user/userSlice'
 import { CARD_MEMBER_ACTIONS } from '~/utils/constants'
 import { ELEMENTAL_LABELS, SORA_PRESET_COVERS, resolveCardCoverUrl } from '~/utils/animeTheme'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
+import { playUiChime } from '~/utils/soundEffects'
 import { useConfirm } from 'material-ui-confirm'
 import { cloneDeep } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
@@ -108,6 +109,7 @@ function ActiveCard() {
   }
 
   const onToggleElementalLabel = (labelObj) => {
+    playUiChime('sparkle')
     const currentLabels = activeCard?.labels || []
     const exists = currentLabels.some(l => l.id === labelObj.id)
     const nextLabels = exists
@@ -118,6 +120,7 @@ function ActiveCard() {
 
   const onAddChecklistItem = () => {
     if (!newQuestTitle.trim()) return
+    playUiChime('sparkle')
     const currentChecklist = activeCard?.checklist || []
     const nextItem = {
       id: `quest-${Date.now()}`,
@@ -131,6 +134,12 @@ function ActiveCard() {
 
   const onToggleChecklistItem = (itemId) => {
     const currentChecklist = activeCard?.checklist || []
+    const target = currentChecklist.find(item => item.id === itemId)
+    if (target && !target.isCompleted) {
+      playUiChime('complete')
+    } else {
+      playUiChime('sparkle')
+    }
     const nextChecklist = currentChecklist.map(item => (
       item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
     ))

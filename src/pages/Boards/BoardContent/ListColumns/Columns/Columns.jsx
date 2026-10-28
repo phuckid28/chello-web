@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box'
 import { useState } from 'react'
 import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Divider from '@mui/material/Divider'
@@ -59,6 +60,7 @@ function Columns({ column }) {
 
   // Cards đã được sắp xếp ở component cha cao nhất (boards/_id.jsx)
   const orderedCards = column.cards
+  const realCardCount = (orderedCards || []).filter(c => !c.FE_PlaceholderCard).length
 
   const [openNewCardForm, setOpenNewCardForm] = useState(false)
   const toggleOpenNewCardForm = () => setOpenNewCardForm(!openNewCardForm)
@@ -132,22 +134,37 @@ function Columns({ column }) {
       <Box
         {...listeners}
         sx={{
-          minWidth: '300px',
-          maxWidth: '300px',
-          bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.84)' : 'rgba(241, 245, 249, 0.90)'),
-          backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255, 255, 255, 0.22)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.22)',
+          minWidth: '304px',
+          maxWidth: '304px',
+          overflow: 'hidden',
+          bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.86)' : 'rgba(248, 250, 252, 0.92)'),
+          backdropFilter: 'blur(18px) saturate(160%)',
+          border: '1px solid rgba(255, 255, 255, 0.24)',
+          boxShadow: '0 10px 34px rgba(0, 0, 0, 0.24)',
           ml: 2,
-          borderRadius: '12px',
+          borderRadius: '14px',
           height: 'fit-content',
-          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`
+          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
+          animation: 'chelloFadeSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'border-color 0.22s ease, box-shadow 0.22s ease',
+          '&:hover': {
+            borderColor: 'rgba(125, 211, 252, 0.5)',
+            boxShadow: '0 14px 38px rgba(0, 0, 0, 0.3)'
+          }
         }}
       >
+        {/* Top Chromatic Sora Accent Bar */}
+        <Box sx={{
+          height: '3px',
+          width: '100%',
+          background: 'linear-gradient(90deg, #7dd3fc 0%, #f472b6 50%, #a78bfa 100%)'
+        }} />
+
         {/* Box column header */}
         <Box sx={{
           height: (theme) => theme.trello.columnHeaderHeight,
-          p: 2,
+          px: 2,
+          py: 1.5,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -159,7 +176,19 @@ function Columns({ column }) {
             onChangedValue={onUpdateColumnTitle}
             data-no-dnd="true"
           />
-          <Box>
+          <Chip
+            label={realCardCount}
+            size="small"
+            sx={{
+              height: 20,
+              minWidth: 24,
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(125, 211, 252, 0.16)' : 'rgba(2, 132, 199, 0.12)'),
+              color: 'primary.main'
+            }}
+          />
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Tooltip title='More options'>
               <ExpandMoreIcon
                 sx={{ color: 'text.primary', cursor: 'pointer' }}

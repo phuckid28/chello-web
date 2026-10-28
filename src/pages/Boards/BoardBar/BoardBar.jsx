@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Avatar from '@mui/material/Avatar'
@@ -6,6 +6,8 @@ import VpnLockIcon from '@mui/icons-material/VpnLock'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import StarBorderRoundedIcon from '@mui/icons-material/StarBorderRounded'
+import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
+import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded'
 import IconButton from '@mui/material/IconButton'
 import Popover from '@mui/material/Popover'
 import Typography from '@mui/material/Typography'
@@ -22,6 +24,7 @@ import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { ELEMENTAL_LABELS, PRIMARY_THEME_KEYS, soraChibi } from '~/utils/animeTheme'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
+import { playUiChime } from '~/utils/soundEffects'
 import { toast } from 'react-toastify'
 
 const MENU_STYLES = {
@@ -32,15 +35,23 @@ const MENU_STYLES = {
   borderRadius: '8px',
   fontWeight: 600,
   backdropFilter: 'blur(6px)',
+  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
   '.MuiSvgIcon-root': {
     color: 'white'
   },
   '&:hover': {
-    bgcolor: 'rgba(255, 255, 255, 0.22)'
+    bgcolor: 'rgba(255, 255, 255, 0.22)',
+    transform: 'translateY(-1px)'
   }
 }
 
-function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
+function BoardBar({
+  board,
+  cardFilterText = '',
+  setCardFilterText,
+  boardViewMode = 'kanban',
+  setBoardViewMode
+}) {
   const dispatch = useDispatch()
   const { personaKey, themeConfig, changePersona } = usePersonaTheme(board?.theme)
 
@@ -52,12 +63,32 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
   // Filter Popover state
   const [filterAnchor, setFilterAnchor] = useState(null)
 
+  // Calculate live board telemetry (total real cards & checklist completion %)
+  const boardTelemetry = useMemo(() => {
+    let cardsCount = 0
+    let totalChecks = 0
+    let doneChecks = 0
+    ;(board?.columns || []).forEach((col) => {
+      ;(col.cards || []).forEach((c) => {
+        if (!c.FE_PlaceholderCard) {
+          cardsCount++
+          const list = c.checklist || []
+          totalChecks += list.length
+          doneChecks += list.filter((i) => i.isCompleted).length
+        }
+      })
+    })
+    const percent = totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0
+    return { cardsCount, totalChecks, doneChecks, percent }
+  }, [board?.columns])
+
   useEffect(() => {
     if (!isRunning) return undefined
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           setIsRunning(false)
+          playUiChime('complete')
           toast.success(`${themeConfig.characterName}: Focus session complete! Rest well with Usagi plush!`)
           return 25 * 60
         }
@@ -81,6 +112,7 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
 
   const handleToggleStarBoard = () => {
     const nextStarred = !board?.isStarred
+    playUiChime('sparkle')
     dispatch(updateCurrentActiveBoard({ ...board, isStarred: nextStarred }))
     updateBoardDetailsAPI(board._id, { isStarred: nextStarred })
   }
@@ -96,9 +128,16 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
   const handleCycleSoraTheme = () => {
     const currentIndex = PRIMARY_THEME_KEYS.indexOf(personaKey)
     const nextTheme = PRIMARY_THEME_KEYS[(currentIndex + 1) % PRIMARY_THEME_KEYS.length]
+    playUiChime('theme')
     changePersona(nextTheme)
     dispatch(updateCurrentActiveBoard({ ...board, theme: nextTheme }))
     updateBoardDetailsAPI(board._id, { theme: nextTheme })
+  }
+
+  const handleToggleViewMode = () => {
+    if (!setBoardViewMode) return
+    playUiChime('sparkle')
+    setBoardViewMode(boardViewMode === 'kanban' ? 'overview' : 'kanban')
   }
 
   return (
@@ -114,17 +153,17 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
       background: (theme) => (
         theme.palette.mode === 'dark' ? themeConfig.boardBarBgDark : themeConfig.boardBarBgLight
       ),
-      backdropFilter: 'blur(12px)',
+      backdropFilter: 'blur(14px)',
       borderBottom: `1px solid ${themeConfig.columnBorder}`,
       '&::-webkit-scrollbar-track': { m: 2 }
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <Tooltip title={board?.description || 'Click to edit board title'}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pl: 0.5 }}>
             <SoraRibbonIcon sx={{ fontSize: '22px' }} />
             <Box sx={{
               minWidth: '120px',
-              maxWidth: '250px',
+              maxWidth: '240px',
               '& input': { color: 'white !important' },
               '& .MuiOutlinedInput-root.Mui-focused': {
                 backgroundColor: 'rgba(255, 255, 255, 0.15)'
@@ -150,6 +189,20 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
           >
             {board?.isStarred ? <StarRoundedIcon fontSize="small" /> : <StarBorderRoundedIcon fontSize="small" />}
           </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Switch between Kanban Board and Bento Analytics Overview">
+          <Chip
+            sx={{
+              ...MENU_STYLES,
+              bgcolor: boardViewMode === 'overview' ? 'rgba(244, 114, 182, 0.32)' : MENU_STYLES.bgcolor,
+              borderColor: boardViewMode === 'overview' ? '#f472b6' : 'rgba(255,255,255,0.24)'
+            }}
+            icon={boardViewMode === 'overview' ? <ViewKanbanOutlinedIcon /> : <InsightsRoundedIcon />}
+            label={boardViewMode === 'overview' ? '看板 Kanban' : '統計 Overview'}
+            onClick={handleToggleViewMode}
+            clickable
+          />
         </Tooltip>
 
         <Tooltip title="Click to toggle Public / Private">
@@ -179,7 +232,8 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
           <Chip
             sx={{
               ...MENU_STYLES,
-              bgcolor: isRunning ? 'rgba(244, 114, 182, 0.35)' : MENU_STYLES.bgcolor
+              bgcolor: isRunning ? 'rgba(244, 114, 182, 0.35)' : MENU_STYLES.bgcolor,
+              animation: isRunning ? 'chelloPulseHalo 2.2s infinite' : 'none'
             }}
             icon={<SoraBunnyIcon />}
             label={isRunning ? `Focus ${formatTimer(secondsLeft)}` : 'Usagi Focus • 集中'}
@@ -199,6 +253,23 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
             onClick={(e) => setFilterAnchor(e.currentTarget)}
             onDelete={cardFilterText ? () => setCardFilterText('') : undefined}
             clickable
+          />
+        </Tooltip>
+
+        <Tooltip title="Board Quest Completion & Active Card Telemetry">
+          <Chip
+            size="small"
+            label={`✦ ${boardTelemetry.cardsCount} Cards${boardTelemetry.totalChecks > 0 ? ` • ${boardTelemetry.percent}% Done` : ''}`}
+            onClick={handleToggleViewMode}
+            sx={{
+              display: { xs: 'none', lg: 'inline-flex' },
+              color: '#f8fafc',
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              bgcolor: 'rgba(15, 23, 42, 0.55)',
+              border: `1px solid ${themeConfig.columnBorder}`,
+              cursor: 'pointer'
+            }}
           />
         </Tooltip>
       </Box>
@@ -233,7 +304,10 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
               variant="contained"
               size="small"
               color={isRunning ? 'warning' : 'primary'}
-              onClick={() => setIsRunning(!isRunning)}
+              onClick={() => {
+                playUiChime('sparkle')
+                setIsRunning(!isRunning)
+              }}
             >
               {isRunning ? 'Pause' : 'Start Focus'}
             </Button>

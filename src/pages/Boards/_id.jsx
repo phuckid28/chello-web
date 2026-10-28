@@ -24,6 +24,7 @@ function Board() {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
   const [cardFilterText, setCardFilterText] = useState('')
+  const [boardViewMode, setBoardViewMode] = useState('kanban')
 
   const { boardId } = useParams()
 
@@ -79,7 +80,7 @@ function Board() {
   }
 
   if (!board) {
-    return <PageLoadingSpinner caption="Loading board..." />
+    return <PageLoadingSpinner caption="Connecting to Okukozome Board..." />
   }
   return (
     <Container disableGutters maxWidth={false} sx={{ height: '100vh' }}>
@@ -89,10 +90,13 @@ function Board() {
         board={board}
         cardFilterText={cardFilterText}
         setCardFilterText={setCardFilterText}
+        boardViewMode={boardViewMode}
+        setBoardViewMode={setBoardViewMode}
       />
       <BoardContent
         board={board}
         cardFilterText={cardFilterText}
+        boardViewMode={boardViewMode}
         moveColumns={moveColumns}
         moveCardInTheSameColumn={moveCardInTheSameColumn}
         moveCardToDifferentColumn={moveCardToDifferentColumn}

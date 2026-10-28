@@ -45,12 +45,15 @@ const theme = extendTheme({
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: '8px',
+          borderRadius: '9px',
           borderWidth: '1px',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
           '&:hover': {
             borderWidth: '1.5px',
-            transform: 'translateY(-1px)'
+            transform: 'translateY(-1.5px)'
+          },
+          '&:active': {
+            transform: 'translateY(0px) scale(0.98)'
           }
         }
       }
@@ -73,7 +76,8 @@ const theme = extendTheme({
       styleOverrides: {
         root: {
           fontSize: '0.875rem',
-          borderRadius: '8px',
+          borderRadius: '9px',
+          transition: 'all 0.2s ease',
           '& fieldset': {
             borderWidth: '1px !important'
           },
@@ -89,24 +93,44 @@ const theme = extendTheme({
     MuiCssBaseline: {
       styleOverrides: {
         '@keyframes chelloFloat': {
-          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)', opacity: 0.45 },
-          '50%': { transform: 'translateY(-18px) rotate(8deg)', opacity: 0.85 }
+          '0%, 100%': {
+            transform: 'translate3d(0px, 0px, 0px) rotate(0deg)',
+            opacity: 0.42
+          },
+          '50%': {
+            transform: 'translate3d(8px, -20px, 0px) rotate(10deg)',
+            opacity: 0.88
+          }
         },
-        '@keyframes chelloPulseGlow': {
-          '0%, 100%': { boxShadow: '0 0 12px rgba(56, 189, 248, 0.25)' },
-          '50%': { boxShadow: '0 0 22px rgba(52, 211, 153, 0.45)' }
+        '@keyframes chelloFadeSlideUp': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(12px) scale(0.985)'
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0) scale(1)'
+          }
+        },
+        '@keyframes chelloPulseHalo': {
+          '0%, 100%': {
+            boxShadow: '0 0 0 0 rgba(244, 114, 182, 0.45), 0 0 14px rgba(125, 211, 252, 0.35)'
+          },
+          '50%': {
+            boxShadow: '0 0 0 6px rgba(244, 114, 182, 0), 0 0 24px rgba(125, 211, 252, 0.65)'
+          }
         },
         body: {
           '*::-webkit-scrollbar': {
-            width: '8px',
-            height: '8px'
+            width: '7px',
+            height: '7px'
           },
           '*::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(148, 163, 184, 0.6)',
+            backgroundColor: 'rgba(148, 163, 184, 0.48)',
             borderRadius: '8px'
           },
           '*::-webkit-scrollbar-thumb:hover': {
-            backgroundColor: 'rgba(226, 232, 240, 0.95)'
+            backgroundColor: 'rgba(125, 211, 252, 0.78)'
           }
         }
       }

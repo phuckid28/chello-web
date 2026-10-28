@@ -16,21 +16,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Columns from './ListColumns/Columns/Columns'
 import Card from './ListColumns/Columns/ListCards/Card/Card'
+import BoardAnalyticsView from './BoardAnalyticsView'
 
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { soraChibi } from '~/utils/animeTheme'
-import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
+import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
+import { playUiChime } from '~/utils/soundEffects'
 import Avatar from '@mui/material/Avatar'
 import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
+import IconButton from '@mui/material/IconButton'
+import CloseFullscreenRoundedIcon from '@mui/icons-material/CloseFullscreenRounded'
 
 const SORA_COMPANION_LINES = [
   '“Usagi plush is watching over your tasks today... 🐰”',
   '“Under the distant sky of Okukozome, take one gentle step at a time. ☁️”',
   '“Don’t forget to rest and check your flip-phone messages. 💌”',
-  '“Every card completed brings us closer to the promised horizon. 🎀”'
+  '“Every card completed brings us closer to the promised horizon. 🎀”',
+  '“Press Ctrl + K anytime to summon the Okukozome Command Center! ✨”'
 ]
 
 const ACTIVE_DRAG_ITEM_TYPE = {
@@ -39,16 +44,19 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 }
 
 const FLOATING_PARTICLES = [
-  { left: '6%', top: '18%', delay: '0s', duration: '6s' },
-  { left: '22%', top: '72%', delay: '1.2s', duration: '7.5s' },
-  { left: '48%', top: '14%', delay: '2.4s', duration: '6.8s' },
-  { left: '74%', top: '65%', delay: '0.8s', duration: '8s' },
-  { left: '91%', top: '28%', delay: '1.8s', duration: '7s' }
+  { left: '6%', top: '18%', delay: '0s', duration: '6.2s' },
+  { left: '19%', top: '76%', delay: '1.2s', duration: '7.5s' },
+  { left: '35%', top: '24%', delay: '2.1s', duration: '6.9s' },
+  { left: '52%', top: '14%', delay: '0.6s', duration: '7.8s' },
+  { left: '68%', top: '70%', delay: '1.6s', duration: '8.2s' },
+  { left: '83%', top: '22%', delay: '2.8s', duration: '6.6s' },
+  { left: '93%', top: '58%', delay: '1.1s', duration: '7.2s' }
 ]
 
 function BoardContent({
   board,
   cardFilterText = '',
+  boardViewMode = 'kanban',
   moveColumns,
   moveCardInTheSameColumn,
   moveCardToDifferentColumn
@@ -64,6 +72,7 @@ function BoardContent({
 
   const [orderedColumns, setOrderedColumns] = useState([])
   const [quoteIdx, setQuoteIdx] = useState(0)
+  const [minimizedMascot, setMinimizedMascot] = useState(false)
 
   // Cùng 1 thời điểm chỉ có 1 phần tử đang được kéo, column hoặc card
   const [activeDragItemId, setActiveDragItemId] = useState(null)
@@ -397,13 +406,40 @@ function BoardContent({
         ))}
 
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%' }}>
-          <ListColumns columns={displayedColumns} />
+          {boardViewMode === 'overview' ? (
+            <BoardAnalyticsView columns={displayedColumns} themeConfig={themeConfig} />
+          ) : (
+            <ListColumns columns={displayedColumns} />
+          )}
         </Box>
 
-        {/* Floating Chibi Sora & Usagi Plush Mascot Companion */}
-        <Tooltip title="Click Chibi Sora & Usagi for a message" placement="left">
+        {/* Visual Novel Style Chibi Sora & Usagi Plush Mascot HUD */}
+        {minimizedMascot ? (
+          <Tooltip title="Expand Chibi Sora & Usagi Dialogue Box" placement="left">
+            <Avatar
+              src={soraChibi}
+              alt="Chibi Sora"
+              onClick={() => {
+                playUiChime('sparkle')
+                setMinimizedMascot(false)
+              }}
+              sx={{
+                position: 'absolute',
+                right: 18,
+                bottom: 16,
+                zIndex: 2,
+                width: 48,
+                height: 48,
+                cursor: 'pointer',
+                border: `2px solid ${themeConfig.secondaryAccent}`,
+                animation: 'chelloPulseHalo 2.6s infinite',
+                transition: 'transform 0.2s ease',
+                '&:hover': { transform: 'scale(1.08)' }
+              }}
+            />
+          </Tooltip>
+        ) : (
           <Box
-            onClick={() => setQuoteIdx((prev) => (prev + 1) % SORA_COMPANION_LINES.length)}
             sx={{
               position: 'absolute',
               right: 18,
@@ -411,17 +447,16 @@ function BoardContent({
               zIndex: 2,
               display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
-              gap: 1.25,
-              px: 1.5,
-              py: 1,
-              borderRadius: '16px',
-              cursor: 'pointer',
+              gap: 1.5,
+              px: 1.75,
+              py: 1.15,
+              borderRadius: '18px',
               userSelect: 'none',
-              bgcolor: 'rgba(15, 23, 42, 0.78)',
-              backdropFilter: 'blur(10px)',
+              bgcolor: 'rgba(15, 23, 42, 0.84)',
+              backdropFilter: 'blur(16px) saturate(160%)',
               border: `1px solid ${themeConfig.accentColor}`,
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-              transition: 'all 0.2s ease',
+              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.42)',
+              transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
               '&:hover': {
                 transform: 'translateY(-3px)',
                 borderColor: '#f472b6'
@@ -431,21 +466,47 @@ function BoardContent({
             <Avatar
               src={soraChibi}
               alt="Chibi Sora & Usagi"
-              sx={{ width: 42, height: 42, border: `2px solid ${themeConfig.secondaryAccent}` }}
+              onClick={() => {
+                playUiChime('sparkle')
+                setQuoteIdx((prev) => (prev + 1) % SORA_COMPANION_LINES.length)
+              }}
+              sx={{
+                width: 46,
+                height: 46,
+                cursor: 'pointer',
+                border: `2px solid ${themeConfig.secondaryAccent}`,
+                animation: 'chelloPulseHalo 3s infinite'
+              }}
             />
-            <Box sx={{ maxWidth: 220 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box
+              onClick={() => {
+                playUiChime('sparkle')
+                setQuoteIdx((prev) => (prev + 1) % SORA_COMPANION_LINES.length)
+              }}
+              sx={{ maxWidth: 235, cursor: 'pointer' }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
                 <SoraBunnyIcon sx={{ fontSize: 15 }} />
-                <Typography variant="caption" sx={{ fontWeight: 800, color: '#f8fafc' }}>
-                  Sora & Usagi • 春日野 穹
+                <Typography variant="caption" sx={{ fontWeight: 800, color: themeConfig.accentColor, letterSpacing: 0.3 }}>
+                  【 春日野 穹 • Sora & Usagi 】
                 </Typography>
+                <SoraRibbonIcon sx={{ fontSize: 13 }} />
               </Box>
-              <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.85)', display: 'block', lineHeight: 1.25 }}>
+              <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.92)', display: 'block', lineHeight: 1.3 }}>
                 {SORA_COMPANION_LINES[quoteIdx]}
               </Typography>
             </Box>
+            <Tooltip title="Minimize Mascot Box">
+              <IconButton
+                size="small"
+                onClick={() => setMinimizedMascot(true)}
+                sx={{ color: 'rgba(248, 250, 252, 0.65)', p: 0.4, '&:hover': { color: 'white' } }}
+              >
+                <CloseFullscreenRoundedIcon sx={{ fontSize: 15 }} />
+              </IconButton>
+            </Tooltip>
           </Box>
-        </Tooltip>
+        )}
 
         <DragOverlay dropAnimation={CustomDropAnimation}>
           {(!activeDragItemType) && null}

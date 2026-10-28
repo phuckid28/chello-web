@@ -44,6 +44,7 @@ import {
 } from '~/utils/animeTheme'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
+import { playUiChime } from '~/utils/soundEffects'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -76,6 +77,7 @@ function Boards() {
   const [boards, setBoards] = useState(null)
   const [totalBoards, setTotalBoards] = useState(null)
   const [isOpenModal, setIsOpenModal] = useState(false)
+  const [previewArt, setPreviewArt] = useState(null)
 
   const { globalPersonaKey, themeConfig, changePersona } = usePersonaTheme()
 
@@ -331,7 +333,7 @@ function Boards() {
                   Sora Kasugano Gallery • 春日野 穹
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
-                  Verified SFW artworks & Usagi plush scenes available for your boards & cards:
+                  Click any verified SFW Sora & Usagi artwork to inspect full-screen:
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.75 }}>
                   {SORA_PRESET_COVERS.map((art) => (
@@ -340,13 +342,23 @@ function Boards() {
                       component="img"
                       src={art.url}
                       alt={art.label}
-                      title={art.label}
+                      title={`${art.label} (Click to preview)`}
+                      onClick={() => {
+                        playUiChime('sparkle')
+                        setPreviewArt(art)
+                      }}
                       sx={{
                         width: '100%',
-                        height: 46,
+                        height: 48,
                         objectFit: 'cover',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(148, 163, 184, 0.35)'
+                        borderRadius: '7px',
+                        cursor: 'pointer',
+                        border: '1px solid rgba(148, 163, 184, 0.35)',
+                        transition: 'transform 0.2s ease, border-color 0.2s ease',
+                        '&:hover': {
+                          transform: 'scale(1.06)',
+                          borderColor: themeConfig.accentColor
+                        }
                       }}
                     />
                   ))}
@@ -720,6 +732,52 @@ function Boards() {
               </Box>
             </form>
           </Box>
+        </Box>
+      </Modal>
+
+      {/* Full-Resolution Sora Kasugano Artwork Lightbox Modal */}
+      <Modal open={Boolean(previewArt)} onClose={() => setPreviewArt(null)}>
+        <Box
+          onClick={() => setPreviewArt(null)}
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 820,
+            maxWidth: '94vw',
+            borderRadius: '18px',
+            overflow: 'hidden',
+            bgcolor: '#090d16',
+            border: `1px solid ${themeConfig.accentColor}`,
+            boxShadow: '0 24px 64px rgba(0, 0, 0, 0.65)',
+            outline: 0,
+            animation: 'chelloFadeSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          {previewArt && (
+            <>
+              <Box
+                component="img"
+                src={previewArt.url}
+                alt={previewArt.label}
+                sx={{ width: '100%', maxHeight: '74vh', objectFit: 'contain', display: 'block', bgcolor: '#05070c' }}
+              />
+              <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'white' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SoraBunnyIcon />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    {previewArt.label} • 春日野 穹 (Yosuga no Sora)
+                  </Typography>
+                </Box>
+                <Chip
+                  label="Click anywhere to close"
+                  size="small"
+                  sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.14)', fontWeight: 700 }}
+                />
+              </Box>
+            </>
+          )}
         </Box>
       </Modal>
     </Container>
