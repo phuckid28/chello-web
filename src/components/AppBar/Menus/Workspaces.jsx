@@ -5,17 +5,19 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Divider from '@mui/material/Divider'
 import ListItemText from '@mui/material/ListItemText'
-import ListItemIcon from '@mui/material/ListItemIcon'
 import Typography from '@mui/material/Typography'
-import ContentCut from '@mui/icons-material/ContentCut'
-import ContentCopy from '@mui/icons-material/ContentCopy'
-import ContentPaste from '@mui/icons-material/ContentPaste'
-import Cloud from '@mui/icons-material/Cloud'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import Avatar from '@mui/material/Avatar'
+import { ANIME_THEMES } from '~/utils/animeTheme'
+import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 
 function Workspaces() {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
+  const { globalPersonaKey, changePersona } = usePersonaTheme()
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
@@ -23,18 +25,24 @@ function Workspaces() {
     setAnchorEl(null)
   }
 
+  const handleSelectPersona = (key) => {
+    changePersona(key)
+    handleClose()
+  }
+
   return (
     <Box>
       <Button
-        sx={{ color: 'white' }}
+        sx={{ color: 'white', fontWeight: 600 }}
         id="basic-button-workspaces"
         aria-controls={open ? 'basic-menu-workspaces' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
+        startIcon={<AutoAwesomeIcon fontSize="small" sx={{ color: '#fde047' }} />}
         endIcon={<ExpandMoreIcon />}
       >
-        Workspaces
+        Archon Realm
       </Button>
       <Menu
         id="basic-menu-workspaces"
@@ -44,41 +52,50 @@ function Workspaces() {
         MenuListProps={{
           'aria-labelledby': 'basic-button-workspaces'
         }}
+        PaperProps={{
+          sx: { width: 340, borderRadius: 2, p: 0.5 }
+        }}
       >
-        <MenuItem>
-          <ListItemIcon>
-            <ContentCut fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Cut</ListItemText>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ⌘X
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: 0.5 }}>
+            SELECT ARCHON PERSONA • 領域選択
           </Typography>
-        </MenuItem>
-        <MenuItem>
-          <ListItemIcon>
-            <ContentCopy fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Copy</ListItemText>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ⌘C
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Transform Chello’s atmosphere with Furina or Nahida
           </Typography>
-        </MenuItem>
-        <MenuItem>
-          <ListItemIcon>
-            <ContentPaste fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Paste</ListItemText>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ⌘V
-          </Typography>
-        </MenuItem>
-        <Divider />
-        <MenuItem>
-          <ListItemIcon>
-            <Cloud fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Web Clipboard</ListItemText>
-        </MenuItem>
+        </Box>
+        <Divider sx={{ mb: 0.5 }} />
+        {Object.values(ANIME_THEMES).map((persona) => {
+          const isSelected = globalPersonaKey === persona.id
+          return (
+            <MenuItem
+              key={persona.id}
+              onClick={() => handleSelectPersona(persona.id)}
+              selected={isSelected}
+              sx={{ borderRadius: 1.5, py: 1.2, mb: 0.5, display: 'flex', alignItems: 'center', gap: 1.5 }}
+            >
+              <Avatar
+                src={persona.heroImage}
+                alt={persona.name}
+                variant="rounded"
+                sx={{ width: 44, height: 44, border: `2px solid ${persona.accentColor}` }}
+              />
+              <ListItemText
+                primary={
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {persona.name}
+                  </Typography>
+                }
+                secondary={
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                    {persona.jpTitle}
+                  </Typography>
+                }
+              />
+              {isSelected && <CheckCircleIcon fontSize="small" sx={{ color: persona.accentColor }} />}
+            </MenuItem>
+          )
+        })}
       </Menu>
     </Box>
   )

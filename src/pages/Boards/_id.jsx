@@ -2,7 +2,7 @@ import Container from '@mui/material/Container'
 import AppBar from '~/components/AppBar/AppBar'
 import BoardBar from './BoardBar/BoardBar'
 import BoardContent from './BoardContent/BoardContent'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   updateBoardDetailsAPI,
   updateColumnDetailsAPI,
@@ -23,6 +23,7 @@ import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
 function Board() {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const [cardFilterText, setCardFilterText] = useState('')
 
   const { boardId } = useParams()
 
@@ -83,10 +84,15 @@ function Board() {
   return (
     <Container disableGutters maxWidth={false} sx={{ height: '100vh' }}>
       <ActiveCard />
-      <AppBar />
-      <BoardBar board={board} />
+      <AppBar boardTheme={board?.theme} />
+      <BoardBar
+        board={board}
+        cardFilterText={cardFilterText}
+        setCardFilterText={setCardFilterText}
+      />
       <BoardContent
         board={board}
+        cardFilterText={cardFilterText}
         moveColumns={moveColumns}
         moveCardInTheSameColumn={moveCardInTheSameColumn}
         moveCardToDifferentColumn={moveCardToDifferentColumn}

@@ -133,9 +133,12 @@ function Columns({ column }) {
         sx={{
           minWidth: '300px',
           maxWidth: '300px',
-          bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333643' : '#ebecf0'),
+          bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.84)' : 'rgba(241, 245, 249, 0.90)'),
+          backdropFilter: 'blur(14px)',
+          border: '1px solid rgba(255, 255, 255, 0.22)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.22)',
           ml: 2,
-          borderRadius: '6px',
+          borderRadius: '12px',
           height: 'fit-content',
           maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`
         }}

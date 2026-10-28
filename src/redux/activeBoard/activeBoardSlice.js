@@ -38,6 +38,10 @@ export const activeBoardSlice = createSlice({
           card.cover = incomingCard.cover
           card.memberIds = incomingCard.memberIds
           card.comments = incomingCard.comments
+          card.labels = incomingCard.labels
+          card.checklist = incomingCard.checklist
+          card.dueDate = incomingCard.dueDate
+          card.isCompleted = incomingCard.isCompleted
         }
       }
     }

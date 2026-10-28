@@ -19,18 +19,29 @@ import Card from './ListColumns/Columns/ListCards/Card/Card'
 
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
+import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
   CARD: 'ACTIVE_DRAG_ITEM_TYPE_CARD'
 }
 
+const FLOATING_PARTICLES = [
+  { left: '6%', top: '18%', delay: '0s', duration: '6s' },
+  { left: '22%', top: '72%', delay: '1.2s', duration: '7.5s' },
+  { left: '48%', top: '14%', delay: '2.4s', duration: '6.8s' },
+  { left: '74%', top: '65%', delay: '0.8s', duration: '8s' },
+  { left: '91%', top: '28%', delay: '1.8s', duration: '7s' }
+]
+
 function BoardContent({
   board,
+  cardFilterText = '',
   moveColumns,
   moveCardInTheSameColumn,
   moveCardToDifferentColumn
 }) {
+  const { themeConfig } = usePersonaTheme(board?.theme)
   // Yêu cầu di chuyển chuột 10px mới kích hoạt event, tránh bị gọi event khi click only
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 10 } })
 
@@ -316,6 +327,21 @@ function BoardContent({
     return lastOverId.current ? [{ id: lastOverId.current }] : []
   }, [activeDragItemType, orderedColumns])
 
+  const displayedColumns = cardFilterText.trim()
+    ? orderedColumns.map(col => ({
+      ...col,
+      cards: col.cards.filter(card => {
+        if (card.FE_PlaceholderCard) return true
+        const q = cardFilterText.trim().toLowerCase()
+        const matchTitle = card.title?.toLowerCase().includes(q)
+        const matchLabel = card.labels?.some(
+          l => l.id?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)
+        )
+        return matchTitle || matchLabel
+      })
+    }))
+    : orderedColumns
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -326,13 +352,40 @@ function BoardContent({
       collisionDetection={collisionDetectionStrategy}
     >
       <Box sx={{
-        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#34495e' : '#1976d2'),
+        position: 'relative',
+        overflow: 'hidden',
+        backgroundImage: (theme) => `${
+          theme.palette.mode === 'dark' ? themeConfig.boardOverlayDark : themeConfig.boardOverlayLight
+        }, url(${themeConfig.heroImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         width: '100%',
         height: (theme) => theme.trello.boardContentHeight,
         display: 'flex',
-        p: '10px 0'
+        p: '12px 0'
       }}>
-        <ListColumns columns={orderedColumns} />
+        {/* Ambient Anime Floating Particles */}
+        {FLOATING_PARTICLES.map((p, idx) => (
+          <Box
+            key={idx}
+            sx={{
+              position: 'absolute',
+              left: p.left,
+              top: p.top,
+              fontSize: '1.25rem',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              zIndex: 0,
+              animation: `chelloFloat ${p.duration} ease-in-out ${p.delay} infinite`
+            }}
+          >
+            {themeConfig.particleSymbols[idx % themeConfig.particleSymbols.length]}
+          </Box>
+        ))}
+
+        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%' }}>
+          <ListColumns columns={displayedColumns} />
+        </Box>
         <DragOverlay dropAnimation={CustomDropAnimation}>
           {(!activeDragItemType) && null}
           {(activeDragItemId && activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && <Columns column={activeDragItemData} />}

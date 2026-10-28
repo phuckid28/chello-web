@@ -9,15 +9,18 @@ import Recent from './Menus/Recent'
 import Starred from './Menus/Starred'
 import Templates from './Menus/Templates'
 import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import Tooltip from '@mui/material/Tooltip'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import Profiles from './Menus/Profiles'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import { Link } from 'react-router-dom'
 import Notifications from './Notifications/Notifications'
 import AutoCompleteSearchBoard from './SearchBoards/AutoCompleteSearchBoard'
+import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 
-function AppBar() {
+function AppBar({ boardTheme }) {
+  const { themeConfig } = usePersonaTheme(boardTheme)
+
   return (
     <Box sx={{
       width: '100%',
@@ -28,23 +31,34 @@ function AppBar() {
       gap: 2,
       paddingX: 2,
       overflowX: 'auto',
-      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#2c3e50' : '#1565c0'),
+      background: (theme) => (
+        theme.palette.mode === 'dark' ? themeConfig.appBarBgDark : themeConfig.appBarBgLight
+      ),
+      borderBottom: `1px solid ${themeConfig.columnBorder}`,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
       '&::-webkit-scrollbar-track': { m: 2 }
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Link to='/boards'>
-          <Tooltip title="Board List">
+          <Tooltip title="All Boards • ボード一覧">
             <AppsIcon sx={{ color: 'white', verticalAlign: 'middle' }} />
           </Tooltip>
         </Link>
         <Link to='/' style={{ textDecoration: 'none' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <SvgIcon component={TrelloLogo} fontSize='small' inheritViewBox sx={{ color: 'white' }} />
-            <Typography variant='span' sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>Chello</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <SvgIcon component={TrelloLogo} fontSize='small' inheritViewBox sx={{ color: themeConfig.accentColor }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+              <Typography variant='span' sx={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', letterSpacing: 0.5 }}>
+                Chello
+              </Typography>
+              <Typography variant='span' sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.78)', fontWeight: 600 }}>
+                {themeConfig.element} • 領域
+              </Typography>
+            </Box>
           </Box>
         </Link>
 
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.5, alignItems: 'center' }}>
           <Workspaces />
           <Recent />
           <Starred />
@@ -55,10 +69,16 @@ function AppBar() {
           <Button
             sx={{
               color: 'white',
-              border: 'none',
-              '&:hover': { border: 'none' }
+              bgcolor: 'rgba(255, 255, 255, 0.12)',
+              border: `1px solid ${themeConfig.columnBorder}`,
+              backdropFilter: 'blur(6px)',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.22)',
+                borderColor: themeConfig.accentColor
+              }
             }}
             variant='outlined'
+            size='small'
             startIcon={<LibraryAddIcon />}
           >
             Boards
@@ -66,16 +86,25 @@ function AppBar() {
         </Link>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Chip
+          label={themeConfig.name}
+          size="small"
+          sx={{
+            display: { xs: 'none', lg: 'inline-flex' },
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '0.72rem',
+            bgcolor: 'rgba(255, 255, 255, 0.14)',
+            border: `1px solid ${themeConfig.accentColor}`
+          }}
+        />
+
         <AutoCompleteSearchBoard />
 
         <ModeSelect />
 
         <Notifications />
-
-        <Tooltip title="Help">
-          <HelpOutlineIcon sx={{ cursor: 'pointer', color: 'white' }} />
-        </Tooltip>
 
         <Profiles />
       </Box>
