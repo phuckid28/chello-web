@@ -1,4 +1,3 @@
-// import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '~/App.jsx'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -18,6 +17,10 @@ import { store } from './redux/store'
 
 // Cấu hình react-router-dom với BrowserRouter
 import { BrowserRouter } from 'react-router-dom'
+
+// Kỹ thuật Inject store: sử dụng biến redux store ở các file ngoài phạm vi component
+import { injectStore } from './utils/authorizeAxios'
+injectStore(store)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter basename='/'>

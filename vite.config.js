@@ -4,15 +4,14 @@ import svgr from 'vite-plugin-svgr'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // Cho phép sử dụng process.env, mặc định là không, phải thông qua import.meta.env
+  // Chỉ định nghĩa biến BUILD_MODE thay vì toàn bộ process.env để tránh lộ biến môi trường máy build
   define: {
-    'process.env': process.env
+    'process.env.BUILD_MODE': JSON.stringify(process.env.BUILD_MODE)
   },
   plugins: [
     react(),
     svgr()
   ],
-  // base: './'
   optimizeDeps: {
     exclude: ['js-big-decimal']
   },

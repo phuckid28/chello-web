@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Avatar from '@mui/material/Avatar'
@@ -21,8 +21,8 @@ import {
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import { useDispatch } from 'react-redux'
 import { loginUserAPI } from '~/redux/user/userSlice'
-import { useSearchParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+
 function LoginForm() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -38,10 +38,7 @@ function LoginForm() {
       dispatch(loginUserAPI({ email, password })),
       { pending: 'Logging in...' }
     ).then(res => {
-      console.log('🚀 ~ submitLogIn ~ res:', res)
-      // Kiểm tra không có lỗi -> điều hướng route /
       if (!res.error) navigate('/')
-
     })
   }
 
@@ -65,7 +62,7 @@ function LoginForm() {
             {verifiedEmail &&
             <Alert severity="success" sx={{ '.MuiAlert-message': { overflow: 'hidden' } }}>
               Your email&nbsp;
-              <Typography variant="span" sx={{ fontWeight: 'bold', '&:hover': { color: '#fdba26' } }}>{registeredEmail}</Typography>
+              <Typography variant="span" sx={{ fontWeight: 'bold', '&:hover': { color: '#fdba26' } }}>{verifiedEmail}</Typography>
               &nbsp;has been verified.<br />Now you can login to enjoy our services! Have a good day!
             </Alert>
             }
@@ -81,7 +78,6 @@ function LoginForm() {
           <Box sx={{ padding: '0 1em 1em 1em' }}>
             <Box sx={{ marginTop: '1em' }}>
               <TextField
-                // autoComplete="nope"
                 autoFocus
                 fullWidth
                 label="Enter Email..."

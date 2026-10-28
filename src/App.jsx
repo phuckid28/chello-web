@@ -1,22 +1,35 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import Board from '~/pages/Boards/_id'
+import Boards from '~/pages/Boards'
 import NotFound from './pages/404/NotFound'
 import Auth from './pages/Auth/Auth'
 import AccountVerification from './pages/Auth/AccountVerification'
+import Settings from '~/pages/Settings/Settings'
+import { useSelector } from 'react-redux'
+import { selectCurrentUser } from '~/redux/user/userSlice'
+
+const ProtectedRoute = ({ user }) => {
+  if (!user) return <Navigate to='/login' replace={true} />
+  return <Outlet />
+}
 
 function App() {
+  const currentUser = useSelector(selectCurrentUser)
+
   return (
     <Routes>
-      {/** Redirect Route */}
+      {/* Redirect Route */}
       <Route path='/' element={
-        // Replace giá trị true để nó thay thế route / (route / sẽ không còn nằm trong history của Browser)
-        // Test bằng cách chọn Go Home từ trang 404 xong quay lại bằng nút back của trình duyệt giữa 2 trường hợp có replace hoặc không có
-        <Navigate to="/boards/683802ed26942f2c2cc289fa" replace={true}/>
+        <Navigate to='/boards' replace={true} />
       } />
 
-      {/** Board Deatils */}
-      <Route path='/boards/:boardId' element={<Board />} />
+      {/* Protected Routes: Chỉ cho phép truy cập sau khi đã đăng nhập */}
+      <Route element={<ProtectedRoute user={currentUser} />}>
+        <Route path='/boards' element={<Boards />} />
+        <Route path='/boards/:boardId' element={<Board />} />
+        <Route path='/settings/account' element={<Settings />} />
+        <Route path='/settings/security' element={<Settings />} />
+      </Route>
 
       {/* Authentication */}
       <Route path='/login' element={<Auth />} />
