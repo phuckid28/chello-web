@@ -5,13 +5,14 @@ import VpnLockIcon from '@mui/icons-material/VpnLock'
 import AddToDriveIcon from '@mui/icons-material/AddToDrive'
 import BoltIcon from '@mui/icons-material/Bolt'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
-import Avatar from '@mui/material/Avatar'
-import AvatarGroup from '@mui/material/AvatarGroup'
 import { Tooltip } from '@mui/material'
-import Button from '@mui/material/Button'
-import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import { capitalizeFirstLetter } from '~/utils/formatters'
-
+import BoardUserGroup from './BoardUserGroup'
+import InviteBoardUser from './InviteBoardUser'
+import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
+import { updateBoardDetailsAPI } from '~/apis'
+import { useDispatch } from 'react-redux'
+import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 
 const MENU_STYLES = {
   color: 'white',
@@ -28,6 +29,14 @@ const MENU_STYLES = {
 }
 
 function BoardBar({ board }) {
+  const dispatch = useDispatch()
+
+  const onUpdateBoardTitle = (newTitle) => {
+    updateBoardDetailsAPI(board._id, { title: newTitle }).then(() => {
+      dispatch(updateCurrentActiveBoard({ ...board, title: newTitle }))
+    })
+  }
+
   return (
     <Box sx={{
       width: '100%',
@@ -42,13 +51,23 @@ function BoardBar({ board }) {
       '&::-webkit-scrollbar-track': { m: 2 }
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Tooltip title={board?.description}>
-          <Chip
-            sx={MENU_STYLES}
-            icon={<DashboardIcon />}
-            label={board?.title}
-            clickable
-          />
+        <Tooltip title={board?.description || 'Click to edit board title'}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 1 }}>
+            <DashboardIcon sx={{ color: 'white', fontSize: '20px' }} />
+            <Box sx={{
+              minWidth: '120px',
+              maxWidth: '260px',
+              '& input': { color: 'white !important' },
+              '& .MuiOutlinedInput-root.Mui-focused': {
+                backgroundColor: 'rgba(255, 255, 255, 0.15)'
+              }
+            }}>
+              <ToggleFocusInput
+                value={board?.title || ''}
+                onChangedValue={onUpdateBoardTitle}
+              />
+            </Box>
+          </Box>
         </Tooltip>
         <Chip
           sx={MENU_STYLES}
@@ -77,106 +96,9 @@ function BoardBar({ board }) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Button
-          variant='outlined'
-          startIcon={<PersonAddAltIcon/>}
-          sx={{
-            color: 'white',
-            borderColor: 'white',
-            '&:hover': { borderColor: 'white' }
-          }}
-        >
-          Invite
-        </Button>
-        <AvatarGroup
-          max={7}
-          sx={{
-            gap: '10px',
-            '& .MuiAvatar-root': {
-              width: '34px',
-              height: '34px',
-              fontSize: 16,
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              '&:first-of-type': { bgcolor: '#a4b0be' }
-            }
-          }}
-        >
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip><Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-          <Tooltip title='Phuckid28'>
-            <Avatar
-              alt="Phuckid28"
-              src='src\assets\sora.jpg'
-            />
-          </Tooltip>
-        </AvatarGroup>
+        <InviteBoardUser boardId={board._id} />
+        <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>
-
     </Box>
   )
 }

@@ -10,12 +10,19 @@ import IconButton from '@mui/material/IconButton'
 import PersonAdd from '@mui/icons-material/PersonAdd'
 import Settings from '@mui/icons-material/Settings'
 import Logout from '@mui/icons-material/Logout'
-import { useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { selectCurrentUser, logoutUserAPI } from '~/redux/user/userSlice'
+import { useConfirm } from 'material-ui-confirm'
+import { Link } from 'react-router-dom'
+import soraAvatar from '~/assets/sora.jpg'
 
 function Profiles() {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
-  const navigate = useNavigate()
+
+  const dispatch = useDispatch()
+  const currentUser = useSelector(selectCurrentUser)
+  const confirmLogout = useConfirm()
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -25,9 +32,14 @@ function Profiles() {
   }
   const handleLogout = () => {
     handleClose()
-    navigate('/login')
+    confirmLogout({
+      title: 'Log out of your account?',
+      confirmationText: 'Confirm',
+      cancellationText: 'Cancel'
+    }).then(() => {
+      dispatch(logoutUserAPI())
+    }).catch(() => {})
   }
-
 
   return (
     <Box>
@@ -40,9 +52,10 @@ function Profiles() {
           aria-haspopup="true"
           aria-expanded={open ? 'true' : undefined}
         >
-          <Avatar sx={{ width: 36, height: 36 }}
-            alt='Phuckid28'
-            src="src\assets\sora.jpg"
+          <Avatar
+            sx={{ width: 36, height: 36 }}
+            alt={currentUser?.displayName || 'User'}
+            src={currentUser?.avatar || soraAvatar}
           />
         </IconButton>
       </Tooltip>
@@ -51,16 +64,23 @@ function Profiles() {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        onClick={handleClose}
         MenuListProps={{
           'aria-labelledby': 'basic-button-profiles'
         }}
       >
-        <MenuItem>
-          <Avatar sx={{ width: 28, height: 28, mr: 2 }}/> Profile
-        </MenuItem>
-        <MenuItem>
-          <Avatar sx={{ width: 28, height: 28, mr: 2 }}/> My account
-        </MenuItem>
+        <Link to="/settings/account" style={{ color: 'inherit', textDecoration: 'none' }}>
+          <MenuItem sx={{
+            '&:hover': { color: 'success.light' }
+          }}>
+            <Avatar
+              sx={{ width: 28, height: 28, mr: 2 }}
+              alt={currentUser?.displayName || 'User'}
+              src={currentUser?.avatar || soraAvatar}
+            />
+            {currentUser?.displayName || 'Profile'}
+          </MenuItem>
+        </Link>
         <Divider />
         <MenuItem>
           <ListItemIcon>
@@ -68,15 +88,22 @@ function Profiles() {
           </ListItemIcon>
           Add another account
         </MenuItem>
-        <MenuItem>
+        <Link to="/settings/security" style={{ color: 'inherit', textDecoration: 'none' }}>
+          <MenuItem>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            Settings
+          </MenuItem>
+        </Link>
+        <MenuItem onClick={handleLogout} sx={{
+          '&:hover': {
+            color: 'warning.dark',
+            '& .logout-icon': { color: 'warning.dark' }
+          }
+        }}>
           <ListItemIcon>
-            <Settings fontSize="small" />
-          </ListItemIcon>
-          Settings
-        </MenuItem>
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
-            <Logout fontSize="small" />
+            <Logout className='logout-icon' fontSize="small" />
           </ListItemIcon>
           Logout
         </MenuItem>
