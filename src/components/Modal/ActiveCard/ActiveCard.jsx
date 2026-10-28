@@ -2,7 +2,6 @@ import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Modal from '@mui/material/Modal'
 import Typography from '@mui/material/Typography'
-import CreditCardIcon from '@mui/icons-material/CreditCard'
 import CancelIcon from '@mui/icons-material/Cancel'
 import Grid from '@mui/material/Unstable_Grid2'
 import Stack from '@mui/material/Stack'
@@ -41,7 +40,8 @@ import {
 } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { CARD_MEMBER_ACTIONS } from '~/utils/constants'
-import { ELEMENTAL_LABELS, resolveCardCoverUrl } from '~/utils/animeTheme'
+import { ELEMENTAL_LABELS, SORA_PRESET_COVERS, resolveCardCoverUrl } from '~/utils/animeTheme'
+import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { useConfirm } from 'material-ui-confirm'
 import { cloneDeep } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
@@ -225,7 +225,7 @@ function ActiveCard() {
         }
 
         <Box sx={{ mb: 2, mt: -2, pr: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CreditCardIcon color="primary" />
+          <SoraRibbonIcon />
           <ToggleFocusInput
             inputFontSize='22px'
             value={activeCard?.title || ''}
@@ -234,12 +234,12 @@ function ActiveCard() {
 
         <Grid container spacing={2.5} sx={{ mb: 2 }}>
           <Grid xs={12} sm={8.5}>
-            {/* Elemental Labels Section */}
+            {/* Sora & Usagi Labels Section */}
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <LabelImportantOutlinedIcon fontSize="small" color="primary" />
                 <Typography sx={{ fontWeight: 700, color: 'primary.main', fontSize: '15px' }}>
-                  Elemental Tags • 元素タグ
+                  Sora & Usagi Tags • 穹のタグ
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -409,25 +409,25 @@ function ActiveCard() {
               </SidebarItem>
 
               {showCoverInput &&
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, p: 1.25, border: '1px solid rgba(56, 189, 248, 0.35)', borderRadius: 2 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    1-Click Archon Covers:
-                  </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, p: 1.25, border: '1px solid rgba(125, 211, 252, 0.35)', borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <SoraBunnyIcon sx={{ fontSize: 16 }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                      1-Click Sora & Usagi Covers:
+                    </Typography>
+                  </Box>
                   <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                    <Chip
-                      label="💧 Furina Stage"
-                      size="small"
-                      color="primary"
-                      onClick={() => onUpdateCardCover('preset:furina')}
-                      clickable
-                    />
-                    <Chip
-                      label="🌿 Nahida Irminsul"
-                      size="small"
-                      color="success"
-                      onClick={() => onUpdateCardCover('preset:nahida')}
-                      clickable
-                    />
+                    {SORA_PRESET_COVERS.map((preset) => (
+                      <Chip
+                        key={preset.key}
+                        label={preset.label}
+                        size="small"
+                        color={activeCard?.cover === preset.key ? 'secondary' : 'primary'}
+                        variant={activeCard?.cover === preset.key ? 'filled' : 'outlined'}
+                        onClick={() => onUpdateCardCover(preset.key)}
+                        clickable
+                      />
+                    ))}
                     {activeCard?.cover && (
                       <Chip
                         label="Remove"

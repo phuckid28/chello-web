@@ -7,7 +7,8 @@ import RegisterForm from './RegisterForm'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
-import { ANIME_THEMES } from '~/utils/animeTheme'
+import { PRIMARY_THEMES_LIST } from '~/utils/animeTheme'
+import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
 
 function Auth() {
   const location = useLocation()
@@ -33,7 +34,7 @@ function Auth() {
       backgroundSize: 'cover',
       backgroundPosition: 'center'
     }}>
-      {/* Floating Archon Theme Switcher on Login/Register screen */}
+      {/* Floating Sora Kasugano Theme Switcher on Login/Register screen */}
       <Box sx={{
         position: 'fixed',
         top: 16,
@@ -44,14 +45,15 @@ function Auth() {
         gap: 1,
         p: 1,
         borderRadius: '12px',
-        bgcolor: 'rgba(15, 23, 42, 0.72)',
+        bgcolor: 'rgba(15, 23, 42, 0.76)',
         backdropFilter: 'blur(10px)',
         border: `1px solid ${themeConfig.accentColor}`
       }}>
+        <SoraBunnyIcon fontSize="small" />
         <Typography variant="caption" sx={{ color: 'white', fontWeight: 700, px: 0.5 }}>
-          Archon Theme:
+          Sora Theme:
         </Typography>
-        {Object.values(ANIME_THEMES).map((p) => (
+        {PRIMARY_THEMES_LIST.map((p) => (
           <Button
             key={p.id}
             size="small"
@@ -66,7 +68,7 @@ function Auth() {
               bgcolor: globalPersonaKey === p.id ? p.accentColor : 'transparent'
             }}
           >
-            {p.name.split('•')[0].trim()}
+            {p.element}
           </Button>
         ))}
       </Box>

@@ -20,6 +20,18 @@ import Card from './ListColumns/Columns/ListCards/Card/Card'
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { soraChibi } from '~/utils/animeTheme'
+import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
+import Avatar from '@mui/material/Avatar'
+import Typography from '@mui/material/Typography'
+import Tooltip from '@mui/material/Tooltip'
+
+const SORA_COMPANION_LINES = [
+  '“Usagi plush is watching over your tasks today... 🐰”',
+  '“Under the distant sky of Okukozome, take one gentle step at a time. ☁️”',
+  '“Don’t forget to rest and check your flip-phone messages. 💌”',
+  '“Every card completed brings us closer to the promised horizon. 🎀”'
+]
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
@@ -51,6 +63,7 @@ function BoardContent({
   const sensors = useSensors(mouseSensor, touchSensor)
 
   const [orderedColumns, setOrderedColumns] = useState([])
+  const [quoteIdx, setQuoteIdx] = useState(0)
 
   // Cùng 1 thời điểm chỉ có 1 phần tử đang được kéo, column hoặc card
   const [activeDragItemId, setActiveDragItemId] = useState(null)
@@ -386,6 +399,54 @@ function BoardContent({
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%' }}>
           <ListColumns columns={displayedColumns} />
         </Box>
+
+        {/* Floating Chibi Sora & Usagi Plush Mascot Companion */}
+        <Tooltip title="Click Chibi Sora & Usagi for a message" placement="left">
+          <Box
+            onClick={() => setQuoteIdx((prev) => (prev + 1) % SORA_COMPANION_LINES.length)}
+            sx={{
+              position: 'absolute',
+              right: 18,
+              bottom: 16,
+              zIndex: 2,
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1.25,
+              px: 1.5,
+              py: 1,
+              borderRadius: '16px',
+              cursor: 'pointer',
+              userSelect: 'none',
+              bgcolor: 'rgba(15, 23, 42, 0.78)',
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${themeConfig.accentColor}`,
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-3px)',
+                borderColor: '#f472b6'
+              }
+            }}
+          >
+            <Avatar
+              src={soraChibi}
+              alt="Chibi Sora & Usagi"
+              sx={{ width: 42, height: 42, border: `2px solid ${themeConfig.secondaryAccent}` }}
+            />
+            <Box sx={{ maxWidth: 220 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <SoraBunnyIcon sx={{ fontSize: 15 }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: '#f8fafc' }}>
+                  Sora & Usagi • 春日野 穹
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.85)', display: 'block', lineHeight: 1.25 }}>
+                {SORA_COMPANION_LINES[quoteIdx]}
+              </Typography>
+            </Box>
+          </Box>
+        </Tooltip>
+
         <DragOverlay dropAnimation={CustomDropAnimation}>
           {(!activeDragItemType) && null}
           {(activeDragItemId && activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && <Columns column={activeDragItemData} />}

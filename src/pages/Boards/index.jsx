@@ -8,11 +8,11 @@ import Grid from '@mui/material/Unstable_Grid2'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ArrowRightIcon from '@mui/icons-material/ArrowRight'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import Checkbox from '@mui/material/Checkbox'
 import Pagination from '@mui/material/Pagination'
@@ -35,8 +35,15 @@ import { useForm, Controller } from 'react-hook-form'
 import { FIELD_REQUIRED_MESSAGE } from '~/utils/validators'
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import { styled } from '@mui/material/styles'
-import { ANIME_THEMES, ANIME_BOARD_TEMPLATES } from '~/utils/animeTheme'
+import {
+  ANIME_THEMES,
+  PRIMARY_THEMES_LIST,
+  ANIME_BOARD_TEMPLATES,
+  SORA_PRESET_COVERS,
+  soraChibi
+} from '~/utils/animeTheme'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -44,19 +51,19 @@ const SidebarItem = styled(Box)(({ theme }) => ({
   gap: '10px',
   cursor: 'pointer',
   fontWeight: 600,
-  backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+  backgroundColor: theme.palette.mode === 'dark' ? '#141824' : '#fff',
   padding: '12px 16px',
   borderRadius: '10px',
-  border: '1px solid rgba(148, 163, 184, 0.2)',
+  border: '1px solid rgba(148, 163, 184, 0.22)',
   transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: theme.palette.mode === 'dark' ? '#33485D' : theme.palette.grey[200],
+    backgroundColor: theme.palette.mode === 'dark' ? '#1e293b' : theme.palette.grey[100],
     transform: 'translateX(3px)'
   },
   '&.active': {
-    color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0c66e4',
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.14)' : '#e9f2ff',
-    borderColor: '#38bdf8'
+    color: theme.palette.mode === 'dark' ? '#7dd3fc' : '#0284c7',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(125, 211, 252, 0.14)' : '#f0f9ff',
+    borderColor: '#7dd3fc'
   }
 }))
 
@@ -129,7 +136,7 @@ function Boards() {
   }
 
   if (!boards) {
-    return <PageLoadingSpinner caption="Synchronizing Akasha & Fontaine Boards..." />
+    return <PageLoadingSpinner caption="Connecting to Okukozome Summer Sky (春日野 穹)..." />
   }
 
   const starredBoards = boards.filter(b => b.isStarred)
@@ -138,7 +145,7 @@ function Boards() {
     <Container disableGutters maxWidth={false}>
       <AppBar />
 
-      {/* Furina & Nahida Anime Hero Banner */}
+      {/* Sora Kasugano (Yosuga no Sora) Hero Banner */}
       <Box sx={{
         position: 'relative',
         mx: { xs: 2, md: 4 },
@@ -151,39 +158,43 @@ function Boards() {
         backgroundImage: `${themeConfig.boardOverlayDark}, url(${themeConfig.heroImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        boxShadow: '0 14px 40px rgba(0, 0, 0, 0.28)',
+        boxShadow: '0 14px 40px rgba(0, 0, 0, 0.32)',
         border: `1px solid ${themeConfig.accentColor}`
       }}>
         <Grid container spacing={2} alignItems="center">
           <Grid xs={12} md={8}>
             <Chip
+              icon={<SoraRibbonIcon fontSize="small" />}
               label={`${themeConfig.jpTitle} • ${themeConfig.element}`}
               size="small"
               sx={{
                 mb: 1.5,
-                bgcolor: 'rgba(255, 255, 255, 0.16)',
-                color: '#fde047',
+                bgcolor: 'rgba(15, 23, 42, 0.65)',
+                color: '#f8fafc',
+                border: `1px solid ${themeConfig.accentColor}`,
                 fontWeight: 700,
-                backdropFilter: 'blur(6px)'
+                backdropFilter: 'blur(8px)'
               }}
             />
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
               {themeConfig.name}
             </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.92, fontStyle: 'italic', maxWidth: 680, mb: 2 }}>
+            <Typography variant="body1" sx={{ opacity: 0.94, fontStyle: 'italic', maxWidth: 680, mb: 2.5 }}>
               {themeConfig.quote}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {Object.values(ANIME_THEMES).map((p) => (
+              {PRIMARY_THEMES_LIST.map((p) => (
                 <Button
                   key={p.id}
                   size="small"
+                  startIcon={<SoraBunnyIcon fontSize="small" />}
                   variant={globalPersonaKey === p.id ? 'contained' : 'outlined'}
                   onClick={() => changePersona(p.id)}
                   sx={{
                     color: 'white',
                     borderColor: p.accentColor,
-                    bgcolor: globalPersonaKey === p.id ? p.accentColor : 'rgba(0,0,0,0.35)',
+                    bgcolor: globalPersonaKey === p.id ? p.accentColor : 'rgba(15, 23, 42, 0.55)',
+                    backdropFilter: 'blur(6px)',
                     '&:hover': {
                       bgcolor: p.accentColor,
                       borderColor: 'white'
@@ -195,7 +206,33 @@ function Boards() {
               ))}
             </Box>
           </Grid>
-          <Grid xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+
+          <Grid xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' }, gap: 2 }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1.25,
+              borderRadius: '14px',
+              bgcolor: 'rgba(15, 23, 42, 0.68)',
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${themeConfig.accentColor}`
+            }}>
+              <Avatar
+                src={soraChibi}
+                alt="Chibi Sora & Usagi"
+                sx={{ width: 54, height: 54, border: `2px solid ${themeConfig.secondaryAccent}` }}
+              />
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.2 }}>
+                  Chibi Sora & Usagi
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.78)' }}>
+                  春日野 穹 • ぬいぐるみ相棒
+                </Typography>
+              </Box>
+            </Box>
+
             <Button
               variant="contained"
               size="large"
@@ -203,14 +240,18 @@ function Boards() {
               onClick={handleOpenModal}
               sx={{
                 px: 3,
-                py: 1.5,
+                py: 1.4,
                 fontWeight: 800,
                 borderRadius: '12px',
-                background: 'linear-gradient(135deg, #38bdf8 0%, #10b981 100%)',
-                boxShadow: '0 8px 25px rgba(56, 189, 248, 0.45)'
+                color: '#0f172a',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #7dd3fc 50%, #f472b6 100%)',
+                boxShadow: '0 8px 25px rgba(125, 211, 252, 0.45)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, #ec4899 100%)'
+                }
               }}
             >
-              Create Anime Board
+              Create Sora Board
             </Button>
           </Grid>
         </Grid>
@@ -222,7 +263,7 @@ function Boards() {
             <Stack direction="column" spacing={1}>
               <SidebarItem className="active">
                 <SpaceDashboardIcon fontSize="small" />
-                All Boards • ボード
+                All Boards • ボード一覧
               </SidebarItem>
               <SidebarItem onClick={handleOpenModal}>
                 <LibraryAddIcon fontSize="small" color="primary" />
@@ -233,12 +274,12 @@ function Boards() {
             <Divider sx={{ my: 2.5 }} />
 
             <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', px: 1, display: 'block', mb: 1 }}>
-              1-CLICK ANIME TEMPLATES • テンプレート
+              1-CLICK SORA TEMPLATES • 穹のテンプレート
             </Typography>
             <Stack direction="column" spacing={1}>
               {ANIME_BOARD_TEMPLATES.map((tpl) => (
                 <SidebarItem key={tpl.id} onClick={() => handleQuickCreateTemplate(tpl)}>
-                  <AutoAwesomeIcon fontSize="small" sx={{ color: '#fbbf24' }} />
+                  <SoraBunnyIcon fontSize="small" />
                   <Box sx={{ overflow: 'hidden' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                       {tpl.title}
@@ -250,6 +291,68 @@ function Boards() {
                 </SidebarItem>
               ))}
             </Stack>
+
+            <Divider sx={{ my: 2.5 }} />
+
+            {/* Chibi Sora & Usagi Plush Sanctuary Widget */}
+            <Card sx={{
+              borderRadius: '14px',
+              overflow: 'hidden',
+              border: `1px solid ${themeConfig.columnBorder}`,
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 27, 75, 0.85) 100%)'
+                : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)'
+            }}>
+              <Box sx={{
+                height: 165,
+                backgroundImage: `url(${soraChibi})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'flex-end',
+                p: 1.25
+              }}>
+                <Chip
+                  icon={<SoraBunnyIcon fontSize="small" />}
+                  label="Usagi Plush Companion"
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    color: 'white',
+                    bgcolor: 'rgba(15, 23, 42, 0.75)',
+                    backdropFilter: 'blur(6px)'
+                  }}
+                />
+              </Box>
+              <CardContent sx={{ p: 1.75, '&:last-child': { p: 1.75 } }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                  Sora Kasugano Gallery • 春日野 穹
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
+                  Verified SFW artworks & Usagi plush scenes available for your boards & cards:
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.75 }}>
+                  {SORA_PRESET_COVERS.map((art) => (
+                    <Box
+                      key={art.key}
+                      component="img"
+                      src={art.url}
+                      alt={art.label}
+                      title={art.label}
+                      sx={{
+                        width: '100%',
+                        height: 46,
+                        objectFit: 'cover',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(148, 163, 184, 0.35)'
+                      }}
+                    />
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
 
           <Grid xs={12} sm={9}>
@@ -278,14 +381,14 @@ function Boards() {
                             transition: 'all 0.22s ease',
                             '&:hover': {
                               transform: 'translateY(-4px)',
-                              boxShadow: '0 12px 28px rgba(56, 189, 248, 0.28)'
+                              boxShadow: '0 12px 28px rgba(125, 211, 252, 0.28)'
                             }
                           }}
                         >
                           <Box sx={{
-                            height: '96px',
+                            height: '104px',
                             position: 'relative',
-                            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%), url(${bTheme.heroImage})`,
+                            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.68) 100%), url(${bTheme.heroImage})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             display: 'flex',
@@ -294,9 +397,10 @@ function Boards() {
                             p: 1.25
                           }}>
                             <Chip
+                              icon={<SoraBunnyIcon fontSize="small" />}
                               label={bTheme.element}
                               size="small"
-                              sx={{ height: 20, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(0,0,0,0.55)' }}
+                              sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.72)' }}
                             />
                             <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />
                           </Box>
@@ -316,9 +420,12 @@ function Boards() {
               </Box>
             )}
 
-            <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
-              Your Workspaces & Boards • すべてのボード
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <SoraRibbonIcon />
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                Okukozome Workspaces & Boards • すべてのボード
+              </Typography>
+            </Box>
 
             {boards?.length === 0 &&
               <Box sx={{
@@ -327,14 +434,15 @@ function Boards() {
                 border: '1px dashed rgba(148, 163, 184, 0.4)',
                 textAlign: 'center'
               }}>
+                <SoraBunnyIcon sx={{ fontSize: 48, mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  No boards found yet!
+                  No boards in Okukozome yet!
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Start with a 1-click Furina or Nahida template on the left, or create a custom board.
+                  Start with a 1-click Sora Kasugano or Usagi Plush template on the left, or create a custom board.
                 </Typography>
                 <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={handleOpenModal}>
-                  Create Your First Board
+                  Create Your First Sora Board
                 </Button>
               </Box>
             }
@@ -348,17 +456,17 @@ function Boards() {
                       <Card sx={{
                         borderRadius: '14px',
                         overflow: 'hidden',
-                        border: '1px solid rgba(148, 163, 184, 0.22)',
+                        border: '1px solid rgba(148, 163, 184, 0.24)',
                         transition: 'all 0.22s ease',
                         '&:hover': {
                           transform: 'translateY(-4px)',
                           borderColor: bTheme.accentColor,
-                          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.18)'
+                          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.22)'
                         }
                       }}>
                         <Box sx={{
-                          height: '92px',
-                          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.62) 100%), url(${bTheme.heroImage})`,
+                          height: '100px',
+                          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.68) 100%), url(${bTheme.heroImage})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           display: 'flex',
@@ -367,9 +475,10 @@ function Boards() {
                           p: 1.25
                         }}>
                           <Chip
+                            icon={<SoraBunnyIcon fontSize="small" />}
                             label={`${bTheme.element} • ${bTheme.name.split('•')[0].trim()}`}
                             size="small"
-                            sx={{ height: 20, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(0,0,0,0.55)' }}
+                            sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.72)' }}
                           />
                           {b.isStarred && <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />}
                         </Box>
@@ -397,7 +506,7 @@ function Boards() {
                               color: 'primary.main',
                               '&:hover': { color: 'primary.light' }
                             }}>
-                            Enter Realm <ArrowRightIcon fontSize="small" />
+                            Open Sky Board <ArrowRightIcon fontSize="small" />
                           </Box>
                         </CardContent>
                       </Card>
@@ -463,9 +572,9 @@ function Boards() {
               onClick={handleCloseModal} />
           </Box>
           <Box id="modal-modal-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LibraryAddIcon color="primary" />
+            <SoraBunnyIcon />
             <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
-              Create New Anime Board • 新規ボード作成
+              Create Sora Kasugano Board • 新規ボード作成
             </Typography>
           </Box>
           <Box id="modal-modal-description" sx={{ my: 2 }}>
@@ -520,7 +629,7 @@ function Boards() {
 
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                    Select Archon Theme • テーマ:
+                    Select Sora Kasugano Aesthetic • 穹のテーマ:
                   </Typography>
                   <Controller
                     name="theme"
@@ -534,19 +643,19 @@ function Boards() {
                         value={field.value}
                       >
                         <FormControlLabel
-                          value="furina"
+                          value="sora-sky"
                           control={<Radio size="small" />}
-                          label="💧 Furina (Hydro)"
+                          label="☁️ Sora Sky (Distant Sky)"
                         />
                         <FormControlLabel
-                          value="nahida"
+                          value="sora-twilight"
                           control={<Radio size="small" />}
-                          label="🌿 Nahida (Dendro)"
+                          label="🎀 Moonlit Ribbon (Gothic)"
                         />
                         <FormControlLabel
-                          value="celestia"
+                          value="sora-usagi"
                           control={<Radio size="small" />}
-                          label="✨ Celestia (Bloom)"
+                          label="🐰 Usagi Plush (Sanctuary)"
                         />
                       </RadioGroup>
                     )}
@@ -593,7 +702,7 @@ function Boards() {
                           size="small"
                         />
                       }
-                      label="Auto-populate starter anime columns, covers & quest checklist"
+                      label="Auto-populate Okukozome columns, Sora artwork cover & Usagi checklist"
                     />
                   )}
                 />

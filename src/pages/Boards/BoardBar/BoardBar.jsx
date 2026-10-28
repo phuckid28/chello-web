@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
-import DashboardIcon from '@mui/icons-material/Dashboard'
+import Avatar from '@mui/material/Avatar'
 import VpnLockIcon from '@mui/icons-material/VpnLock'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import StarBorderRoundedIcon from '@mui/icons-material/StarBorderRounded'
@@ -22,7 +20,8 @@ import { updateBoardDetailsAPI } from '~/apis'
 import { useDispatch } from 'react-redux'
 import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
-import { ELEMENTAL_LABELS } from '~/utils/animeTheme'
+import { ELEMENTAL_LABELS, PRIMARY_THEME_KEYS, soraChibi } from '~/utils/animeTheme'
+import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { toast } from 'react-toastify'
 
 const MENU_STYLES = {
@@ -40,8 +39,6 @@ const MENU_STYLES = {
     bgcolor: 'rgba(255, 255, 255, 0.22)'
   }
 }
-
-const THEME_ORDER = ['furina', 'nahida', 'celestia']
 
 function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
   const dispatch = useDispatch()
@@ -61,7 +58,7 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           setIsRunning(false)
-          toast.success(`${themeConfig.characterName}: Focus session complete! Time for tea & desserts!`)
+          toast.success(`${themeConfig.characterName}: Focus session complete! Rest well with Usagi plush!`)
           return 25 * 60
         }
         return prev - 1
@@ -96,9 +93,9 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
     })
   }
 
-  const handleCycleArchonTheme = () => {
-    const currentIndex = THEME_ORDER.indexOf(personaKey)
-    const nextTheme = THEME_ORDER[(currentIndex + 1) % THEME_ORDER.length]
+  const handleCycleSoraTheme = () => {
+    const currentIndex = PRIMARY_THEME_KEYS.indexOf(personaKey)
+    const nextTheme = PRIMARY_THEME_KEYS[(currentIndex + 1) % PRIMARY_THEME_KEYS.length]
     changePersona(nextTheme)
     dispatch(updateCurrentActiveBoard({ ...board, theme: nextTheme }))
     updateBoardDetailsAPI(board._id, { theme: nextTheme })
@@ -123,8 +120,8 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Tooltip title={board?.description || 'Click to edit board title'}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
-            <DashboardIcon sx={{ color: themeConfig.accentColor, fontSize: '20px' }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pl: 0.5 }}>
+            <SoraRibbonIcon sx={{ fontSize: '22px' }} />
             <Box sx={{
               minWidth: '120px',
               maxWidth: '250px',
@@ -165,37 +162,37 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
           />
         </Tooltip>
 
-        <Tooltip title="Switch Board Archon Theme (Furina / Nahida / Celestia)">
+        <Tooltip title="Switch Sora Kasugano Mood (Distant Sky / Black Ribbon / Usagi Plush)">
           <Chip
             sx={{
               ...MENU_STYLES,
               borderColor: themeConfig.accentColor
             }}
-            icon={<AutoAwesomeIcon sx={{ color: `${themeConfig.secondaryAccent} !important` }} />}
+            icon={<SoraRibbonIcon />}
             label={`${themeConfig.element}: ${themeConfig.name.split('•')[0].trim()}`}
-            onClick={handleCycleArchonTheme}
+            onClick={handleCycleSoraTheme}
             clickable
           />
         </Tooltip>
 
-        <Tooltip title="Akasha & Fontaine Focus Timer (Pomodoro)">
+        <Tooltip title="Sora & Usagi Focus Timer (Pomodoro)">
           <Chip
             sx={{
               ...MENU_STYLES,
-              bgcolor: isRunning ? 'rgba(16, 185, 129, 0.35)' : MENU_STYLES.bgcolor
+              bgcolor: isRunning ? 'rgba(244, 114, 182, 0.35)' : MENU_STYLES.bgcolor
             }}
-            icon={<TimerOutlinedIcon />}
-            label={isRunning ? `Focus ${formatTimer(secondsLeft)}` : 'Akasha Focus • 集中'}
+            icon={<SoraBunnyIcon />}
+            label={isRunning ? `Focus ${formatTimer(secondsLeft)}` : 'Usagi Focus • 集中'}
             onClick={(e) => setTimerAnchor(e.currentTarget)}
             clickable
           />
         </Tooltip>
 
-        <Tooltip title="Filter cards by title or Elemental tag">
+        <Tooltip title="Filter cards by title or Sora tag">
           <Chip
             sx={{
               ...MENU_STYLES,
-              bgcolor: cardFilterText ? 'rgba(56, 189, 248, 0.35)' : MENU_STYLES.bgcolor
+              bgcolor: cardFilterText ? 'rgba(125, 211, 252, 0.35)' : MENU_STYLES.bgcolor
             }}
             icon={<FilterAltIcon />}
             label={cardFilterText ? `Filter: ${cardFilterText}` : 'Filter'}
@@ -213,14 +210,22 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
         onClose={() => setTimerAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2.5, width: 310, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            ⏳ {themeConfig.name} Focus Timer
-          </Typography>
+        <Box sx={{ p: 2.5, width: 325, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar src={soraChibi} alt="Chibi Sora" sx={{ width: 46, height: 46, border: '2px solid #f472b6' }} />
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                🐰 {themeConfig.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Usagi Plush Focus Companion
+              </Typography>
+            </Box>
+          </Box>
           <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
             {themeConfig.quote}
           </Typography>
-          <Typography variant="h3" sx={{ fontWeight: 800, textAlign: 'center', my: 1, letterSpacing: 2 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, textAlign: 'center', my: 0.5, letterSpacing: 2 }}>
             {formatTimer(secondsLeft)}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
@@ -240,7 +245,7 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
                 setSecondsLeft(25 * 60)
               }}
             >
-              25m Work
+              25m Focus
             </Button>
             <Button
               variant="outlined"
@@ -250,7 +255,7 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
                 setSecondsLeft(5 * 60)
               }}
             >
-              5m Tea
+              5m Rest
             </Button>
           </Box>
         </Box>
@@ -263,14 +268,14 @@ function BoardBar({ board, cardFilterText = '', setCardFilterText }) {
         onClose={() => setFilterAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2, width: 300, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ p: 2, width: 310, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-            🔍 Filter Quests & Elemental Tags
+            🔍 Filter Tasks & Sora Tags
           </Typography>
           <TextField
             size="small"
             fullWidth
-            placeholder="Type card title or element..."
+            placeholder="Type card title or tag..."
             value={cardFilterText}
             onChange={(e) => setCardFilterText(e.target.value)}
             autoFocus

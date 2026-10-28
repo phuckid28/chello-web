@@ -32,6 +32,7 @@ import {
 import { cloneDeep } from 'lodash'
 import { useDispatch, useSelector } from 'react-redux'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
+import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
 
 function Columns({ column }) {
   const dispatch = useDispatch()
@@ -149,8 +150,10 @@ function Columns({ column }) {
           p: 2,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          gap: 0.75
         }}>
+          <SoraBunnyIcon sx={{ fontSize: 18, flexShrink: 0 }} />
           <ToggleFocusInput
             value={column?.title}
             onChangedValue={onUpdateColumnTitle}
