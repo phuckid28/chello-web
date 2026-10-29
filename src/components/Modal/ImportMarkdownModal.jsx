@@ -32,10 +32,14 @@ import {
   parseSprintCsvTemplate,
   saveTeamRoster
 } from '~/utils/excelExporter'
+import { snapProgress } from '~/utils/progress'
+import ProgressSelect from '~/components/Modal/ProgressSelect'
+import LoadingButton from '~/components/Loading/LoadingButton'
+import { fxCelebrate } from '~/fx/fxEvents'
 import { playUiChime } from '~/utils/soundEffects'
 
-const SAMPLE_SPRINT_34_CSV = [
-  'Sprint,34,,,Status,,Handle by,Resource point,',
+const buildSampleSprintCsv = (sprintNum = '34') => [
+  `Sprint,${sprintNum},,,Status,,Handle by,Resource point,`,
   'Start date,10/22/2026,,,Processing,,Lam Chi Kien,1,',
   'End date,11/5/2026,,,In testing,,Phan Nguyen Song Toan,1,',
   'Update till,10/26/2026,,,Blocking,,Ho Thao Dieu,0.5,',
@@ -45,7 +49,7 @@ const SAMPLE_SPRINT_34_CSV = [
   ',,,,,,Bui Hoang Gia Phuc,1,',
   ',,,,,,Vo Viet Binh,1,',
   'Ticket ID,CR Description,Status,Handle by,Due date for dev,Dev Progress,Resource used,Note,',
-  'BNPL-945,Usage Limit - Monthly 1 time synchronized update for user,Ready for deploy,"Ho Thao Dieu, Hoang Vinh Son ",5/11,1,1,Đồng bộ hạn mức 1 lần/tháng cho user,'
+  'BNPL-945,Usage Limit - Monthly 1 time synchronized update for user,Ready for deploy,"Ho Thao Dieu, Hoang Vinh Son ",5/11,100%,1,Đồng bộ hạn mức 1 lần/tháng cho user,'
 ].join('\n')
 
 const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssignee = 'Ho Thao Dieu, Hoang Vinh Son') => {
@@ -184,6 +188,9 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
     if (open && board?.columns?.length > 0 && !selectedColumnId) {
       setSelectedColumnId(board.columns[0]._id)
     }
+    if (open) {
+      setSprint(board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name)
+    }
     setTeamRoster(getSavedTeamRoster(board))
   }, [open, board, selectedColumnId])
 
@@ -204,7 +211,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         setBaStatus(firstCr.baStatus || 'Ready for deploy')
         setAssignee(firstCr.assignee || defaultAssignee)
         setDeadline(firstCr.deadline || '2026-11-05')
-        setDevProgress(firstCr.devProgress ?? 1)
+        setDevProgress(snapProgress(firstCr.devProgress ?? 1))
         setResourceUsed(firstCr.resourceUsed ?? 1)
         setNote(firstCr.note || '')
       }
@@ -218,7 +225,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
     setAssignee(parsed.assignee)
     setBaStatus(parsed.baStatus)
     setDeadline(parsed.deadline)
-    setDevProgress(parsed.devProgress)
+    setDevProgress(snapProgress(parsed.devProgress))
     setResourceUsed(parsed.resourceUsed)
     setNote(parsed.note || '')
     setPriority(parsed.priority)
@@ -238,10 +245,11 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
     event.target.value = ''
   }
 
-  const handleLoadSprint34CsvSample = () => {
-    applyParsedMarkdown(SAMPLE_SPRINT_34_CSV, 'Sprint_34_Template_BNPL-945.csv')
+  const handleLoadSprintCsvSample = () => {
+    const sprintNum = board?.sprintConfig?.number || String(defaultSprint).replace(/\D+/g, '') || '34'
+    applyParsedMarkdown(buildSampleSprintCsv(sprintNum), `${defaultSprint.replace(/\s+/g, '_')}_Template_BNPL-945.csv`)
     playUiChime('sparkle')
-    toast.success('Đã nạp mẫu CSV Sprint 34 (BNPL-945 & Danh sách Handle by)!')
+    toast.success(`Đã nạp mẫu CSV ${defaultSprint} (BNPL-945 & Danh sách Handle by)!`)
   }
 
   const handleLoadSampleFrd = () => {
@@ -254,7 +262,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
       '- [ ] Nghiệm thu UAT luồng đồng bộ hạn mức với đội Core Payment'
     ].join('\n')
     applyParsedMarkdown(sample, 'FRD_BNPL-945_Usage_Limit.md')
-    setNote('Đồng bộ hạn mức 1 lần/tháng cho user (Sprint 34: 22/10 - 05/11).')
+    setNote(`Đồng bộ hạn mức 1 lần/tháng cho user (${defaultSprint}).`)
   }
 
   const selectedAssigneesList = String(assignee || '')
@@ -311,7 +319,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         baStatus,
         deadline: deadline || null,
         dueDate: !Number.isNaN(dueDateTimestamp) ? dueDateTimestamp : null,
-        devProgress: Number(devProgress) || 0,
+        devProgress: snapProgress(devProgress),
         resourceUsed: Number(resourceUsed) || 0,
         note: note.trim(),
         priority,
@@ -349,6 +357,9 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
       }
 
       playUiChime('complete')
+      if (snapProgress(devProgress) >= 1 || baStatus === 'Deployed' || baStatus === 'Done testing') {
+        fxCelebrate()
+      }
       toast.success(`Đã khởi tạo CR Ticket [${crCode}] thành công!`)
       onClose()
     } catch (error) {
@@ -378,7 +389,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
               Import Markdown / CSV Template Sprint thành CR Ticket
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Hỗ trợ cả file .MD (FRD) và file .CSV mẫu Sprint 34 (Ticket ID, CR Description, Status, Handle by, Due date, Dev Progress)
+              Hỗ trợ cả file .MD (FRD) và file .CSV mẫu {defaultSprint} (Ticket ID, CR Description, Status, Handle by, Due date, Dev Progress 0%–100%)
             </Typography>
           </Box>
         </Box>
@@ -397,9 +408,9 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             variant="outlined"
             color="success"
             startIcon={<TableChartRoundedIcon />}
-            onClick={handleLoadSprint34CsvSample}
+            onClick={handleLoadSprintCsvSample}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
-            Mẫu CSV Sprint 34 (BNPL-945)
+            Mẫu CSV {defaultSprint} (BNPL-945)
           </Button>
           <Button
             size="small"
@@ -489,15 +500,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
             />
-            <TextField
-              label="Dev Progress (0 → 1)"
-              type="number"
-              size="small"
-              fullWidth
-              inputProps={{ step: '0.1', min: 0, max: 100 }}
-              value={devProgress}
-              onChange={(e) => setDevProgress(e.target.value)}
-            />
+            <ProgressSelect value={devProgress} onChange={setDevProgress} />
             <TextField
               label="Resource used (Point)"
               type="number"
@@ -603,13 +606,14 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600 }}>
           Đóng
         </Button>
-        <Button
+        <LoadingButton
           variant="contained"
-          disabled={isSubmitting}
+          loading={isSubmitting}
+          loadingLabel="Đang khởi tạo CR Ticket..."
           onClick={handleCreateTicketFromMarkdown}
           sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '10px', px: 2.5 }}>
-          {isSubmitting ? 'Đang khởi tạo CR Ticket...' : `Tạo CR Ticket [${crCode || 'CR'}] & Đính kèm FRD`}
-        </Button>
+          {`Tạo CR Ticket [${crCode || 'CR'}] & Đính kèm FRD`}
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   )

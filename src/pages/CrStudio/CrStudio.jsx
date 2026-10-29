@@ -47,6 +47,11 @@ import {
   normalizeCrStatus,
   parseAssigneeList
 } from '~/utils/excelExporter'
+import { snapProgress, formatProgress, progressToPercent } from '~/utils/progress'
+import ProgressSelect from '~/components/Modal/ProgressSelect'
+import LoadingButton from '~/components/Loading/LoadingButton'
+import { fxCelebrate } from '~/fx/fxEvents'
+import { setBoardThemeOverride } from '~/fx/fxThemeStore'
 import { playUiChime } from '~/utils/soundEffects'
 import { toast } from 'react-toastify'
 
@@ -223,6 +228,12 @@ function CrStudio() {
   const [devProgressVal, setDevProgressVal] = useState(1)
   const [resourceUsedVal, setResourceUsedVal] = useState(0)
   const [noteVal, setNoteVal] = useState('')
+  const [savingCr, setSavingCr] = useState(false)
+
+  useEffect(() => {
+    setBoardThemeOverride(board?.theme || null)
+    return () => setBoardThemeOverride(null)
+  }, [board?.theme])
 
   useEffect(() => {
     if (!board || board._id !== boardId) {
@@ -305,19 +316,28 @@ function CrStudio() {
     )
   )
 
-  const handleSaveCrMetadata = async () => {
-    const updated = await updateCardDetailsAPI(card._id, {
-      baStatus: statusVal,
-      assignee: handleByVal.trim(),
-      deadline: dueDateVal.trim() || null,
-      devProgress: Number(devProgressVal),
-      resourceUsed: Number(resourceUsedVal),
-      note: noteVal.trim(),
-      isCompleted: statusVal === 'Deployed' || statusVal === 'Done testing'
-    })
-    dispatch(updateCardInBoard(updated))
-    playUiChime('complete')
-    toast.success(`Đã lưu cập nhật cho [${card.crCode || card.title}]!`)
+  const handleSaveCrMetadata = async (event) => {
+    const targetEl = event?.currentTarget
+    const nextProgress = snapProgress(devProgressVal)
+    const isDone = nextProgress >= 1 || statusVal === 'Deployed' || statusVal === 'Done testing'
+    setSavingCr(true)
+    try {
+      const updated = await updateCardDetailsAPI(card._id, {
+        baStatus: statusVal,
+        assignee: handleByVal.trim(),
+        deadline: dueDateVal.trim() || null,
+        devProgress: nextProgress,
+        resourceUsed: Number(resourceUsedVal),
+        note: noteVal.trim(),
+        isCompleted: statusVal === 'Deployed' || statusVal === 'Done testing'
+      })
+      dispatch(updateCardInBoard(updated))
+      playUiChime('complete')
+      if (isDone) fxCelebrate(targetEl)
+      toast.success(`Đã lưu cập nhật cho [${card.crCode || card.title}]!`)
+    } finally {
+      setSavingCr(false)
+    }
   }
 
   const glassCardSx = {
@@ -673,15 +693,16 @@ function CrStudio() {
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>
                     📋 Thông tin CR (Chuẩn Template Sprint {sprintConfig.sprintNumber || '34'}) & Đặc tả FRD
                   </Typography>
-                  <Button
+                  <LoadingButton
                     variant="contained"
                     size="small"
+                    loading={savingCr}
                     startIcon={<SaveRoundedIcon />}
                     onClick={handleSaveCrMetadata}
                     sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '8px' }}
                   >
                     Lưu cập nhật CR
-                  </Button>
+                  </LoadingButton>
                 </Box>
 
                 <Grid container spacing={1.5} sx={{ mb: 2 }}>
@@ -720,15 +741,7 @@ function CrStudio() {
                     />
                   </Grid>
                   <Grid xs={6} sm={4}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="number"
-                      inputProps={{ step: '0.1', min: '0', max: '1' }}
-                      label="Dev Progress (0 -> 1)"
-                      value={devProgressVal}
-                      onChange={(e) => setDevProgressVal(e.target.value)}
-                    />
+                    <ProgressSelect value={devProgressVal} onChange={setDevProgressVal} />
                   </Grid>
                   <Grid xs={6} sm={4}>
                     <TextField
@@ -814,7 +827,7 @@ function CrStudio() {
                 <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: 'action.hover', mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                      Dev Progress: {devProgressVal} ({Math.round(Number(devProgressVal || 0) * 100)}%)
+                      Dev Progress: {formatProgress(devProgressVal)}
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: dlInfo.color }}>
                       {dlInfo.label}
@@ -822,7 +835,7 @@ function CrStudio() {
                   </Box>
                   <LinearProgress
                     variant="determinate"
-                    value={Math.min(100, Math.round(Number(devProgressVal || 0) * 100))}
+                    value={progressToPercent(devProgressVal)}
                     sx={{ height: 7, borderRadius: 4 }}
                   />
                 </Box>

@@ -1,6 +1,8 @@
 // Multi-language (VI / EN / JA / KO) + Bilingual Mode (Song ngữ) Engine for Chella
 // Keeps technical terms (Sprint, CR, FRD, Ticket ID, Status, Handle by, Resource point, Dev Progress, Kanban, Obsidian Graph) intact
 import { FEATURE_TRANSLATIONS } from '~/utils/i18nV5'
+import { V6_TRANSLATIONS } from '~/utils/i18nV6'
+import { GRAPH_TRANSLATIONS } from '~/pages/Boards/BoardContent/KnowledgeGraph/graphI18n'
 
 const LANG_STORAGE_KEY = 'chella_locale_lang'
 const BILINGUAL_STORAGE_KEY = 'chella_bilingual_mode'
@@ -324,11 +326,16 @@ const BASE_TRANSLATIONS = {
   }
 }
 
-// Base UI dictionary + v5 feature dictionary, merged per language
+// Base UI dictionary + v5/v6/graph feature dictionaries, merged per language
 export const TRANSLATIONS = Object.fromEntries(
   Object.keys(BASE_TRANSLATIONS).map(code => [
     code,
-    { ...BASE_TRANSLATIONS[code], ...(FEATURE_TRANSLATIONS[code] || {}) }
+    {
+      ...BASE_TRANSLATIONS[code],
+      ...(FEATURE_TRANSLATIONS[code] || {}),
+      ...(V6_TRANSLATIONS[code] || {}),
+      ...(GRAPH_TRANSLATIONS[code] || {})
+    }
   ])
 )
 

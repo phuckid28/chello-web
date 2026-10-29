@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import AppBar from '~/components/AppBar/AppBar'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
+import LoadingButton from '~/components/Loading/LoadingButton'
+import { runWithReveal } from '~/fx/themeReveal'
+import { fxBurst } from '~/fx/fxEvents'
 import Container from '@mui/material/Container'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -92,7 +95,7 @@ function Boards() {
   const query = new URLSearchParams(location.search)
   const page = parseInt(query.get('page') || '1', 10)
 
-  const { control, register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       title: '',
       description: '',
@@ -117,16 +120,17 @@ function Boards() {
     reset()
   }
 
-  const handleSwitchGlobalPersona = (themeKey) => {
+  const handleSwitchGlobalPersona = (themeKey, event) => {
     playUiChime('theme')
-    changePersona(themeKey)
+    if (event?.currentTarget) fxBurst(event.currentTarget, 14)
+    runWithReveal(event, () => changePersona(themeKey))
     if (isMusicBoxActive()) {
       playOstTrack(getDefaultTrackForTheme(themeKey))
     }
   }
 
   const submitCreateNewBoard = (data) => {
-    createNewBoardAPI(data).then((createdBoard) => {
+    return createNewBoardAPI(data).then((createdBoard) => {
       handleCloseModal()
       if (createdBoard?._id) {
         navigate(`/boards/${createdBoard._id}`)
@@ -210,7 +214,7 @@ function Boards() {
                   size="small"
                   startIcon={<Avatar src={p.mascotImage} sx={{ width: 20, height: 20 }} />}
                   variant={globalPersonaKey === p.id ? 'contained' : 'outlined'}
-                  onClick={() => handleSwitchGlobalPersona(p.id)}
+                  onClick={(e) => handleSwitchGlobalPersona(p.id, e)}
                   sx={{
                     color: 'white',
                     textTransform: 'none',
@@ -760,20 +764,21 @@ function Boards() {
                           size="small"
                         />
                       }
-                      label="Tự động tạo sẵn các cột chủ đề CR, thẻ mẫu (BNPL-945) & tài liệu FRD kỳ Sprint 34"
+                      label="Tự động tạo sẵn các cột chủ đề CR, thẻ mẫu (BNPL-945) & tài liệu FRD cho kỳ Sprint"
                     />
                   )}
                 />
 
                 <Box sx={{ alignSelf: 'flex-end' }}>
-                  <Button
+                  <LoadingButton
                     className="interceptor-loading"
                     type="submit"
                     variant="contained"
                     color="primary"
+                    loading={isSubmitting}
                   >
                     {t('createBoard')}
-                  </Button>
+                  </LoadingButton>
                 </Box>
               </Box>
             </form>

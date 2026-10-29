@@ -1,6 +1,8 @@
 // Sprint CR Excel (.XLS) & CSV Exporter, Resource Point Calculator, Deadline Analyzer & FRD File Manager
 // Aligned 1:1 with the Sprint 34 Template (Sprint, Start date, End date, Update till, By, Status, Handle by, Resource point, Ticket ID, CR Description, Status, Handle by, Due date for dev, Dev Progress, Resource used, Note)
 
+import { snapProgress, formatProgress } from '~/utils/progress'
+
 const ROSTER_STORAGE_KEY = 'chella_sprint_team_roster'
 
 export const DEFAULT_TEAM_ROSTER = [
@@ -161,14 +163,12 @@ export const getCardDevProgress = (card) => {
   if (!card) return 0
   if (card.devProgress !== undefined && card.devProgress !== null && card.devProgress !== '') {
     const num = Number(card.devProgress)
-    if (!Number.isNaN(num)) {
-      return num > 1 ? Math.min(1, Number((num / 100).toFixed(2))) : Math.max(0, Number(num.toFixed(2)))
-    }
+    if (!Number.isNaN(num)) return snapProgress(num)
   }
   const checklist = card.checklist || []
   if (checklist.length > 0) {
     const done = checklist.filter(i => i.isCompleted).length
-    return Number((done / checklist.length).toFixed(2))
+    return snapProgress(done / checklist.length)
   }
   const norm = normalizeCrStatus(card.baStatus)
   if (norm === 'Ready for deploy' || norm === 'Deployed' || norm === 'Done testing') return 1
@@ -394,7 +394,7 @@ export const exportSprintCrsToExcel = (board) => {
         <td style="border:1px solid #cbd5e1;padding:7px 10px;font-weight:bold;">${escapeHtml(statusText)}</td>
         <td style="border:1px solid #cbd5e1;padding:7px 10px;">${escapeHtml(handleBy)}</td>
         <td style="text-align:center;border:1px solid #cbd5e1;padding:7px 10px;">${escapeHtml(dueShort)}</td>
-        <td style="text-align:center;border:1px solid #cbd5e1;padding:7px 10px;font-weight:bold;">${devProg}</td>
+        <td style="text-align:center;border:1px solid #cbd5e1;padding:7px 10px;font-weight:bold;">${formatProgress(devProg)}</td>
         <td style="text-align:center;border:1px solid #cbd5e1;padding:7px 10px;">${resUsed || ''}</td>
         <td style="border:1px solid #cbd5e1;padding:7px 10px;">${escapeHtml(noteText)}</td>
       </tr>
@@ -511,7 +511,7 @@ export const exportSprintCrsToCsv = (board) => {
       statusText,
       handleBy,
       dueShort,
-      devProg,
+      formatProgress(devProg),
       resUsed,
       noteText
     ].map(escapeCsvCell).join(','))
@@ -614,7 +614,7 @@ export const parseSprintCsvTemplate = (csvText) => {
         baStatus: normalizeCrStatus(cols[2] || 'Processing'),
         assignee: cols[3] || '',
         deadline: deadlineIso,
-        devProgress: cols[5] !== undefined && cols[5] !== '' ? Number(cols[5]) : 1,
+        devProgress: cols[5] !== undefined && cols[5] !== '' ? snapProgress(cols[5]) : 1,
         resourceUsed: cols[6] !== undefined && cols[6] !== '' ? Number(cols[6]) : 0,
         note: cols[7] || ''
       })
@@ -669,7 +669,7 @@ export const exportCardAsFrdMarkdown = (card, sprintName = 'Sprint 34') => {
     `- **Status**: ${normalizeCrStatus(card.baStatus)}`,
     `- **Handle by**: ${card.assignee || 'Unassigned'}`,
     `- **Due date for dev**: ${dl.shortDate || card.deadline || 'TBD'}`,
-    `- **Dev Progress**: ${devProg} (${Math.round(devProg * 100)}%)`,
+    `- **Dev Progress**: ${formatProgress(devProg)}`,
     `- **Resource used**: ${resUsed}`,
     `- **Note**: ${card.note || '—'}`,
     '',

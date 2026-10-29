@@ -20,6 +20,8 @@ import { BrowserRouter } from 'react-router-dom'
 
 // Kỹ thuật Inject store: sử dụng biến redux store ở các file ngoài phạm vi component
 import { injectStore } from './utils/authorizeAxios'
+import ThemeFxProvider from '~/fx/ThemeFxProvider'
+import ShortcutsDialog from '~/components/Shortcuts/ShortcutsDialog'
 injectStore(store)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -34,6 +36,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           buttonOrder: ['confirm', 'cancel']
         }}>
           <CssBaseline />
+          <ThemeFxProvider />
+          <ShortcutsDialog />
           <App />
           <ToastContainer
             position='bottom-left'

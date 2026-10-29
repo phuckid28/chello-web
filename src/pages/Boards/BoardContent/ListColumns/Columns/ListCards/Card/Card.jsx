@@ -28,6 +28,7 @@ import {
   getDeadlineStatus,
   getStatusOption
 } from '~/utils/excelExporter'
+import { getProgressColor } from '~/utils/progress'
 import { playUiChime } from '~/utils/soundEffects'
 import { DEFAULT_PRIORITY, getPriorityOption } from '~/utils/crMeta'
 
@@ -209,7 +210,7 @@ function Card({ card }) {
         <Box sx={{ mt: 1 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
             <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 700 }}>
-              Dev Progress: {devProg}
+              Dev Progress: {devPercent}%
             </Typography>
             {resourceUsed > 0 && (
               <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>
@@ -220,8 +221,16 @@ function Card({ card }) {
           <LinearProgress
             variant="determinate"
             value={devPercent}
-            color={devProg >= 1 ? 'success' : 'primary'}
-            sx={{ height: 4, borderRadius: 2 }}
+            sx={{
+              height: 4,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 2,
+                bgcolor: getProgressColor(devProg),
+                transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
+              }
+            }}
           />
         </Box>
       </CardContent>

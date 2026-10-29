@@ -1,7 +1,7 @@
 {
   "name": "vite-chello-project",
   "private": true,
-  "version": "5.0.0",
+  "version": "6.0.0",
   "type": "module",
   "author": "Dao Thanh Phuc",
   "description": "Chella — A clone of \"C\"onfluence - tr\"ELL\"o - jir\"A\"",

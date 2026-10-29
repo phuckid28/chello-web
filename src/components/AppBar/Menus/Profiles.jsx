@@ -9,11 +9,13 @@ import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
 import PersonAdd from '@mui/icons-material/PersonAdd'
 import Settings from '@mui/icons-material/Settings'
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import Logout from '@mui/icons-material/Logout'
 import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, logoutUserAPI } from '~/redux/user/userSlice'
 import { useConfirm } from 'material-ui-confirm'
 import { Link } from 'react-router-dom'
+import { useTranslation } from '~/customHooks/useTranslation'
 import soraAvatar from '~/assets/sora.jpg'
 
 function Profiles() {
@@ -23,6 +25,7 @@ function Profiles() {
   const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
   const confirmLogout = useConfirm()
+  const { tPrimary } = useTranslation()
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -88,6 +91,14 @@ function Profiles() {
           </ListItemIcon>
           Add another account
         </MenuItem>
+        <Link to="/settings/appearance" style={{ color: 'inherit', textDecoration: 'none' }}>
+          <MenuItem>
+            <ListItemIcon>
+              <AutoAwesomeRoundedIcon fontSize="small" />
+            </ListItemIcon>
+            {tPrimary('tabAppearance')}
+          </MenuItem>
+        </Link>
         <Link to="/settings/security" style={{ color: 'inherit', textDecoration: 'none' }}>
           <MenuItem>
             <ListItemIcon>

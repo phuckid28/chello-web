@@ -63,6 +63,10 @@ import {
   getSavedTeamRoster,
   saveTeamRoster
 } from '~/utils/excelExporter'
+import { snapProgress } from '~/utils/progress'
+import ProgressSelect from '~/components/Modal/ProgressSelect'
+import LoadingButton from '~/components/Loading/LoadingButton'
+import { fxCelebrate } from '~/fx/fxEvents'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { playUiChime } from '~/utils/soundEffects'
 import { useConfirm } from 'material-ui-confirm'
@@ -133,6 +137,7 @@ function ActiveCard() {
   const [priority, setPriority] = useState(DEFAULT_PRIORITY)
   const [startDate, setStartDate] = useState('')
   const [selectedLinkCardId, setSelectedLinkCardId] = useState('')
+  const [savingCr, setSavingCr] = useState(false)
 
   useEffect(() => {
     setTeamRoster(getSavedTeamRoster(board))
@@ -146,7 +151,7 @@ function ActiveCard() {
       setBaStatus(activeCard.baStatus || 'Processing')
       setDevProgress(
         activeCard.devProgress !== undefined && activeCard.devProgress !== null
-          ? activeCard.devProgress
+          ? snapProgress(activeCard.devProgress)
           : (['Ready for deploy', 'Deployed', 'Done testing', 'Done'].includes(activeCard.baStatus) ? 1 : 0)
       )
       setResourceUsed(
@@ -236,27 +241,35 @@ function ActiveCard() {
     toast.success(`Đã gắn người phụ trách "${trimmed}" vào CR!`)
   }
 
-  const onSaveBaCrMetadata = async () => {
+  const onSaveBaCrMetadata = async (event) => {
+    const targetEl = event?.currentTarget
+    const nextProgress = snapProgress(devProgress)
+    const isDone = nextProgress >= 1 || ['Deployed', 'Done testing', 'Done'].includes(baStatus)
     const dueDateTs = deadline ? new Date(`${deadline}T17:00:00`).getTime() : null
     const startDateTs = startDate ? new Date(`${startDate}T08:00:00`).getTime() : null
-    const parsedDevProgress = Number(devProgress)
     const parsedResourceUsed = Number(resourceUsed)
-    await callApiUpdateCard({
-      crCode: crCode.trim(),
-      sprint: sprint.trim() || defaultSprint,
-      assignee: assignee.trim(),
-      baStatus,
-      priority,
-      startDate: Number.isNaN(startDateTs) ? null : startDateTs,
-      deadline: deadline || null,
-      dueDate: !Number.isNaN(dueDateTs) ? dueDateTs : null,
-      devProgress: !Number.isNaN(parsedDevProgress) ? parsedDevProgress : 0,
-      resourceUsed: !Number.isNaN(parsedResourceUsed) ? parsedResourceUsed : 0,
-      isCompleted: ['Deployed', 'Done testing', 'Done'].includes(baStatus),
-      note: note.trim()
-    })
-    playUiChime('complete')
-    toast.success(`Đã lưu thông tin CR [${crCode.trim() || activeCard?.title}]!`)
+    setSavingCr(true)
+    try {
+      await callApiUpdateCard({
+        crCode: crCode.trim(),
+        sprint: sprint.trim() || defaultSprint,
+        assignee: assignee.trim(),
+        baStatus,
+        priority,
+        startDate: Number.isNaN(startDateTs) ? null : startDateTs,
+        deadline: deadline || null,
+        dueDate: !Number.isNaN(dueDateTs) ? dueDateTs : null,
+        devProgress: nextProgress,
+        resourceUsed: !Number.isNaN(parsedResourceUsed) ? parsedResourceUsed : 0,
+        isCompleted: ['Deployed', 'Done testing', 'Done'].includes(baStatus),
+        note: note.trim()
+      })
+      playUiChime('complete')
+      if (isDone) fxCelebrate(targetEl)
+      toast.success(`Đã lưu thông tin CR [${crCode.trim() || activeCard?.title}]!`)
+    } finally {
+      setSavingCr(false)
+    }
   }
 
   const onUploadFrdDocument = (event) => {
@@ -555,15 +568,16 @@ function ActiveCard() {
                     {t('crTrackingSection')}
                   </Typography>
                 </Box>
-                <Button
+                <LoadingButton
                   size="small"
                   variant="contained"
+                  loading={savingCr}
                   startIcon={<SaveRoundedIcon />}
                   onClick={onSaveBaCrMetadata}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
                   {t('saveCrBtn')}
-                </Button>
+                </LoadingButton>
               </Box>
 
               <Stack spacing={1.5}>
@@ -628,15 +642,7 @@ function ActiveCard() {
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
                   />
-                  <TextField
-                    label="Dev Progress (0 → 1)"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    inputProps={{ step: '0.1', min: 0, max: 100 }}
-                    value={devProgress}
-                    onChange={(e) => setDevProgress(e.target.value)}
-                  />
+                  <ProgressSelect value={devProgress} onChange={setDevProgress} />
                   <TextField
                     label="Resource used (Point)"
                     type="number"

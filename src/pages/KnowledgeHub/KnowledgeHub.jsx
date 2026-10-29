@@ -25,6 +25,7 @@ import { computeBacklinks, createWikiResolver, extractWikiLinks } from '~/utils/
 import { collectBoardCardsWithColumn, formatDateVN } from '~/utils/excelExporter'
 import { formatMessage } from '~/utils/i18nV5'
 import { playUiChime } from '~/utils/soundEffects'
+import { setBoardThemeOverride } from '~/fx/fxThemeStore'
 
 const LABEL_KEYS = [
   'newPage', 'newSubPage', 'searchPages', 'pageTitlePlaceholder', 'editBtn', 'previewBtn', 'saveBtn', 'deleteBtn',
@@ -101,6 +102,11 @@ function KnowledgeHub() {
       setLoading(false)
     }
   }, [boardId])
+
+  useEffect(() => {
+    setBoardThemeOverride(board?.theme || null)
+    return () => setBoardThemeOverride(null)
+  }, [board?.theme])
 
   useEffect(() => {
     if (!boardMatches) dispatch(fetchBoardDetailsAPI(boardId))

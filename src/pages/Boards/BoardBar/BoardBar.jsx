@@ -23,6 +23,8 @@ import InviteBoardUser from './InviteBoardUser'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
 import ImportMarkdownModal from '~/components/Modal/ImportMarkdownModal'
 import SprintReportDialog from '~/components/Modal/SprintReportDialog'
+import { runWithReveal } from '~/fx/themeReveal'
+import { fxBurst } from '~/fx/fxEvents'
 import ViewSwitcher from './parts/ViewSwitcher'
 import FilterPopover from './parts/FilterPopover'
 import SprintConfigPopover from './parts/SprintConfigPopover'
@@ -124,9 +126,10 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
       .catch(() => {})
   }
 
-  const handleSelectTheme = (nextThemeKey) => {
+  const handleSelectTheme = (nextThemeKey, event) => {
     playUiChime('theme')
-    changePersona(nextThemeKey)
+    if (event?.currentTarget) fxBurst(event.currentTarget, 14)
+    runWithReveal(event, () => changePersona(nextThemeKey))
     optimisticBoardUpdate({ theme: nextThemeKey }).catch(() => {})
     if (isMusicBoxActive()) playOstTrack(getDefaultTrackForTheme(nextThemeKey))
     setAnchors(prev => ({ ...prev, theme: null }))

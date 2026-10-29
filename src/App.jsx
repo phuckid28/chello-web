@@ -4,6 +4,7 @@ import NotFound from './pages/404/NotFound'
 import Auth from './pages/Auth/Auth'
 import AccountVerification from './pages/Auth/AccountVerification'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
+import PageTransition from '~/fx/PageTransition'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 
@@ -18,7 +19,9 @@ const ProtectedRoute = ({ user }) => {
   if (!user) return <Navigate to='/login' replace={true} />
   return (
     <Suspense fallback={<PageLoadingSpinner caption='Chella' />}>
-      <Outlet />
+      <PageTransition>
+        <Outlet />
+      </PageTransition>
     </Suspense>
   )
 }
@@ -42,6 +45,7 @@ function App() {
         <Route path='/boards/:boardId/wiki/:pageId' element={<KnowledgeHub />} />
         <Route path='/settings/account' element={<Settings />} />
         <Route path='/settings/security' element={<Settings />} />
+        <Route path='/settings/appearance' element={<Settings />} />
       </Route>
 
       {/* Authentication */}

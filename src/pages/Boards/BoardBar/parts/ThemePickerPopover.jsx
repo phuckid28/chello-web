@@ -20,7 +20,7 @@ function ThemePickerPopover({ anchorEl, onClose, personaKey, onSelect }) {
             return (
               <Box
                 key={t.id}
-                onClick={() => onSelect(t.id)}
+                onClick={(e) => onSelect(t.id, e)}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',

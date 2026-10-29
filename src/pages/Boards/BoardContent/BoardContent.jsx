@@ -22,7 +22,7 @@ import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { applyFiltersToColumns } from '~/utils/crFilters'
-import CircularProgress from '@mui/material/CircularProgress'
+import ThemedLoader from '~/components/Loading/ThemedLoader'
 
 // Secondary views are code-split so the Kanban board loads faster
 const BoardAnalyticsView = lazy(() => import('./BoardAnalyticsView'))
@@ -31,7 +31,7 @@ const TimelineView = lazy(() => import('./TimelineView'))
 
 const ViewFallback = () => (
   <Box sx={{ width: '100%', display: 'grid', placeItems: 'center' }}>
-    <CircularProgress size={34} sx={{ color: 'white' }} />
+    <ThemedLoader size={64} />
   </Box>
 )
 
@@ -380,7 +380,7 @@ function BoardContent({
           </Box>
         ))}
 
-        <Box key={boardViewMode} sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%', animation: 'chelloFadeSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+        <Box key={boardViewMode} sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%', animation: 'fxViewSwap 0.36s cubic-bezier(0.16, 1, 0.3, 1)' }}>
           <Suspense fallback={<ViewFallback />}>
             {renderActiveView()}
           </Suspense>

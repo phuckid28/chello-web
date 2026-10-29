@@ -2,6 +2,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
+import LocalGraphMini from '~/pages/Boards/BoardContent/KnowledgeGraph/LocalGraphMini'
 
 function PanelSection({ title, count, children }) {
   return (
@@ -88,6 +89,9 @@ function LinksPanel({ outline, outgoing, backlinks, onOpenTarget, onOpenPage, on
           <LinkRow key={`bc-${c._id}`} icon="🎫" label={`${c.crCode || 'CR'} • ${c.title}`} sub={c.baStatus} onClick={() => onOpenCard(c)} />
         ))}
       </PanelSection>
+
+      <Divider />
+      <LocalGraphMini centerType="wiki" onOpenPage={onOpenPage} onOpenCard={onOpenCard} />
     </Box>
   )
 }

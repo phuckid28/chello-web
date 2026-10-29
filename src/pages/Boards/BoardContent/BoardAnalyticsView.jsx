@@ -34,6 +34,8 @@ import {
   getStatusOption,
   normalizeCrStatus
 } from '~/utils/excelExporter'
+import { formatProgress } from '~/utils/progress'
+import SprintPulse from '~/components/SprintPulse/SprintPulse'
 import { playUiChime } from '~/utils/soundEffects'
 
 function BoardAnalyticsView({ columns = [], themeConfig }) {
@@ -84,6 +86,8 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
         py: 2
       }}
     >
+      <SprintPulse columns={columns} sprintConfig={sprintConfig} themeConfig={themeConfig} sx={{ mb: 2.5 }} />
+
       {/* Top 3-Block Template Header (Sprint Meta | Status List | Handle by & Resource Point) */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         {/* Block 1: Sprint Info */}
@@ -311,7 +315,7 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                         />
                       </TableCell>
                       <TableCell align="center" sx={{ fontWeight: 800 }}>
-                        {devProg}
+                        {formatProgress(devProg)}
                       </TableCell>
                       <TableCell align="center" sx={{ fontWeight: 700 }}>
                         {resUsed || ''}

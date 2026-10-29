@@ -23,6 +23,7 @@ import { EMPTY_CR_FILTERS, applyFiltersToColumns, normalizeFilters } from '~/uti
 import { BOARD_VIEWS, SWITCH_VIEW_EVENT, persistBoardView, readBoardView } from '~/utils/boardEvents'
 import { useDeadlineReminder } from '~/customHooks/useDeadlineReminder'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { setBoardThemeOverride } from '~/fx/fxThemeStore'
 
 const FILTER_STORAGE_PREFIX = 'chella_board_filters_'
 
@@ -53,6 +54,11 @@ function Board() {
     dispatch(fetchBoardDetailsAPI(boardId))
     setFiltersState(readStoredFilters(boardId))
   }, [dispatch, boardId])
+
+  useEffect(() => {
+    setBoardThemeOverride(board?._id === boardId ? board?.theme : null)
+    return () => setBoardThemeOverride(null)
+  }, [board?._id, board?.theme, boardId])
 
   useEffect(() => {
     const handleSwitchView = (e) => {

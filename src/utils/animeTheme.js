@@ -246,49 +246,49 @@ export const SORA_PRESET_COVERS = [
 export const ANIME_BOARD_TEMPLATES = [
   {
     id: 'cosmos-zodiac-sprint',
-    title: 'Sprint 34 • Astral Cosmos & Zodiac Hub',
-    description: 'Không gian quản lý Sprint 34, theo dõi CR và sơ đồ tri thức dưới bầu trời sao & dải ngân hà.',
+    title: 'Astral Cosmos & Zodiac Sprint Hub',
+    description: 'Không gian quản lý Sprint, theo dõi CR và sơ đồ tri thức dưới bầu trời sao & dải ngân hà.',
     theme: 'cosmos',
     badge: '🌌 Cosmos • Zodiac'
   },
   {
     id: 'wind-chime-sprint',
-    title: 'Sprint 34 • Azure Breeze & Furin Workspace',
-    description: 'Bảng điều phối Sprint 34 thanh mát sắc xanh bầu trời, đồng cỏ và tiếng chuông gió Furin.',
+    title: 'Azure Breeze & Furin Sprint Workspace',
+    description: 'Bảng điều phối Sprint thanh mát sắc xanh bầu trời, đồng cỏ và tiếng chuông gió Furin.',
     theme: 'wind-chime',
     badge: '🎐 Sky • Wind Chime'
   },
   {
     id: 'sora-okukozome',
-    title: 'Sprint 34 • Sora Distant Sky Hub',
-    description: 'Theo dõi CR, tài liệu FRD và tiến độ Sprint 34 với sắc trắng bạc & xanh bầu trời của Sora Kasugano.',
+    title: 'Sora Distant Sky Sprint Hub',
+    description: 'Theo dõi CR, tài liệu FRD và tiến độ Sprint với sắc trắng bạc & xanh bầu trời của Sora Kasugano.',
     theme: 'sora-sky',
     badge: '☁️ Sora • Distant Sky'
   },
   {
     id: 'furina-salon-solitaire',
-    title: 'Sprint 34 • Fontaine Opera CR Hub',
+    title: 'Fontaine Opera CR & Sprint Hub',
     description: 'Không gian quản trị CR & nghiệm thu lộng lẫy sắc xanh Hydro vùng Fontaine cùng Furina.',
     theme: 'furina',
     badge: '💧 Furina • Fontaine'
   },
   {
     id: 'nahida-irminsul-kb',
-    title: 'Sprint 34 • Surasthana Knowledge Graph',
+    title: 'Surasthana Knowledge Graph Hub',
     description: 'Tập trung tri thức hệ thống, mô hình hóa nghiệp vụ và liên kết tài liệu FRD cùng Nahida.',
     theme: 'nahida',
     badge: '🌿 Nahida • Sumeru'
   },
   {
     id: 'sora-moonlit-ribbon',
-    title: 'Sprint 34 • Moonlit Black Ribbon Studio',
+    title: 'Moonlit Black Ribbon Sprint Studio',
     description: 'Bảng phân tích hệ thống tĩnh lặng dưới ánh trăng tím bạc cùng dải ruy-băng đen của Sora.',
     theme: 'sora-twilight',
     badge: '🎀 Sora • Black Ribbon'
   },
   {
     id: 'sora-usagi-sanctuary',
-    title: 'Sprint 34 • Usagi Plush Sanctuary',
+    title: 'Usagi Plush Sprint Sanctuary',
     description: 'Không gian quản lý backlog nhẹ nhàng cùng Sora và thỏ bông Usagi.',
     theme: 'sora-usagi',
     badge: '🐰 Sora • Usagi Plush'
