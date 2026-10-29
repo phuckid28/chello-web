@@ -29,6 +29,7 @@ import {
   getStatusOption
 } from '~/utils/excelExporter'
 import { playUiChime } from '~/utils/soundEffects'
+import { DEFAULT_PRIORITY, getPriorityOption } from '~/utils/crMeta'
 
 function Card({ card }) {
   const dispatch = useDispatch()
@@ -54,6 +55,7 @@ function Card({ card }) {
   const frdCount = card?.frdDocuments?.length || 0
   const linkedCount = card?.linkedCardIds?.length || 0
   const deadlineInfo = getDeadlineStatus(card)
+  const priorityOpt = getPriorityOption(card?.priority)
   const statusOpt = getStatusOption(card?.baStatus)
 
   const setActiveCard = () => {
@@ -116,6 +118,11 @@ function Card({ card }) {
       <CardContent sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5, mb: 0.75 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+            {card?.priority && card.priority !== DEFAULT_PRIORITY && (
+              <Tooltip title={`Priority: ${priorityOpt.label}`}>
+                <Box component="span" sx={{ fontSize: '0.8rem', lineHeight: 1, cursor: 'default' }}>{priorityOpt.icon}</Box>
+              </Tooltip>
+            )}
             {card?.crCode && (
               <Chip
                 label={card.crCode}

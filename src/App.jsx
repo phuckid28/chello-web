@@ -1,17 +1,26 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
-import Board from '~/pages/Boards/_id'
-import Boards from '~/pages/Boards'
-import CrStudio from '~/pages/CrStudio/CrStudio'
 import NotFound from './pages/404/NotFound'
 import Auth from './pages/Auth/Auth'
 import AccountVerification from './pages/Auth/AccountVerification'
-import Settings from '~/pages/Settings/Settings'
+import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 
+// Route-level code splitting: each workspace area is downloaded only when visited
+const Boards = lazy(() => import('~/pages/Boards'))
+const Board = lazy(() => import('~/pages/Boards/_id'))
+const CrStudio = lazy(() => import('~/pages/CrStudio/CrStudio'))
+const KnowledgeHub = lazy(() => import('~/pages/KnowledgeHub/KnowledgeHub'))
+const Settings = lazy(() => import('~/pages/Settings/Settings'))
+
 const ProtectedRoute = ({ user }) => {
   if (!user) return <Navigate to='/login' replace={true} />
-  return <Outlet />
+  return (
+    <Suspense fallback={<PageLoadingSpinner caption='Chella' />}>
+      <Outlet />
+    </Suspense>
+  )
 }
 
 function App() {
@@ -29,6 +38,8 @@ function App() {
         <Route path='/boards' element={<Boards />} />
         <Route path='/boards/:boardId' element={<Board />} />
         <Route path='/boards/:boardId/cr/:cardId' element={<CrStudio />} />
+        <Route path='/boards/:boardId/wiki' element={<KnowledgeHub />} />
+        <Route path='/boards/:boardId/wiki/:pageId' element={<KnowledgeHub />} />
         <Route path='/settings/account' element={<Settings />} />
         <Route path='/settings/security' element={<Settings />} />
       </Route>

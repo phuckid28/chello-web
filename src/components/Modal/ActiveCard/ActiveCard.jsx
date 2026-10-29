@@ -70,6 +70,18 @@ import { cloneDeep } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { toast } from 'react-toastify'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { DEFAULT_PRIORITY, PRIORITY_OPTIONS, normalizePriority } from '~/utils/crMeta'
+import CrAssistantPanel from './CrAssistantPanel'
+
+// Converts a timestamp / ISO string into the YYYY-MM-DD value expected by <input type="date">
+const toDateInputValue = (value) => {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${month}-${day}`
+}
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -118,6 +130,8 @@ function ActiveCard() {
   const [devProgress, setDevProgress] = useState(0)
   const [resourceUsed, setResourceUsed] = useState(1)
   const [note, setNote] = useState('')
+  const [priority, setPriority] = useState(DEFAULT_PRIORITY)
+  const [startDate, setStartDate] = useState('')
   const [selectedLinkCardId, setSelectedLinkCardId] = useState('')
 
   useEffect(() => {
@@ -153,6 +167,8 @@ function ActiveCard() {
         setDeadline('')
       }
       setNote(activeCard.note || '')
+      setPriority(normalizePriority(activeCard.priority))
+      setStartDate(toDateInputValue(activeCard.startDate))
     }
   }, [activeCard, defaultSprint])
 
@@ -222,6 +238,7 @@ function ActiveCard() {
 
   const onSaveBaCrMetadata = async () => {
     const dueDateTs = deadline ? new Date(`${deadline}T17:00:00`).getTime() : null
+    const startDateTs = startDate ? new Date(`${startDate}T08:00:00`).getTime() : null
     const parsedDevProgress = Number(devProgress)
     const parsedResourceUsed = Number(resourceUsed)
     await callApiUpdateCard({
@@ -229,6 +246,8 @@ function ActiveCard() {
       sprint: sprint.trim() || defaultSprint,
       assignee: assignee.trim(),
       baStatus,
+      priority,
+      startDate: Number.isNaN(startDateTs) ? null : startDateTs,
       deadline: deadline || null,
       dueDate: !Number.isNaN(dueDateTs) ? dueDateTs : null,
       devProgress: !Number.isNaN(parsedDevProgress) ? parsedDevProgress : 0,
@@ -378,6 +397,14 @@ function ActiveCard() {
     callApiUpdateCard({ checklist: nextChecklist })
   }
 
+  const onAddSuggestedSubtasks = async (titles) => {
+    const currentChecklist = activeCard?.checklist || []
+    const stamp = Date.now()
+    const newItems = titles.map((title, idx) => ({ id: `quest-${stamp}-${idx}`, title: title.slice(0, 200), isCompleted: false }))
+    await callApiUpdateCard({ checklist: [...currentChecklist, ...newItems] })
+    playUiChime('complete')
+  }
+
   const onAddCardComment = async (commentToAdd) => {
     await callApiUpdateCard({ commentToAdd })
   }
@@ -525,7 +552,7 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AssignmentOutlinedIcon color="primary" />
                   <Typography sx={{ fontWeight: 800, fontSize: '16px', color: 'primary.main' }}>
-                    Thông tin Change Request (CR) • Sprint 34 Template
+                    {t('crTrackingSection')}
                   </Typography>
                 </Box>
                 <Button
@@ -535,7 +562,7 @@ function ActiveCard() {
                   onClick={onSaveBaCrMetadata}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
-                  Lưu thông tin CR
+                  {t('saveCrBtn')}
                 </Button>
               </Box>
 
@@ -549,13 +576,25 @@ function ActiveCard() {
                     sx={{ width: { xs: '100%', sm: '180px' } }}
                   />
                   <TextField
-                    label="Sprint (2 tuần)"
+                    label="Sprint"
                     size="small"
                     value={sprint}
                     onChange={(e) => setSprint(e.target.value)}
-                    placeholder="Sprint 34"
-                    sx={{ width: { xs: '100%', sm: '160px' } }}
+                    placeholder={defaultSprint}
+                    sx={{ width: { xs: '100%', sm: '140px' } }}
                   />
+                  <TextField
+                    select
+                    label={t('priorityLabel')}
+                    size="small"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    sx={{ width: { xs: '100%', sm: '150px' } }}
+                  >
+                    {PRIORITY_OPTIONS.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.icon} {opt.label}</MenuItem>
+                    ))}
+                  </TextField>
                   <TextField
                     select
                     label="Status"
@@ -571,6 +610,15 @@ function ActiveCard() {
                 </Stack>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                  <TextField
+                    label={t('crStartDate')}
+                    type="date"
+                    size="small"
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
                   <TextField
                     label="Due date for dev"
                     type="date"
@@ -932,9 +980,10 @@ function ActiveCard() {
                   }}
                 />
                 <Button variant="contained" size="small" onClick={onAddChecklistItem}>
-                  Thêm
+                  {t('addBtn')}
                 </Button>
               </Box>
+              <CrAssistantPanel card={activeCard} onAddItems={onAddSuggestedSubtasks} />
             </Box>
 
             <Box sx={{ mb: 3 }}>

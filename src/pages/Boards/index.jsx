@@ -181,7 +181,7 @@ function Boards() {
           <Grid xs={12} md={8}>
             <Chip
               icon={<SoraRibbonIcon fontSize="small" />}
-              label={`Chella — A clone of "C"onfluence - tr"ELL"o - jir"A" • Sprint 34 (22/10 - 05/11)`}
+              label='Chella — A clone of "C"onfluence - tr"ELL"o - jir"A"'
               size="small"
               sx={{
                 mb: 1.5,
@@ -477,7 +477,7 @@ function Boards() {
                   Chưa có bảng Sprint nào được khởi tạo!
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Hãy chọn một mẫu bảng 1-Click ở cột bên trái hoặc tạo bảng mới để bắt đầu theo dõi CR kỳ Sprint 34.
+                  Hãy chọn một mẫu bảng 1-Click ở cột bên trái hoặc tạo bảng mới để bắt đầu theo dõi CR của Sprint.
                 </Typography>
                 <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={handleOpenModal}>
                   {t('createBoard')}

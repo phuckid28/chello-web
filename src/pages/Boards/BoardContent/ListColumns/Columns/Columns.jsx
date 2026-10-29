@@ -72,8 +72,14 @@ function Columns({ column }) {
       toast.error('Please enter CR title', { position: 'bottom-right' })
       return
     }
-    const nextIndex = realCardCount + 1
     const prefix = (column?.title || 'CR').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4) || 'CR'
+    // Use the full board (not the filtered view) and the highest existing number to avoid duplicate Ticket IDs
+    const codePattern = new RegExp(`^${prefix}-(\\d+)$`, 'i')
+    const usedNumbers = (board?.columns || [])
+      .flatMap(c => c.cards || [])
+      .map(c => Number(String(c.crCode || '').match(codePattern)?.[1]))
+      .filter(n => Number.isFinite(n))
+    const nextIndex = Math.max(realCardCount, ...usedNumbers, 0) + 1
     const newCardData = {
       title: newCardTitle,
       columnId: column._id,

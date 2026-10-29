@@ -30,13 +30,16 @@ import {
   parseAssigneeList
 } from '~/utils/excelExporter'
 import { playUiChime } from '~/utils/soundEffects'
+import { fetchWikiPagesAPI } from '~/apis'
 
-// Extract [[BNPL-xxx]] wiki-links from markdown text
+// Extract [[BNPL-xxx]] / [[Page title|alias]] wiki-links from markdown text (upper-cased targets)
 const extractWikiLinks = (text) => {
   if (!text) return []
   const matches = String(text).match(/\[\[([^\]]+)\]\]/g) || []
-  return matches.map(m => m.slice(2, -2).trim().toUpperCase())
+  return matches.map(m => m.slice(2, -2).split('|')[0].trim().toUpperCase())
 }
+
+const WIKI_NODE_COLOR = '#e879f9'
 
 function ObsidianGraphView({ columns = [], themeConfig }) {
   const dispatch = useDispatch()
@@ -57,6 +60,18 @@ function ObsidianGraphView({ columns = [], themeConfig }) {
   const [showTopics, setShowTopics] = useState(true)
   const [showMembers, setShowMembers] = useState(true)
   const [showFrds, setShowFrds] = useState(true)
+  const [showWiki, setShowWiki] = useState(true)
+  const [wikiPages, setWikiPages] = useState([])
+
+  // Knowledge Hub pages become graph nodes so CRs and documentation live in one knowledge map
+  useEffect(() => {
+    if (!board?._id) return undefined
+    let cancelled = false
+    fetchWikiPagesAPI(board._id)
+      .then(list => { if (!cancelled) setWikiPages(Array.isArray(list) ? list : []) })
+      .catch(() => { if (!cancelled) setWikiPages([]) })
+    return () => { cancelled = true }
+  }, [board?._id])
 
   // Build Obsidian Graph Data (Sprint -> Topics -> CRs <-> CRs -> Assignees & FRDs)
   const graphData = useMemo(() => {
@@ -201,15 +216,52 @@ function ObsidianGraphView({ columns = [], themeConfig }) {
       })
     })
 
+    // Knowledge Hub pages: page → CR, page → page and CR → page via [[WikiLinks]]
+    if (showWiki && wikiPages.length) {
+      const pageTitleToNodeId = new Map()
+      wikiPages.forEach((page, idx) => {
+        const pageNodeId = `wiki-${page._id}`
+        const angle = (idx / wikiPages.length) * Math.PI * 2 + 0.4
+        pageTitleToNodeId.set(String(page.title || '').trim().toUpperCase(), pageNodeId)
+        addNode({
+          id: pageNodeId,
+          label: `${page.icon || '📄'} ${String(page.title || '').slice(0, 20)}`,
+          subLabel: 'Knowledge Hub page',
+          type: 'wiki',
+          pageId: page._id,
+          radius: 12,
+          color: WIKI_NODE_COLOR,
+          x: 420 + Math.cos(angle) * 200,
+          y: 270 + Math.sin(angle) * 190,
+          vx: 0,
+          vy: 0
+        })
+      })
+      wikiPages.forEach(page => {
+        const sourceId = `wiki-${page._id}`
+        extractWikiLinks(page.content).forEach(target => {
+          const targetId = crCodeToNodeId.get(target) || pageTitleToNodeId.get(target)
+          if (targetId && targetId !== sourceId) edges.push({ source: sourceId, target: targetId, kind: 'wikilink' })
+        })
+      })
+      allCards.forEach(({ card }) => {
+        const sourceId = `cr-${card._id}`
+        ;[...extractWikiLinks(card.description), ...extractWikiLinks(card.note)].forEach(target => {
+          const targetId = pageTitleToNodeId.get(target)
+          if (targetId) edges.push({ source: sourceId, target: targetId, kind: 'wikilink' })
+        })
+      })
+    }
+
     return { nodes, edges }
-  }, [board?._id, columns, sprintConfig, themeConfig.accentColor, showTopics, showMembers, showFrds])
+  }, [board?._id, columns, sprintConfig, themeConfig.accentColor, showTopics, showMembers, showFrds, showWiki, wikiPages])
 
   useEffect(() => {
     nodesRef.current = graphData.nodes.map(n => ({ ...n }))
     edgesRef.current = graphData.edges.map(e => ({ ...e }))
-    if (!selectedNode && nodesRef.current.length > 0) {
+    if (nodesRef.current.length > 0) {
       const firstCr = nodesRef.current.find(n => n.type === 'cr') || nodesRef.current[0]
-      setSelectedNode(firstCr)
+      setSelectedNode(prev => prev || firstCr)
     }
   }, [graphData])
 
@@ -547,6 +599,17 @@ function ObsidianGraphView({ columns = [], themeConfig }) {
                 bgcolor: showFrds ? '#10b981' : 'rgba(255,255,255,0.08)'
               }}
             />
+            <Chip
+              label="Knowledge Hub"
+              size="small"
+              onClick={() => setShowWiki(!showWiki)}
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.7rem',
+                color: 'white',
+                bgcolor: showWiki ? WIKI_NODE_COLOR : 'rgba(255,255,255,0.08)'
+              }}
+            />
             <Tooltip title="Thu nhỏ">
               <IconButton size="small" onClick={() => setZoom(z => Math.max(0.55, Number((z - 0.15).toFixed(2))))} sx={{ color: 'white' }}>
                 <ZoomOutRoundedIcon fontSize="small" />
@@ -599,6 +662,7 @@ function ObsidianGraphView({ columns = [], themeConfig }) {
             <Typography variant="caption" sx={{ color: '#f59e0b', fontWeight: 700 }}>● Ready for deploy</Typography>
             <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 700 }}>● Deployed / FRD</Typography>
             <Typography variant="caption" sx={{ color: '#f472b6', fontWeight: 700 }}>● Handle by (PIC)</Typography>
+            <Typography variant="caption" sx={{ color: WIKI_NODE_COLOR, fontWeight: 700 }}>● Knowledge Hub</Typography>
           </Box>
         </Box>
       </Card>
@@ -714,6 +778,20 @@ function ObsidianGraphView({ columns = [], themeConfig }) {
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 {selectedNode.subLabel}
               </Typography>
+              {selectedNode.type === 'wiki' && (
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<OpenInNewRoundedIcon />}
+                  onClick={() => {
+                    playUiChime('sparkle')
+                    navigate(`/boards/${board._id}/wiki/${selectedNode.pageId}`)
+                  }}
+                  sx={{ mt: 2, fontWeight: 800, borderRadius: '10px', bgcolor: WIKI_NODE_COLOR, '&:hover': { bgcolor: '#d946ef' } }}
+                >
+                  Knowledge Hub
+                </Button>
+              )}
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
                 Nhấn vào một nút CR (Ticket ID) bất kỳ trên đồ thị để xem chi tiết hoặc mở trình mô phỏng CR Studio.
               </Typography>

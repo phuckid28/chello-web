@@ -120,6 +120,23 @@ const theme = extendTheme({
             boxShadow: '0 0 0 6px rgba(244, 114, 182, 0), 0 0 24px rgba(125, 211, 252, 0.65)'
           }
         },
+        '@keyframes chelloTimelineGrow': {
+          '0%': { opacity: 0, transform: 'scaleX(0.2)' },
+          '100%': { opacity: 1, transform: 'scaleX(1)' }
+        },
+        '@keyframes chelloShimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' }
+        },
+        // Respect OS-level "reduce motion" preference for every decorative animation
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            transitionDuration: '0.01ms !important',
+            scrollBehavior: 'auto !important'
+          }
+        },
         body: {
           '*::-webkit-scrollbar': {
             width: '7px',

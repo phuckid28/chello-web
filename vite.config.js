@@ -15,6 +15,22 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['js-big-decimal']
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Long-term cacheable vendor chunks: app deploys don't invalidate framework code
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom', 'react-redux', '@reduxjs/toolkit'],
+          'vendor-mui': ['@mui/material', '@emotion/react', '@emotion/styled'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities']
+        }
+      }
+    }
+  },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.js']
+  },
   resolve: {
     alias: [
       { find: '~', replacement: '/src' }

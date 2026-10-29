@@ -80,3 +80,24 @@ export const inviteUserToBoardAPI = async (data) => {
   toast.success('User invited to board successfully!')
   return response.data
 }
+
+// Knowledge Hub (Confluence-style wiki pages scoped to a Sprint board)
+export const fetchWikiPagesAPI = async (boardId) => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/wiki-pages`, { params: { boardId } })
+  return response.data
+}
+
+export const createWikiPageAPI = async (pageData) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/wiki-pages`, pageData)
+  return response.data
+}
+
+export const updateWikiPageAPI = async (pageId, updateData) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/wiki-pages/${pageId}`, updateData)
+  return response.data
+}
+
+export const deleteWikiPageAPI = async (pageId) => {
+  const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/wiki-pages/${pageId}`)
+  return response.data
+}

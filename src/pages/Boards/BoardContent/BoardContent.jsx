@@ -12,54 +12,28 @@ import {
 } from '@dnd-kit/core'
 import { MouseSensor, TouchSensor } from '~/customLibaries/DndKitSensors'
 import { arrayMove } from '@dnd-kit/sortable'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import Columns from './ListColumns/Columns/Columns'
 import Card from './ListColumns/Columns/ListCards/Card/Card'
-import BoardAnalyticsView from './BoardAnalyticsView'
-import ObsidianGraphView from './ObsidianGraphView'
+import CompanionHud from './CompanionHud'
 
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
-import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
-import { playUiChime } from '~/utils/soundEffects'
-import Avatar from '@mui/material/Avatar'
-import Typography from '@mui/material/Typography'
-import Tooltip from '@mui/material/Tooltip'
-import IconButton from '@mui/material/IconButton'
-import CloseFullscreenRoundedIcon from '@mui/icons-material/CloseFullscreenRounded'
+import { applyFiltersToColumns } from '~/utils/crFilters'
+import CircularProgress from '@mui/material/CircularProgress'
 
-const COMPANION_LINES_BY_THEME = {
-  cosmos: [
-    '“Dưới dải ngân hà và vòng tròn hoàng đạo, mỗi CR và chủ đề đều là một vì sao được kết nối chặt chẽ. 🌌”',
-    '“Mở Obsidian Graph trên thanh công cụ để quan sát toàn bộ mạng lưới CR và người phụ trách! ✦”',
-    '“Nhấn vào nút CR Studio trên thẻ bất kỳ để chạy mô phỏng luồng hệ thống trực quan! 🪐”'
-  ],
-  'wind-chime': [
-    '“Gió nhẹ thoang thoảng tiếng chuông gió Furin... hãy thong thả rà soát từng CR trong kỳ Sprint 34 nhé. 🎐”',
-    '“Mỗi cột tương ứng một Chủ đề CR, mỗi thẻ là một CR gắn trực tiếp với người phụ trách (Handle by). 🍃”',
-    '“Bấm Xuất Excel Sprint để tải về báo cáo khớp 100% với file template mẫu! ☁️”'
-  ],
-  furina: [
-    '“Chào mừng đến Opera Epiclese! Mọi CR trong Sprint 34 đều xứng đáng một màn trình diễn hoàn hảo! 💧”',
-    '“Đừng quên kiểm tra các tài liệu FRD trước giờ mở màn nghiệm thu nhé! 🎩”',
-    '“Bấm Xuất Excel Sprint trên thanh công cụ bất cứ lúc nào để tổng hợp báo cáo tiến độ! 🍰”',
-    '“Nhấn Ctrl + K để triệu hồi bảng điều khiển nhanh của Fontaine! ✨”'
-  ],
-  nahida: [
-    '“Mỗi tài liệu FRD và quy tắc hệ thống là một nhánh tri thức quý giá trong cây Irminsul. 🌿”',
-    '“Hãy mở chế độ Obsidian Graph để kết nối các CR có chung luồng nghiệp vụ lại với nhau nhé! 📖”',
-    '“Bạn có thể Import trực tiếp file Markdown (.md) hoặc CSV thành CR Ticket chỉ với 1 cú nhấp chuột! 🍀”',
-    '“Nhấn Ctrl + K để tra cứu nhanh bất kỳ CR hay tài liệu nào trên bảng! ✨”'
-  ],
-  default: [
-    '“Thỏ bông Usagi luôn đồng hành cùng bạn theo dõi các CR trong kỳ Sprint 34 này... 🐰”',
-    '“Dưới bầu trời bình yên, hãy hoàn thiện từng đặc tả FRD một cách thật tỉ mỉ nhé. ☁️”',
-    '“Đừng quên kiểm tra cảnh báo Due date trên thanh công cụ để không bỏ lỡ mốc hoàn thành nào. 💌”',
-    '“Nhấn Ctrl + K bất cứ lúc nào để mở nhanh Trung tâm Điều khiển! 🎀”'
-  ]
-}
+// Secondary views are code-split so the Kanban board loads faster
+const BoardAnalyticsView = lazy(() => import('./BoardAnalyticsView'))
+const ObsidianGraphView = lazy(() => import('./ObsidianGraphView'))
+const TimelineView = lazy(() => import('./TimelineView'))
+
+const ViewFallback = () => (
+  <Box sx={{ width: '100%', display: 'grid', placeItems: 'center' }}>
+    <CircularProgress size={34} sx={{ color: 'white' }} />
+  </Box>
+)
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
@@ -78,7 +52,7 @@ const FLOATING_PARTICLES = [
 
 function BoardContent({
   board,
-  cardFilterText = '',
+  filters,
   boardViewMode = 'kanban',
   moveColumns,
   moveCardInTheSameColumn,
@@ -90,8 +64,6 @@ function BoardContent({
   const sensors = useSensors(mouseSensor, touchSensor)
 
   const [orderedColumns, setOrderedColumns] = useState([])
-  const [quoteIdx, setQuoteIdx] = useState(0)
-  const [minimizedMascot, setMinimizedMascot] = useState(false)
 
   const [activeDragItemId, setActiveDragItemId] = useState(null)
   const [activeDragItemType, setActiveDragItemType] = useState(null)
@@ -99,8 +71,6 @@ function BoardContent({
   const [oldColumnWhenDraggingCard, setOldColumnWhenDraggingCard] = useState(null)
 
   const lastOverId = useRef(null)
-
-  const companionLines = COMPANION_LINES_BY_THEME[personaKey] || COMPANION_LINES_BY_THEME.default
 
   useEffect(() => {
     setOrderedColumns(board.columns)
@@ -356,23 +326,18 @@ function BoardContent({
     return lastOverId.current ? [{ id: lastOverId.current }] : []
   }, [activeDragItemType, orderedColumns])
 
-  const displayedColumns = cardFilterText.trim()
-    ? orderedColumns.map(col => ({
-      ...col,
-      cards: col.cards.filter(card => {
-        if (card.FE_PlaceholderCard) return true
-        const q = cardFilterText.trim().toLowerCase()
-        const matchTitle = card.title?.toLowerCase().includes(q)
-        const matchCrCode = card.crCode?.toLowerCase().includes(q)
-        const matchAssignee = card.assignee?.toLowerCase().includes(q)
-        const matchSprint = card.sprint?.toLowerCase().includes(q)
-        const matchLabel = card.labels?.some(
-          l => l.id?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)
-        )
-        return matchTitle || matchCrCode || matchAssignee || matchSprint || matchLabel
-      })
-    }))
-    : orderedColumns
+  // Filters run on the live DnD state so drag & drop stays consistent while a filter is active
+  const displayedColumns = useMemo(
+    () => applyFiltersToColumns(orderedColumns, filters),
+    [orderedColumns, filters]
+  )
+
+  const renderActiveView = () => {
+    if (boardViewMode === 'overview') return <BoardAnalyticsView columns={displayedColumns} themeConfig={themeConfig} />
+    if (boardViewMode === 'graph') return <ObsidianGraphView columns={displayedColumns} themeConfig={themeConfig} />
+    if (boardViewMode === 'timeline') return <TimelineView columns={displayedColumns} themeConfig={themeConfig} />
+    return <ListColumns columns={displayedColumns} />
+  }
 
   return (
     <DndContext
@@ -415,110 +380,13 @@ function BoardContent({
           </Box>
         ))}
 
-        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%' }}>
-          {boardViewMode === 'overview' ? (
-            <BoardAnalyticsView columns={displayedColumns} themeConfig={themeConfig} />
-          ) : boardViewMode === 'graph' ? (
-            <ObsidianGraphView columns={displayedColumns} themeConfig={themeConfig} />
-          ) : (
-            <ListColumns columns={displayedColumns} />
-          )}
+        <Box key={boardViewMode} sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%', animation: 'chelloFadeSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+          <Suspense fallback={<ViewFallback />}>
+            {renderActiveView()}
+          </Suspense>
         </Box>
 
-        {/* Visual Novel Style Character Chibi Mascot HUD */}
-        {minimizedMascot ? (
-          <Tooltip title={`Mở hộp thoại ${themeConfig.characterName}`} placement="left">
-            <Avatar
-              src={themeConfig.mascotImage}
-              alt={themeConfig.characterName}
-              onClick={() => {
-                playUiChime('sparkle')
-                setMinimizedMascot(false)
-              }}
-              sx={{
-                position: 'absolute',
-                right: 18,
-                bottom: 16,
-                zIndex: 2,
-                width: 48,
-                height: 48,
-                cursor: 'pointer',
-                border: `2px solid ${themeConfig.accentColor}`,
-                animation: 'chelloPulseHalo 2.6s infinite',
-                transition: 'transform 0.2s ease',
-                '&:hover': { transform: 'scale(1.08)' }
-              }}
-            />
-          </Tooltip>
-        ) : (
-          <Box
-            sx={{
-              position: 'absolute',
-              right: 18,
-              bottom: 16,
-              zIndex: 2,
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
-              gap: 1.5,
-              px: 1.75,
-              py: 1.15,
-              borderRadius: '18px',
-              userSelect: 'none',
-              bgcolor: 'rgba(15, 23, 42, 0.84)',
-              backdropFilter: 'blur(16px) saturate(160%)',
-              border: `1px solid ${themeConfig.accentColor}`,
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.42)',
-              transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-              '&:hover': {
-                transform: 'translateY(-3px)',
-                borderColor: themeConfig.secondaryAccent
-              }
-            }}
-          >
-            <Avatar
-              src={themeConfig.mascotImage}
-              alt={themeConfig.characterName}
-              onClick={() => {
-                playUiChime('sparkle')
-                setQuoteIdx((prev) => (prev + 1) % companionLines.length)
-              }}
-              sx={{
-                width: 46,
-                height: 46,
-                cursor: 'pointer',
-                border: `2px solid ${themeConfig.accentColor}`,
-                animation: 'chelloPulseHalo 3s infinite'
-              }}
-            />
-            <Box
-              onClick={() => {
-                playUiChime('sparkle')
-                setQuoteIdx((prev) => (prev + 1) % companionLines.length)
-              }}
-              sx={{ maxWidth: 255, cursor: 'pointer' }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
-                <SoraBunnyIcon sx={{ fontSize: 15 }} />
-                <Typography variant="caption" sx={{ fontWeight: 800, color: themeConfig.accentColor, letterSpacing: 0.3 }} noWrap>
-                  【 {themeConfig.characterName} 】
-                </Typography>
-                <SoraRibbonIcon sx={{ fontSize: 13 }} />
-              </Box>
-              <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.92)', display: 'block', lineHeight: 1.3 }}>
-                {companionLines[quoteIdx % companionLines.length]}
-              </Typography>
-            </Box>
-            <Tooltip title="Thu gọn hộp thoại nhân vật">
-              <IconButton
-                size="small"
-                onClick={() => setMinimizedMascot(true)}
-                sx={{ color: 'rgba(248, 250, 252, 0.65)', p: 0.4, '&:hover': { color: 'white' } }}
-              >
-                <CloseFullscreenRoundedIcon sx={{ fontSize: 15 }} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
+        <CompanionHud personaKey={personaKey} themeConfig={themeConfig} sprintName={board?.sprintConfig?.name || 'Sprint'} />
 
         <DragOverlay dropAnimation={CustomDropAnimation}>
           {(!activeDragItemType) && null}

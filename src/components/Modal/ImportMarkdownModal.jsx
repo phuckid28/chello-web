@@ -18,7 +18,8 @@ import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
 import { toast } from 'react-toastify'
-import { createNewCardAPI } from '~/apis'
+import { createNewCardAPI, updateBoardDetailsAPI } from '~/apis'
+import { DEFAULT_PRIORITY, PRIORITY_OPTIONS, normalizePriority } from '~/utils/crMeta'
 import {
   selectCurrentActiveBoard,
   updateCurrentActiveBoard
@@ -58,6 +59,7 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
   let parsedDevProgress = 1
   let parsedResourceUsed = 1
   let parsedNote = ''
+  let parsedPriority = DEFAULT_PRIORITY
   const checklist = []
 
   for (const rawLine of lines) {
@@ -110,7 +112,7 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
       if (dmy) {
         parsedDeadline = `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`
       } else if (shortDm) {
-        parsedDeadline = `2026-${shortDm[2].padStart(2, '0')}-${shortDm[1].padStart(2, '0')}`
+        parsedDeadline = `${new Date().getFullYear()}-${shortDm[2].padStart(2, '0')}-${shortDm[1].padStart(2, '0')}`
       } else {
         parsedDeadline = rawDate
       }
@@ -120,6 +122,12 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
     const noteMatch = line.match(/^(?:-\s*)?\*?\*?(?:Ghi chú|Note)\*?\*?\s*:\s*(.+)$/i)
     if (noteMatch) {
       parsedNote = noteMatch[1].replace(/[*`]/g, '').trim()
+      continue
+    }
+
+    const priorityMatch = line.match(/^(?:-\s*)?\*?\*?(?:Priority|Độ ưu tiên|Mức ưu tiên)\*?\*?\s*:\s*(.+)$/i)
+    if (priorityMatch) {
+      parsedPriority = normalizePriority(priorityMatch[1].replace(/[*`]/g, '').trim())
       continue
     }
 
@@ -143,6 +151,7 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
     devProgress: parsedDevProgress,
     resourceUsed: parsedResourceUsed,
     note: parsedNote,
+    priority: parsedPriority,
     checklist
   }
 }
@@ -166,6 +175,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
   const [devProgress, setDevProgress] = useState(1)
   const [resourceUsed, setResourceUsed] = useState(1)
   const [note, setNote] = useState('')
+  const [priority, setPriority] = useState(DEFAULT_PRIORITY)
   const [parsedChecklist, setParsedChecklist] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [teamRoster, setTeamRoster] = useState(() => getSavedTeamRoster(board))
@@ -210,7 +220,8 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
     setDeadline(parsed.deadline)
     setDevProgress(parsed.devProgress)
     setResourceUsed(parsed.resourceUsed)
-    if (parsed.note) setNote(parsed.note)
+    setNote(parsed.note || '')
+    setPriority(parsed.priority)
     setParsedChecklist(parsed.checklist)
   }
 
@@ -303,6 +314,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         devProgress: Number(devProgress) || 0,
         resourceUsed: Number(resourceUsed) || 0,
         note: note.trim(),
+        priority,
         labels: [
           { id: 'cr-import', title: `📋 ${crCode.trim() || 'CR'} • FRD`, color: '#0284c7' }
         ],
@@ -320,7 +332,20 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
           targetCol.cards.push(createdCard)
           targetCol.cardOrderIds.push(createdCard._id)
         }
-        dispatch(updateCurrentActiveBoard(newBoard))
+      }
+
+      // Show the new CR immediately, then persist an imported roster without blocking the import
+      dispatch(updateCurrentActiveBoard(newBoard))
+
+      const savedRoster = getSavedTeamRoster(board)
+      if (JSON.stringify(savedRoster) !== JSON.stringify(teamRoster)) {
+        const nextSprintConfig = { ...DEFAULT_SPRINT_CONFIG, ...(board?.sprintConfig || {}), teamRoster }
+        try {
+          await updateBoardDetailsAPI(board._id, { sprintConfig: nextSprintConfig })
+          dispatch(updateCurrentActiveBoard({ ...newBoard, sprintConfig: nextSprintConfig }))
+        } catch (rosterError) {
+          // Roster sync is optional; the interceptor already showed the reason (e.g. read-only board)
+        }
       }
 
       playUiChime('complete')
@@ -438,6 +463,18 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
               onChange={(e) => setBaStatus(e.target.value)}>
               {BA_STATUS_OPTIONS.map(opt => (
                 <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              select
+              label="Priority"
+              size="small"
+              fullWidth
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}>
+              {PRIORITY_OPTIONS.map(opt => (
+                <MenuItem key={opt.value} value={opt.value}>{opt.icon} {opt.label}</MenuItem>
               ))}
             </TextField>
           </Stack>

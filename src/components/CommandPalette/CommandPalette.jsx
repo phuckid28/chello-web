@@ -14,6 +14,10 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded'
+import ViewTimelineRoundedIcon from '@mui/icons-material/ViewTimelineRounded'
+import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded'
+import { requestBoardView, requestSprintReport } from '~/utils/boardEvents'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useColorScheme } from '@mui/material/styles'
@@ -44,7 +48,7 @@ function CommandPalette() {
   const board = useSelector(selectCurrentActiveBoard)
   const { mode, setMode } = useColorScheme()
   const { themeConfig, changePersona } = usePersonaTheme(board?.theme)
-  const { lang, bilingual, languages, changeLanguage, toggleBilingual } = useTranslation()
+  const { lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary } = useTranslation()
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -82,31 +86,72 @@ function CommandPalette() {
 
     // 1. Sprint Tools & CR Cards in current active board
     if (board?._id) {
+      const sprintName = board?.sprintConfig?.name || 'Sprint'
+      list.push({
+        id: 'sprint-knowledge-hub',
+        category: 'Sprint & Change Request (CR) Tools',
+        title: `📚 ${tPrimary('openKnowledgeHubCmd')}`,
+        subtitle: tPrimary('knowledgeHubSub'),
+        badge: 'Wiki',
+        icon: <MenuBookRoundedIcon fontSize="small" color="secondary" />,
+        action: () => {
+          playUiChime('sparkle')
+          navigate(`/boards/${board._id}/wiki`)
+        }
+      })
+
+      list.push({
+        id: 'sprint-timeline',
+        category: 'Sprint & Change Request (CR) Tools',
+        title: `🗓️ ${tPrimary('openTimelineCmd')}`,
+        subtitle: tPrimary('timelineSub'),
+        badge: 'Timeline',
+        icon: <ViewTimelineRoundedIcon fontSize="small" color="success" />,
+        action: () => {
+          playUiChime('sparkle')
+          if (!window.location.pathname.endsWith(board._id)) navigate(`/boards/${board._id}`)
+          setTimeout(() => requestBoardView('timeline'), 0)
+        }
+      })
+
+      list.push({
+        id: 'sprint-report',
+        category: 'Sprint & Change Request (CR) Tools',
+        title: `📝 ${tPrimary('openReportCmd')}`,
+        subtitle: tPrimary('sprintReportSub'),
+        badge: 'Markdown',
+        icon: <SummarizeRoundedIcon fontSize="small" color="secondary" />,
+        action: () => {
+          if (!window.location.pathname.endsWith(board._id)) navigate(`/boards/${board._id}`)
+          setTimeout(requestSprintReport, 0)
+        }
+      })
+
       list.push({
         id: 'sprint-export-excel',
         category: 'Sprint & Change Request (CR) Tools',
-        title: `Xuất File Excel Báo cáo CR (${board?.sprintConfig?.name || 'Sprint 34'})`,
-        subtitle: 'Sprint 34 Template: Start/End date, Update till, Handle by, Resource point, Ticket ID, Status, Dev Progress',
+        title: `${tPrimary('exportExcelBtn')} (${sprintName})`,
+        subtitle: 'Sprint • Start/End date • Update till • Handle by • Resource point • Ticket ID • Status • Dev Progress',
         badge: 'Excel .XLS',
         icon: <TableViewRoundedIcon fontSize="small" color="success" />,
         action: () => {
           exportSprintCrsToExcel(board)
           playUiChime('complete')
-          toast.success('Đã xuất file Excel báo cáo CR thành công!')
+          toast.success(`Excel • ${sprintName} ✓`)
         }
       })
 
       list.push({
         id: 'sprint-export-csv',
         category: 'Sprint & Change Request (CR) Tools',
-        title: `Xuất File CSV Template (${board?.sprintConfig?.name || 'Sprint 34'})`,
-        subtitle: 'Xuất chuẩn định dạng CSV mẫu Sprint 34',
+        title: `${tPrimary('exportCsvBtn')} (${sprintName})`,
+        subtitle: 'CSV template',
         badge: 'CSV',
         icon: <TableViewRoundedIcon fontSize="small" color="info" />,
         action: () => {
           exportSprintCrsToCsv(board)
           playUiChime('complete')
-          toast.success('Đã xuất file CSV báo cáo CR thành công!')
+          toast.success(`CSV • ${sprintName} ✓`)
         }
       })
     }
@@ -280,7 +325,7 @@ function CommandPalette() {
         item.category.toLowerCase().includes(q) ||
         item.badge.toLowerCase().includes(q)
     )
-  }, [board, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual])
+  }, [board, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary])
 
   const handleClose = () => setOpen(false)
 

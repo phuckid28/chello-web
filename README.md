@@ -2,136 +2,176 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-v4.0.0-38bdf8?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-v5.0.0-a78bfa?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18.2-61dafb?style=for-the-badge&logo=react)
 ![MUI](https://img.shields.io/badge/Material_UI-5.13-007fff?style=for-the-badge&logo=mui)
-![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2.2-764abc?style=for-the-badge&logo=redux)
+![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2.x-764abc?style=for-the-badge&logo=redux)
+![Vitest](https://img.shields.io/badge/Vitest-38_tests-6e9f18?style=for-the-badge&logo=vitest)
 ![Deploy](https://img.shields.io/badge/Vercel-Production-000000?style=for-the-badge&logo=vercel)
 
-**Chella — Sự kết hợp tinh hoa giữa "C"onfluence (Tài liệu đặc tả FRD & Đồ thị tri thức Obsidian) × tr"ELL"o (Bảng Kanban trực quan) × jir"A" (Quản trị Sprint, Change Request, Resource Point & Mô phỏng luồng kỹ thuật CR Studio).**
+**Confluence (Knowledge Hub & FRD) × Trello (Kanban trực quan) × Jira (Sprint, CR, Timeline, Quick Filters, Report) — gói gọn trong một không gian làm việc nhiều chủ đề, đa ngôn ngữ.**
 
-[🌐 Trải nghiệm Web App (Vercel)](https://chello-web.vercel.app) • [⚙️ Backend API (Render)](https://chello-api.onrender.com/v1/status)
+[🌐 Web App (Vercel)](https://chello-web.vercel.app) • [⚙️ Backend API (Render)](https://chello-api.onrender.com/v1/status) • [🧩 Backend repo](https://github.com/phuckid28/chello-api)
 
 </div>
 
 ---
 
-## ✨ Điểm Nhấn Nổi Bật (Key Highlights — v4.0.0)
+## 🚀 Có gì mới trong `v5.0.0` — *Knowledge & Delivery Release*
 
-### 1. 🧭 Cấu Trúc Quản Trị Chuẩn Hóa: `Board = Sprint` • `Column = Chủ đề CR` • `Card = CR`
-- **Đồng bộ 1:1 với File Excel / CSV Template Sprint 34 (`22/10/2026 – 05/11/2026`)**:
-  - **Khung Metadata Sprint & Đội ngũ (`Top Section`)**:
-    - `Sprint: 34`, `Start date: 22/10/2026`, `End date: 05/11/2026`, `Update till: 26/10/2026`, `By: Dao Thanh Phuc`, `Note`.
-    - Hệ thống trạng thái chuẩn (`Status`): `Processing`, `In testing`, `Blocking`, `Ready for deploy`, `Deployed`, `Done testing`.
-    - Bảng phân bổ `Handle by` & `Resource point`: Hỗ trợ gắn trực tiếp các thành viên trong đội dự án (`Lam Chi Kien`, `Phan Nguyen Song Toan`, `Ho Thao Dieu`, `Nguyen Phuoc Long`, `Nguyen Khanh Duy`, `Hoang Vinh Son`, `Bui Hoang Gia Phuc`, `Vo Viet Binh` hoặc thêm nhân sự mới bất kỳ) **ngay cả khi nhân sự chưa có tài khoản đăng nhập**.
-  - **Bảng Chi Tiết Change Request (`Bottom Table`)**:
-    - Đầy đủ 8 cột chuẩn: `Ticket ID` (VD: `BNPL-945`), `CR Description` (`Usage Limit - Monthly 1 time synchronized update for user`), `Status` (`Ready for deploy`), `Handle by` (`Ho Thao Dieu, Hoang Vinh Son`), `Due date for dev` (`5/11`), `Dev Progress` (`1`), `Resource used` (`1`), `Note`.
-  - **Xuất & Nhập Báo Cáo 1-Click**:
-    - Xuất trực tiếp cả **Excel (`.xls`)** có định dạng màu sắc và **CSV (`.csv`)** đúng từng ô như file mẫu.
-    - Hỗ trợ **Import file `.md` hoặc `.csv` mẫu Sprint 34** thành CR Ticket chỉ với 1 cú nhấp chuột.
+| | Tính năng | Lấy cảm hứng từ | Bạn dùng nó để… |
+| :---: | :--- | :--- | :--- |
+| 📚 | **Knowledge Hub** (`/boards/:boardId/wiki`) | Confluence + Obsidian | Viết biên bản họp, FRD, Decision Log, Glossary, Retro, Release Note theo **cây trang**; liên kết `[[BNPL-945]]` tới CR và `[[Tên trang]]` tới trang khác; xem **Backlinks**, **Outgoing links** và **Mục lục** tự động. Tự lưu sau 1.2s, `Ctrl + S` để lưu ngay. |
+| 🗓️ | **Timeline view** | Jira Timeline / Gantt | Xem mọi CR trên trục thời gian của Sprint (Start date → Due date for dev), vạch **Hôm nay**, nhóm theo **Chủ đề CR** hoặc **Handle by**, thanh tiến độ Dev Progress ngay trong bar. |
+| 🔎 | **Quick Filters** | Jira quick filters | Lọc đồng thời theo **Handle by** (kể cả *Chưa phân công*), **Status**, **Priority**, **Due date** (Quá hạn / Sắp đến hạn / Cần chú ý / Chưa có hạn), Labels và từ khoá. Áp dụng cho **cả 4 view**, nhớ theo từng board. |
+| 📝 | **Sprint Report & Daily Stand-up** | Jira reports | Sinh báo cáo Markdown theo **Status** hoặc **theo người** bằng 4 ngôn ngữ → Copy dán Teams/Slack/Email/Confluence hoặc tải `.md`. |
+| ✨ | **CR Assistant** | Atlassian Intelligence | Gợi ý subtask BA theo nội dung CR (API, UI, Notification, Limit, Payment, Report, Data sync, Permission…). Chạy cục bộ, kiến trúc sẵn sàng thay bằng AI provider. |
+| ⏫ | **Priority & Start date** cho CR | Jira | 5 mức `Highest → Lowest`, hiển thị trên thẻ, lọc được, import được từ Markdown (`Priority: P1 / Cao / High`). |
+| ⏰ | **Deadline reminder** | Jira notifications | Mở board là nhận tóm tắt CR quá hạn / sắp đến hạn (tối đa 1 lần/ngày/board). |
+| ⚡ | **Hiệu năng** | — | Tách code theo route & view (`React.lazy`), tách vendor chunk, nén lại ảnh nền (**~20 MB → ~3 MB**), tôn trọng `prefers-reduced-motion`. |
 
----
-
-### 2. 🕸️ Đồ Thị Tri Thức Obsidian (`Obsidian Graph`) & Trang Riêng Mô Phỏng Kỹ Thuật (`CR Studio`)
-- **Đồ Thị Tri Thức Obsidian (`ObsidianGraphView.jsx`)**:
-  - Mô phỏng lực tương tác vật lý (`Force-Directed Knowledge Graph`) kết nối trực tiếp:
-    - 🟣 **Cột chủ đề CR (`Column / Topic`)**
-    - 🔵 **Thẻ Change Request (`Card / CR`)**
-    - 🟢 **Nhân sự phụ trách (`Handle by`)**
-    - 🟠 **Tài liệu đặc tả (`FRD Document`)**
-  - Hỗ trợ cú pháp liên kết hai chiều **`[[Ticket-ID]]` (`WikiLinks`)** ngay trong mô tả Markdown và ghi chú, tự động vẽ đường nối liên kết tri thức giữa các CR.
-- **Trang Riêng Mô Phỏng Luồng CR (`CrStudio.jsx` — `/boards/:boardId/cr/:cardId`)**:
-  - Không gian toàn màn hình dành riêng cho từng CR để trực quan hóa, kiểm thử kịch bản và mô phỏng luồng hoạt động từng bước (`Step-by-Step Interactive Flow Simulator`):
-    - 🟢 **Kịch bản Chuẩn (`Happy Path — 200 OK`)**: Chạy từng bước qua `Client / App` → `API Gateway` → `Usage Limit Engine` → `Core DB & Audit Log` → `Response & Notification`.
-    - 🟠 **Kịch bản Chặn Quy Tắc Nghiệp Vụ (`Quota / Business Rule Block — 409 Conflict`)**: Mô phỏng tự động trường hợp user đã đồng bộ hạn mức 1 lần trong tháng (`MONTHLY_SYNC_LIMIT_REACHED`).
-    - 🔴 **Kịch bản Xung Đột Đồng Thời & Timeout (`Race / Timeout Rollback — 503`)**: Kiểm tra cơ chế `Idempotency-Key` và tự động rollback giao dịch.
-  - Tích hợp **Sơ đồ Kiến trúc & Sequence Diagram**, **Obsidian WikiLink Notes** và **Đồ thị Liên kết Cục bộ (`Local Knowledge Graph`)** ngay trên cùng một trang.
+> [!TIP]
+> Nhấn `Ctrl + K` → gõ *Knowledge Hub*, *Timeline* hoặc *Report* để mở nhanh mọi tính năng mới.
 
 ---
 
-### 3. 🌐 Đa Ngôn Ngữ (`VI` • `EN` • `JA` • `KO`) & Chế Độ Song Ngữ (`Bilingual Mode`)
-- Chuyển đổi tức thì giữa **4 ngôn ngữ**:
-  - 🇻🇳 **Tiếng Việt (`VI`)**
-  - 🇬🇧 **English (`EN`)**
-  - 🇯🇵 **日本語 (`JA`)**
-  - 🇰🇷 **한국어 (`KO`)**
-- **Nút Chuyển Đổi Song Ngữ (`Song ngữ / Bilingual`)**: Hiển thị song song bản dịch và thuật ngữ đối chiếu, đồng thời giữ nguyên các thuật ngữ chuyên ngành quốc tế (`Sprint`, `CR`, `FRD`, `Ticket ID`, `Status`, `Handle by`, `Resource point`, `Due date for dev`, `Dev Progress`, `Resource used`, `Kanban`, `Obsidian Graph`, `CR Studio`).
-
----
-
-### 4. 🎨 7 Chủ Đề Không Gian & Âm Thanh Đa Tầng (Cosmos • Wind Chime • Sora • Furina • Nahida)
-
-| Mã Theme | Chủ Đề Không Gian | Sắc Độ & Bảng Màu Chủ Đạo | Âm Thanh / Nhạc Nền Mặc Định |
-| :--- | :--- | :--- | :--- |
-| `cosmos` | **🌌 Vũ Trụ & Dải Ngân Hà (`Astral Cosmos • Milky Way & Zodiac`)** | Tối dịu mắt (`#161b33` / `#1e2442`), Vàng ánh sao (`#f5d061`) & Tím tinh vân (`#a78bfa`) | *Cosmic Astral Harmony* (Âm hưởng Vũ trụ & Cung Hoàng Đạo huyền bí, êm dịu) |
-| `wind-chime` | **🎐 Bầu Trời Xanh & Chuông Gió (`Azure Breeze • Sky & Wind Chime`)** | Xanh da trời nhạt (`#38bdf8`, `#e0f2fe`) & Xanh lá bạc hà tươi mát (`#34d399`, `#d1fae5`) | *Gentle Breeze & Glass Furin* (Tiếng gió nhẹ thoang thoảng & chuông gió thủy tinh) |
-| `sora-sky` | **☁️ Sora Kasugano • Beyond the Distant Sky** | Trắng bạc & Xanh bầu trời (`#7dd3fc`) | *Toui Sora e (遠い空へ)* |
-| `furina` | **💧 Furina • Salon Solitaire & Fontaine** | Xanh Hydro Fontaine (`#38bdf8`) | *Sinner's Finale (The Last Rose of the Sinner)* |
-| `nahida` | **🌿 Nahida • Sanctuary of Surasthana** | Xanh Ngọc Lục Bảo Sumeru (`#34d399`) | *Sumeru Main Theme (Forest of Jnana & Vidya)* |
-| `sora-twilight` | **🎀 Sora Kasugano • Moonlit Black Ribbon** | Đen tuyền & Tím ánh trăng (`#a78bfa`) | *Inori (祈り)* |
-| `sora-usagi` | **🐰 Sora & Usagi • Bunny Sanctuary** | Hồng phấn & Thỏ bông Usagi (`#f472b6`) | *Tomadoi no Naka (戸惑いの中)* |
-
----
-
-## 🏗️ Kiến Trúc Hệ Thống (System Architecture)
+## 🧭 Mô hình làm việc
 
 ```mermaid
 flowchart LR
-  subgraph Client["Chella Web (React 18 + Redux Toolkit + MUI)"]
-    UI["Kanban Board & Sprint Matrix View"]
-    GRAPH["Obsidian Force-Directed Graph"]
-    STUDIO["CR Studio & Step-by-Step Simulator"]
-    I18N["4-Language (VI/EN/JA/KO) + Bilingual Engine"]
-    XLS["Sprint 34 Excel (.xls) & CSV Exporter"]
-    AUDIO["Cosmic / Wind Chime / OST Sound Engine"]
-  end
+  B["🗂️ Board = Sprint"] --> C["📌 Column = Chủ đề CR"]
+  C --> K["🎫 Card = CR (Ticket ID)"]
+  K --> H["👥 Handle by (không cần tài khoản)"]
+  K --> F["📄 FRD đính kèm (.md / .pdf / .docx)"]
+  B --> W["📚 Knowledge Hub pages"]
+  W -- "[[BNPL-945]]" --> K
+  W -- "[[Tên trang]]" --> W
+```
 
-  subgraph Server["Chella API (Node.js + Express + Joi)"]
-    AUTH["JWT Auth & RBAC Middleware"]
-    VAL["Joi Schema Validation (CR, Roster & FRD)"]
-    SVC["Board / Column / Card Services"]
-  end
+- **Sprint template 1:1 với file Excel/CSV**: `Sprint`, `Start date`, `End date`, `Update till`, `By`, `Note` • `Status`: `Processing`, `In testing`, `Blocking`, `Ready for deploy`, `Deployed`, `Done testing` • `Handle by` & `Resource point`.
+- **Bảng CR**: `Ticket ID`, `CR Description`, `Status`, `Handle by`, `Due date for dev`, `Dev Progress`, `Resource used`, `Note` — xuất **Excel (.xls)** / **CSV** 1-click, import **.md / .csv** thành CR.
+- **Team roster** lưu ngay trên board (đồng bộ mọi thiết bị) — thành viên chưa có tài khoản vẫn được gắn CR.
 
-  subgraph DB["Cloud Storage & Database"]
-    MONGO[("MongoDB Atlas")]
-    CLD[("Cloudinary / Brevo")]
-  end
+---
 
-  UI --> AUTH
-  GRAPH --> UI
-  STUDIO --> AUTH
-  AUTH --> VAL --> SVC --> MONGO
-  SVC --> CLD
+## 🧰 Các view của một Sprint Board
+
+| View | Mục đích |
+| :--- | :--- |
+| **Kanban** | Kéo thả CR giữa các Chủ đề, badge Status / Priority / Due date / FRD / liên kết. |
+| **Sprint Matrix** | Bảng theo đúng template Excel + phân bổ `Resource point` theo người. |
+| **Timeline** *(mới)* | Gantt theo Sprint, nhóm theo Chủ đề hoặc Handle by. |
+| **Obsidian Graph** | Đồ thị lực kết nối Topic ↔ CR ↔ Handle by ↔ FRD ↔ `[[WikiLink]]`. |
+| **CR Studio** | Trang riêng mô phỏng luồng CR (Happy path `200`, Business rule `409`, Timeout/Rollback `503`). |
+
+---
+
+## 🌐 Đa ngôn ngữ & 🎨 Chủ đề
+
+- **4 ngôn ngữ** 🇻🇳 `VI` • 🇬🇧 `EN` • 🇯🇵 `JA` • 🇰🇷 `KO` + **chế độ Song ngữ**; thuật ngữ chuyên môn (`Sprint`, `CR`, `FRD`, `Status`, `Handle by`, `Priority`, `Timeline`, `Backlinks`…) được giữ nguyên. Lời thoại nhân vật trên board cũng đã được bản địa hoá đủ 4 ngôn ngữ.
+
+| Theme | Không gian | Âm thanh mặc định |
+| :--- | :--- | :--- |
+| `cosmos` | 🌌 Astral Cosmos • Milky Way & Zodiac | Cosmic Astral Harmony |
+| `wind-chime` | 🎐 Azure Breeze • Sky & Wind Chime | Gentle Breeze & Glass Furin |
+| `sora-sky` | ☁️ Sora Kasugano • Beyond the Distant Sky | *Toui Sora e* |
+| `sora-twilight` | 🎀 Sora Kasugano • Moonlit Black Ribbon | *Inori* |
+| `sora-usagi` | 🐰 Sora & Usagi • Bunny Sanctuary | *Tomadoi no Naka* |
+| `furina` | 💧 Furina • Salon Solitaire & Fontaine | *Sinner's Finale* |
+| `nahida` | 🌿 Nahida • Sanctuary of Surasthana | *Sumeru Main Theme* |
+
+---
+
+## 🏗️ Kiến trúc
+
+```mermaid
+flowchart LR
+  subgraph Client["Chella Web — React 18 · Redux Toolkit · MUI · Vite"]
+    VIEWS["Kanban · Sprint Matrix · Timeline · Graph"]
+    HUB["Knowledge Hub (react-markdown + GFM)"]
+    UTILS["Pure utils: crFilters · timeline · wikiLinks · sprintReport · crAssistant"]
+    I18N["i18n VI/EN/JA/KO + Bilingual"]
+  end
+  subgraph Server["Chella API — Express · Joi · JWT"]
+    ACCESS["Board access guard (owner / member, read vs write)"]
+    SVC["Board · Column · Card · Wiki page services"]
+  end
+  MONGO[("MongoDB Atlas")]
+  VIEWS --> ACCESS
+  HUB --> ACCESS
+  ACCESS --> SVC --> MONGO
+```
+
+**Cấu trúc thư mục chính (mới trong v5)**
+
+```text
+src/
+├── pages/KnowledgeHub/        # KnowledgeHub, PageTree, WikiEditor, MarkdownView, LinksPanel, templates
+├── pages/Boards/BoardBar/parts/  # ViewSwitcher, FilterPopover, SprintConfigPopover, DeadlineCenter, ThemePicker, Pomodoro, ToolsMenu
+├── pages/Boards/BoardContent/ # TimelineView, CompanionHud (+ Kanban, Matrix, Graph)
+├── components/Modal/          # SprintReportDialog, ActiveCard/CrAssistantPanel
+├── customHooks/               # usePomodoro, useDeadlineReminder
+└── utils/                     # crFilters, crMeta, timeline, wikiLinks, sprintReport, crAssistant, boardEvents, i18nV5, companionLines
+    └── __tests__/             # Vitest unit tests (38 tests)
 ```
 
 ---
 
-## 📜 Lịch Sử Phiên Bản & Chi Tiết Thay Đổi (Version History & Changelog)
+## 📜 Lịch sử phiên bản
 
-| Phiên Bản | Cột Mốc | Tóm Tắt Thay Đổi Trọng Tâm |
+| Phiên bản | Cột mốc | Tóm tắt |
 | :--- | :--- | :--- |
-| **`v4.0.0`** | **Chella Rebrand, Obsidian Graph, CR Studio, 4-Lang & Cosmos/Wind-Chime** *(Hiện tại)* | Đổi tên đồng bộ thành **Chella (`"C"onfluence - tr"ELL"o - jir"A"`)**, hỗ trợ 4 ngôn ngữ (`VI`/`EN`/`JA`/`KO`) + chế độ Song ngữ, bổ sung **Đồ thị tri thức Obsidian**, **Trang riêng mô phỏng CR Studio**, 2 chủ đề mới (**Vũ Trụ/Hoàng Đạo** & **Bầu Trời Xanh/Chuông Gió**), đồng bộ 100% file mẫu Excel/CSV Sprint 34 (`BNPL-945`) và gắn nhân sự chưa cần tài khoản. |
-| **`v3.0.0`** | **CR/FRD Suite & Multi-Theme OST** | Quản lý CR/FRD chuyên sâu, Import Markdown thành CR Ticket, Xuất Excel Sprint 34 (22/10 - 05/11), Cảnh báo Deadline, mở rộng chủ đề **Furina & Nahida** và trình phát OST. |
-| **`v2.2.0`** | **Sora Kasugano Edition & Motion UX** | Thiết kế chủ đề **Sora Kasugano**, bộ icon SVG, Command Palette (`Ctrl+K`), Bento Analytics View và hiệu ứng âm thanh Web Audio API. |
-| **`v2.0.0`** | **🌟 Mốc Đặc Biệt: Antigravity Full-Stack Audit** | Khắc phục toàn bộ lỗi kiến trúc & bảo mật, đồng bộ giao dịch kéo thả cột/thẻ, sửa lỗi stale state, hỗ trợ xóa cột/thẻ an toàn và tối ưu hóa triển khai Vercel + Render. |
-| **`v1.0.0`** | **Full-Stack Social & Real-time Kanban** (`PR #30` – `#41`) | Hoàn thiện mời thành viên, bình luận thẻ, phân trang tìm kiếm bảng (`AutoCompleteSearchBoard`), thông báo thời gian thực với `Socket.io` và `ActiveCard` Modal. |
-| **`v0.5.0`** | **Authentication & User Settings** (`PR #20` – `#29`) | Xây dựng đăng ký/đăng nhập, xác thực tài khoản qua email, `axios` interceptors tự động làm mới token (`refreshToken`), bảo vệ route (`ProtectedRoute`) và trang hồ sơ cá nhân. |
-| **`v0.1.0`** | **Core Kanban & Drag-and-Drop Engine** (`PR #8` – `#19`) | Khởi tạo giao diện Kanban, tích hợp `@dnd-kit` kéo thả Column/Card mượt mà, xử lý `PlaceholderCard` khi cột rỗng và kết nối API cơ bản. |
+| **`v5.0.0`** | **Knowledge & Delivery Release** *(hiện tại)* | Knowledge Hub (wiki + backlinks), Timeline view, Quick Filters, Sprint Report/Stand-up, CR Assistant, Priority & Start date, Deadline reminder, tách BoardBar thành module, lazy-loading, nén ảnh, unit test. |
+| **`v4.0.0`** | Chella Rebrand, Obsidian Graph, CR Studio, 4-Lang & Cosmos/Wind-Chime | Đổi tên thành **Chella**, 4 ngôn ngữ + Song ngữ, Đồ thị Obsidian, CR Studio, 2 chủ đề mới, đồng bộ file mẫu Excel/CSV Sprint 34, gắn nhân sự chưa cần tài khoản. |
+| **`v3.0.0`** | CR/FRD Suite & Multi-Theme OST | Quản lý CR/FRD, Import Markdown → CR, Xuất Excel Sprint, cảnh báo Deadline, chủ đề Furina & Nahida, trình phát OST. |
+| **`v2.2.0`** | Sora Kasugano Edition & Motion UX | Chủ đề Sora, icon SVG, Command Palette (`Ctrl+K`), Bento Analytics, Web Audio. |
+| **`v2.0.0`** | 🌟 Mốc đặc biệt: Antigravity Full-Stack Audit | Sửa lỗi kiến trúc & bảo mật, đồng bộ kéo thả, sửa stale state, xoá cột/thẻ an toàn, tối ưu deploy Vercel + Render. |
+| **`v1.0.0`** | Full-Stack Social & Real-time Kanban (`PR #30`–`#41`) | Mời thành viên, bình luận, phân trang tìm kiếm board, thông báo realtime `Socket.io`, `ActiveCard` modal. |
+| **`v0.5.0`** | Authentication & User Settings (`PR #20`–`#29`) | Đăng ký/đăng nhập, xác thực email, refresh token qua axios interceptor, `ProtectedRoute`, trang hồ sơ. |
+| **`v0.1.0`** | Core Kanban & Drag-and-Drop (`PR #8`–`#19`) | Giao diện Kanban, `@dnd-kit`, `PlaceholderCard`, kết nối API cơ bản. |
+
+<details>
+<summary><b>🔍 Chi tiết thay đổi v5.0.0</b></summary>
+
+**✨ Tính năng**
+- `KnowledgeHub` page với cây trang lồng nhau, tìm kiếm full-text (tiêu đề / nội dung / tags), 7 mẫu trang (Blank, Meeting notes, FRD, ADR, Glossary, Retro, Release note) theo ngôn ngữ đang dùng, icon picker, tags, chế độ **Edit / Split / Preview**, chèn nhanh `[[Ticket ID]]`, autosave + flush khi chuyển trang.
+- `[[WikiLink]]` render thành chip: 🎫 CR (mở chi tiết CR), 📄 trang, ＋ trang chưa tồn tại (bấm để tạo). Bỏ qua link trong code block.
+- `TimelineView`: trục ngày theo Sprint, cuối tuần tô nền, vạch hôm nay, nhóm theo Topic/Handle by, bar có tiến độ & cảnh báo quá hạn.
+- `FilterPopover` + `crFilters` dùng chung cho mọi view; bộ lọc lưu theo board (sessionStorage), view đang chọn được ghi nhớ.
+- `SprintReportDialog` (status / stand-up, 4 ngôn ngữ, copy & download).
+- `CrAssistantPanel` gợi ý subtask, thêm từng mục hoặc tất cả vào checklist.
+- CR có `priority` & `startDate`; Import Markdown đọc `Priority:`.
+- `useDeadlineReminder`: toast tóm tắt hạn chót khi mở board.
+- Command Palette: lệnh mở Knowledge Hub, Timeline, Sprint Report.
+
+**🐛 Sửa lỗi**
+- Cấu hình Sprint trước đây chỉ lưu `name/startDate/endDate/goal` lên server → nay lưu đủ `sprintNumber`, `updateTill`, `updatedBy`, `teamRoster`.
+- Xoá thành viên khỏi roster bị "hồi sinh" sau khi tải lại (do luôn merge danh sách mặc định) → roster trên board là nguồn dữ liệu chính.
+- Roster import từ CSV giờ được lưu lên board khi tạo CR.
+- Lời thoại nhân vật & một số nhãn còn cứng tiếng Việt / "Sprint 34" → bản địa hoá và lấy theo Sprint hiện tại.
+- Import Markdown với ngày dạng `D/M` dùng năm hiện tại thay vì cố định 2026.
+- Sửa 2 lỗi ESLint tồn đọng (`quotes`, `react-hooks/exhaustive-deps`).
+
+**🧱 Cấu trúc & hiệu năng**
+- `BoardBar.jsx` 868 → ~300 dòng, tách thành 7 module trong `BoardBar/parts/`; `BoardContent` tách `CompanionHud`.
+- Route-level & view-level code splitting, `manualChunks` cho React / MUI / dnd-kit.
+- Nén ảnh: `login-register-bg` 6.1 MB → 118 KB, `furina-swan` PNG 3 MB → WebP 181 KB, nhiều ảnh nền giảm 60–85%.
+- Keyframes mới (`chelloTimelineGrow`, `chelloShimmer`), hiệu ứng chuyển view mượt, hỗ trợ `prefers-reduced-motion`.
+- Thêm **Vitest** (`yarn test`) với 38 unit test cho filters, timeline, wiki links, report, assistant, priority, roster.
+
+</details>
 
 ---
 
-## 🛠️ Hướng Dẫn Cài Đặt & Chạy Dự Án (Local Development)
+## 🛠️ Chạy dự án
 
 ```bash
-# 1. Cài đặt dependencies
-yarn install
-
-# 2. Chạy môi trường Development (http://localhost:5173)
-yarn dev
-
-# 3. Kiểm tra quy chuẩn code (ESLint)
-yarn lint
-
-# 4. Build bản Production
-yarn build
+yarn install      # Cài dependencies
+yarn dev          # http://localhost:5173
+yarn lint         # ESLint (0 warning)
+yarn test         # Vitest unit tests
+yarn build        # Build production
 ```
+
+> [!NOTE]
+> Knowledge Hub cần backend `chello-api` **v5.0.0+** (endpoint `/v1/wiki-pages`).

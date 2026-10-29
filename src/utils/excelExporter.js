@@ -59,21 +59,25 @@ const normalizeRosterItem = (item) => {
   return ''
 }
 
-export const getSavedTeamRoster = (board) => {
-  const boardRoster = board?.sprintConfig?.teamRoster
-  let localRoster = []
+const readLocalRoster = () => {
   try {
     const raw = localStorage.getItem(ROSTER_STORAGE_KEY)
-    if (raw) localRoster = JSON.parse(raw)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
   } catch (e) {
-    // Ignore
+    // localStorage may be unavailable (private mode / SSR / tests) — fall back to defaults
+    return []
   }
-  const merged = new Set([
-    ...DEFAULT_TEAM_ROSTER,
-    ...(Array.isArray(boardRoster) ? boardRoster.map(normalizeRosterItem) : []),
-    ...(Array.isArray(localRoster) ? localRoster.map(normalizeRosterItem) : [])
-  ])
-  return Array.from(merged).filter(Boolean)
+}
+
+// Source of truth priority: roster persisted on the board (API) → last local roster → default team.
+// Members removed from the board roster stay removed (defaults are no longer force-merged back in).
+export const getSavedTeamRoster = (board) => {
+  const boardRoster = board?.sprintConfig?.teamRoster
+  const fromBoard = Array.isArray(boardRoster) ? boardRoster.map(normalizeRosterItem).filter(Boolean) : []
+  const fromLocal = readLocalRoster().map(normalizeRosterItem).filter(Boolean)
+  const base = fromBoard.length ? fromBoard : (fromLocal.length ? fromLocal : DEFAULT_TEAM_ROSTER)
+  return Array.from(new Set(base))
 }
 
 export const saveTeamRosterLocal = (rosterArray) => {
@@ -182,7 +186,7 @@ export const getCardResourceUsed = (card) => {
   return 0
 }
 
-export const getDeadlineStatus = (card) => {
+export const getDeadlineStatus = (card, now = Date.now()) => {
   const normStatus = normalizeCrStatus(card?.baStatus)
   const isDone = Boolean(
     card?.isCompleted ||
@@ -220,7 +224,6 @@ export const getDeadlineStatus = (card) => {
     }
   }
 
-  const now = Date.now()
   const diffDays = Math.ceil((ts - now) / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) {
