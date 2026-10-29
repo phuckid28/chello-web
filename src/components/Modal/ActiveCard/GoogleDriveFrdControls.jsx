@@ -86,13 +86,18 @@ function GoogleDriveFrdControls({
         isTextOrMd ? fileToText(file) : Promise.resolve('')
       ])
 
-      const driveRes = await uploadFrdToGoogleDriveAPI({
-        boardId,
-        crCode: activeCard?.crCode || 'CR',
-        fileName: file.name,
-        mimeType: file.type || (isTextOrMd ? 'text/markdown' : 'application/octet-stream'),
-        base64Data: base64
-      })
+      let driveRes = null
+      try {
+        driveRes = await uploadFrdToGoogleDriveAPI({
+          boardId,
+          crCode: activeCard?.crCode || 'CR',
+          fileName: file.name,
+          mimeType: file.type || (isTextOrMd ? 'text/markdown' : 'application/octet-stream'),
+          base64Data: base64
+        })
+      } catch (driveErr) {
+        driveRes = { ok: false }
+      }
 
       if (driveRes?.ok && driveRes?.fileId) {
         const newDoc = {
