@@ -4,8 +4,10 @@ import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import EditNoteIcon from '@mui/icons-material/EditNote'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescription }) {
+  const { tPrimary } = useTranslation()
   const [markdownEditMode, setMarkdownEditMode] = useState(false)
   const [cardDescription, setCardDescription] = useState(cardDescriptionProp || '')
 
@@ -26,7 +28,7 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
             fullWidth
             multiline
             rows={5}
-            placeholder="Add a more detailed description..."
+            placeholder={tPrimary('addDetailedDescPlaceholder')}
             value={cardDescription}
             onChange={(e) => setCardDescription(e.target.value)}
             autoFocus
@@ -40,7 +42,7 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
               size="small"
               variant="text"
             >
-              Cancel
+              {tPrimary('cancelBtn')}
             </Button>
             <Button
               onClick={updateCardDescription}
@@ -50,7 +52,7 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
               size="small"
               color="info"
             >
-              Save
+              {tPrimary('saveBtn')}
             </Button>
           </Box>
         </Box>
@@ -64,7 +66,7 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
             size="small"
             startIcon={<EditNoteIcon />}
           >
-            Edit
+            {tPrimary('editBtn')}
           </Button>
           <Box
             onClick={() => setMarkdownEditMode(true)}
@@ -80,7 +82,7 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
             }}
           >
             <Typography variant="body2" sx={{ color: cardDescription ? 'text.primary' : 'text.secondary' }}>
-              {cardDescription || 'Add a more detailed description...'}
+              {cardDescription || tPrimary('addDetailedDescPlaceholder')}
             </Typography>
           </Box>
         </Box>

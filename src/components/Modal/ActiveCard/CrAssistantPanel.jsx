@@ -16,6 +16,7 @@ import { toast } from 'react-toastify'
 import { requestSubtaskSuggestions } from '~/utils/crAssistant'
 import { generateAiCrAssistanceAPI } from '~/apis'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { formatMessage } from '~/utils/i18nV5'
 import { playUiChime } from '~/utils/soundEffects'
 import LoadingButton from '~/components/Loading/LoadingButton'
 
@@ -112,14 +113,15 @@ function CrAssistantPanel({
           title: `✨ ${title}`
         }))
         setSuggestions((prev) => [...aiItems, ...prev])
-        toast.success(`Gemini (${res.modelUsed}) đã sinh ${aiItems.length} hạng mục Subtask/UAT!`)
+        toast.success(formatMessage(tPrimary('aiSubtasksDoneToast'), { model: res.modelUsed, count: aiItems.length }))
       } else if (res.markdown) {
         setAiMarkdown(res.markdown)
         setAiMarkdownType(mode)
         toast.success(
-          mode === 'frd'
-            ? `Gemini (${res.modelUsed}) đã soạn thảo xong tài liệu FRD!`
-            : `Gemini (${res.modelUsed}) đã hoàn tất rà soát xung đột CR!`
+          formatMessage(
+            mode === 'frd' ? tPrimary('aiFrdDoneToast') : tPrimary('aiConflictDoneToast'),
+            { model: res.modelUsed }
+          )
         )
       }
     } catch (err) {
@@ -214,12 +216,12 @@ function CrAssistantPanel({
               variant="contained"
               color="secondary"
               loading={aiBusyMode === 'subtasks'}
-              loadingLabel="Đang phân tích..."
+              loadingLabel={tPrimary('aiGeneratingSubtasks')}
               startIcon={<AutoAwesomeRoundedIcon />}
               onClick={() => handleRunGeminiAi('subtasks')}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
             >
-              AI Gợi ý Subtasks
+              {tPrimary('aiSuggestSubtasksBtn')}
             </LoadingButton>
 
             <LoadingButton
@@ -227,12 +229,12 @@ function CrAssistantPanel({
               variant="outlined"
               color="primary"
               loading={aiBusyMode === 'frd'}
-              loadingLabel="Đang soạn FRD..."
+              loadingLabel={tPrimary('aiWritingFrd')}
               startIcon={<DescriptionRoundedIcon />}
               onClick={() => handleRunGeminiAi('frd')}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
             >
-              AI Viết FRD
+              {tPrimary('aiWriteFrdBtn')}
             </LoadingButton>
 
             <LoadingButton
@@ -240,12 +242,12 @@ function CrAssistantPanel({
               variant="outlined"
               color="warning"
               loading={aiBusyMode === 'conflict_check'}
-              loadingLabel="Đang rà soát..."
+              loadingLabel={tPrimary('aiCheckingConflicts')}
               startIcon={<RadarRoundedIcon />}
               onClick={() => handleRunGeminiAi('conflict_check')}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
             >
-              AI Rà Xung đột
+              {tPrimary('aiConflictCheckBtn')}
             </LoadingButton>
           </Stack>
 
@@ -262,8 +264,8 @@ function CrAssistantPanel({
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>
                   {aiMarkdownType === 'frd'
-                    ? '📄 Bản thảo FRD do Gemini AI biên soạn:'
-                    : '🔍 Báo cáo rà soát xung đột & phụ thuộc CR:'}
+                    ? tPrimary('aiFrdDraftLabel')
+                    : tPrimary('aiConflictReportLabel')}
                 </Typography>
                 <Stack direction="row" spacing={0.75}>
                   {onApplyMarkdownToDescription && (
@@ -272,11 +274,11 @@ function CrAssistantPanel({
                       variant="contained"
                       onClick={() => {
                         onApplyMarkdownToDescription(aiMarkdown)
-                        toast.success('Đã nạp nội dung AI vào khung Đặc tả FRD của thẻ!')
+                        toast.success(tPrimary('appliedAiFrdToast'))
                       }}
                       sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.74rem', py: 0.25 }}
                     >
-                      Nạp vào Mô tả CR
+                      {tPrimary('applyToCrDescBtn')}
                     </Button>
                   )}
                   {onAttachMarkdownAsFrd && (
@@ -291,7 +293,7 @@ function CrAssistantPanel({
                       }}
                       sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.74rem', py: 0.25 }}
                     >
-                      Lưu thành file FRD (.MD)
+                      {tPrimary('saveAsFrdMdBtn')}
                     </Button>
                   )}
                   <Button
@@ -300,7 +302,7 @@ function CrAssistantPanel({
                     onClick={() => setAiMarkdown('')}
                     sx={{ textTransform: 'none', fontSize: '0.74rem', py: 0.25 }}
                   >
-                    Ẩn
+                    {tPrimary('hideBtn')}
                   </Button>
                 </Stack>
               </Box>

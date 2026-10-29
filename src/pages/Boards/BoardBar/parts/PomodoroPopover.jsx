@@ -5,12 +5,14 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import { formatTimer } from '~/customHooks/usePomodoro'
+import { useTranslation } from '~/customHooks/useTranslation'
 import { playUiChime } from '~/utils/soundEffects'
 import { POMODORO_BREAK_SECONDS, POMODORO_FOCUS_SECONDS } from './boardBarStyles'
 
 const RING_SIZE = 150
 
 function PomodoroPopover({ anchorEl, onClose, themeConfig, pomodoro }) {
+  const { tPrimary } = useTranslation()
   const { secondsLeft, durationSeconds, isRunning, setIsRunning, reset } = pomodoro
   const progress = durationSeconds ? (secondsLeft / durationSeconds) * 100 : 0
 
@@ -21,7 +23,7 @@ function PomodoroPopover({ anchorEl, onClose, themeConfig, pomodoro }) {
           <Avatar src={themeConfig.mascotImage} alt={themeConfig.name} sx={{ width: 46, height: 46, border: `2px solid ${themeConfig.accentColor}` }} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }} noWrap>{themeConfig.name}</Typography>
-            <Typography variant="caption" color="text.secondary">Pomodoro Focus</Typography>
+            <Typography variant="caption" color="text.secondary">{tPrimary('pomodoroFocusSub')}</Typography>
           </Box>
         </Box>
         <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>{themeConfig.quote}</Typography>
@@ -50,10 +52,10 @@ function PomodoroPopover({ anchorEl, onClose, themeConfig, pomodoro }) {
               setIsRunning(!isRunning)
             }}
           >
-            {isRunning ? 'Pause' : 'Start'}
+            {isRunning ? tPrimary('pauseBtn') : tPrimary('startBtn')}
           </Button>
-          <Button variant="outlined" size="small" onClick={() => reset(POMODORO_FOCUS_SECONDS)}>25m Focus</Button>
-          <Button variant="outlined" size="small" onClick={() => reset(POMODORO_BREAK_SECONDS)}>5m Break</Button>
+          <Button variant="outlined" size="small" onClick={() => reset(POMODORO_FOCUS_SECONDS)}>{tPrimary('focus25m')}</Button>
+          <Button variant="outlined" size="small" onClick={() => reset(POMODORO_BREAK_SECONDS)}>{tPrimary('break5m')}</Button>
         </Box>
       </Box>
     </Popover>

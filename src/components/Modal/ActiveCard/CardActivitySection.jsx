@@ -5,10 +5,12 @@ import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
+import { useTranslation } from '~/customHooks/useTranslation'
 import soraAvatar from '~/assets/sora.jpg'
 
 function CardActivitySection({ cardComments = [], onAddCardComment }) {
   const currentUser = useSelector(selectCurrentUser)
+  const { tPrimary } = useTranslation()
 
   const handleAddCardComment = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -36,7 +38,7 @@ function CardActivitySection({ cardComments = [], onAddCardComment }) {
         />
         <TextField
           fullWidth
-          placeholder="Write a comment... (Press Enter to send)"
+          placeholder={tPrimary('writeCommentPlaceholder')}
           type="text"
           variant="outlined"
           multiline
@@ -46,7 +48,7 @@ function CardActivitySection({ cardComments = [], onAddCardComment }) {
 
       {cardComments.length === 0 &&
         <Typography sx={{ pl: '45px', fontSize: '14px', fontWeight: '500', color: '#b1b1b1' }}>
-          No activity found!
+          {tPrimary('noActivityFound')}
         </Typography>
       }
       {cardComments.map((comment, index) =>

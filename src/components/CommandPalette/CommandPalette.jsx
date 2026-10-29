@@ -48,7 +48,7 @@ function CommandPalette() {
   const board = useSelector(selectCurrentActiveBoard)
   const { mode, setMode } = useColorScheme()
   const { themeConfig, changePersona } = usePersonaTheme(board?.theme)
-  const { lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary } = useTranslation()
+  const { lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary, formatMessage } = useTranslation()
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -89,7 +89,7 @@ function CommandPalette() {
       const sprintName = board?.sprintConfig?.name || 'Sprint'
       list.push({
         id: 'sprint-knowledge-hub',
-        category: 'Sprint & Change Request (CR) Tools',
+        category: tPrimary('cmdCatSprintTools'),
         title: `📚 ${tPrimary('openKnowledgeHubCmd')}`,
         subtitle: tPrimary('knowledgeHubSub'),
         badge: 'Wiki',
@@ -102,7 +102,7 @@ function CommandPalette() {
 
       list.push({
         id: 'sprint-timeline',
-        category: 'Sprint & Change Request (CR) Tools',
+        category: tPrimary('cmdCatSprintTools'),
         title: `🗓️ ${tPrimary('openTimelineCmd')}`,
         subtitle: tPrimary('timelineSub'),
         badge: 'Timeline',
@@ -116,7 +116,7 @@ function CommandPalette() {
 
       list.push({
         id: 'sprint-report',
-        category: 'Sprint & Change Request (CR) Tools',
+        category: tPrimary('cmdCatSprintTools'),
         title: `📝 ${tPrimary('openReportCmd')}`,
         subtitle: tPrimary('sprintReportSub'),
         badge: 'Markdown',
@@ -129,29 +129,29 @@ function CommandPalette() {
 
       list.push({
         id: 'sprint-export-excel',
-        category: 'Sprint & Change Request (CR) Tools',
+        category: tPrimary('cmdCatSprintTools'),
         title: `${tPrimary('exportExcelBtn')} (${sprintName})`,
-        subtitle: 'Sprint • Start/End date • Update till • Handle by • Resource point • Ticket ID • Status • Dev Progress',
+        subtitle: tPrimary('cmdExportExcelSub'),
         badge: 'Excel .XLS',
         icon: <TableViewRoundedIcon fontSize="small" color="success" />,
         action: () => {
           exportSprintCrsToExcel(board)
           playUiChime('complete')
-          toast.success(`Excel • ${sprintName} ✓`)
+          toast.success(tPrimary('exportedSprintExcelToast'))
         }
       })
 
       list.push({
         id: 'sprint-export-csv',
-        category: 'Sprint & Change Request (CR) Tools',
+        category: tPrimary('cmdCatSprintTools'),
         title: `${tPrimary('exportCsvBtn')} (${sprintName})`,
-        subtitle: 'CSV template',
+        subtitle: tPrimary('cmdExportCsvSub'),
         badge: 'CSV',
         icon: <TableViewRoundedIcon fontSize="small" color="info" />,
         action: () => {
           exportSprintCrsToCsv(board)
           playUiChime('complete')
-          toast.success(`CSV • ${sprintName} ✓`)
+          toast.success(tPrimary('exportedSprintCsvToast'))
         }
       })
     }
@@ -162,10 +162,10 @@ function CommandPalette() {
           if (!card.FE_PlaceholderCard) {
             list.push({
               id: `card-${card._id}`,
-              category: 'Change Requests (CR) & Cards trên Bảng',
+              category: tPrimary('cmdCatCrsOnBoard'),
               title: `${card.crCode ? `[${card.crCode}] ` : ''}${card.title}`,
-              subtitle: `Chủ đề: ${col.title} • Handle by: ${card.assignee || 'Chưa phân công'}`,
-              badge: card.crCode || 'Mở CR',
+              subtitle: `${col.title} • Handle by: ${card.assignee || tPrimary('cmdUnassigned')}`,
+              badge: card.crCode || 'CR',
               icon: <SoraRibbonIcon fontSize="small" />,
               action: () => {
                 dispatch(updateCurrentActiveCard(card))
@@ -176,9 +176,9 @@ function CommandPalette() {
 
             list.push({
               id: `studio-${card._id}`,
-              category: 'CR Studio & Interactive Flow Simulator',
-              title: `🚀 Mô phỏng CR Studio: ${card.crCode ? `[${card.crCode}] ` : ''}${card.title}`,
-              subtitle: 'Mở trang riêng mô phỏng luồng kỹ thuật, kiểm thử kịch bản & đồ thị Obsidian',
+              category: tPrimary('cmdCatCrStudio'),
+              title: `🚀 ${formatMessage('cmdSimulateStudioTitle', { code: card.crCode || 'CR', title: card.title })}`,
+              subtitle: tPrimary('cmdSimulateStudioSub'),
               badge: 'CR Studio',
               icon: <AccountTreeRoundedIcon fontSize="small" color="secondary" />,
               action: () => {
@@ -195,24 +195,24 @@ function CommandPalette() {
     languages.forEach((l) => {
       list.push({
         id: `lang-${l.code}`,
-        category: 'Ngôn ngữ & Chế độ Song ngữ (VI • EN • JA • KO)',
-        title: `${l.flag} Chuyển ngôn ngữ sang: ${l.name}`,
-        subtitle: lang === l.code ? 'Đang sử dụng' : `Switch UI language to ${l.name}`,
+        category: tPrimary('cmdCatLanguages'),
+        title: `${l.flag} ${formatMessage('cmdSwitchLangTo', { label: l.name, native: l.short })}`,
+        subtitle: lang === l.code ? tPrimary('cmdCurrentlyUsed') : tPrimary('cmdAvailable'),
         badge: l.short,
         icon: <TranslateRoundedIcon fontSize="small" color="primary" />,
         action: () => {
           changeLanguage(l.code)
           playUiChime('sparkle')
-          toast.info(`${l.flag} Language: ${l.name}`)
+          toast.info(formatMessage('switchedLangToast', { label: l.name }))
         }
       })
     })
 
     list.push({
       id: 'lang-bilingual-toggle',
-      category: 'Ngôn ngữ & Chế độ Song ngữ (VI • EN • JA • KO)',
-      title: `Chế độ Song ngữ (Bilingual Mode): ${bilingual ? 'Đang BẬT' : 'Đang TẮT'}`,
-      subtitle: 'Hiển thị song song ngôn ngữ đang chọn cùng thuật ngữ gốc',
+      category: tPrimary('cmdCatLanguages'),
+      title: tPrimary('cmdBilingualTitle'),
+      subtitle: tPrimary('cmdBilingualSub'),
       badge: bilingual ? 'ON' : 'OFF',
       icon: <TranslateRoundedIcon fontSize="small" color="secondary" />,
       action: () => {
@@ -225,8 +225,8 @@ function CommandPalette() {
     PRIMARY_THEMES_LIST.forEach((t) => {
       list.push({
         id: `theme-${t.id}`,
-        category: 'Chủ đề Không gian (Cosmos • Wind Chime • Sora • Furina • Nahida)',
-        title: `Chuyển sang chủ đề: ${t.name}`,
+        category: tPrimary('cmdCatThemes'),
+        title: formatMessage('cmdSwitchThemeTo', { name: t.name }),
         subtitle: t.jpTitle,
         badge: t.element,
         icon: <SoraBunnyIcon fontSize="small" />,
@@ -237,7 +237,7 @@ function CommandPalette() {
             updateBoardDetailsAPI(board._id, { theme: t.id })
           }
           playUiChime('theme')
-          toast.info(`Đã chuyển chủ đề sang ${t.name}`)
+          toast.info(formatMessage('cmdSwitchThemeTo', { name: t.name }))
         }
       })
     })
@@ -246,14 +246,14 @@ function CommandPalette() {
     OST_TRACK_CATALOG.forEach((track) => {
       list.push({
         id: `ost-${track.id}`,
-        category: 'Âm thanh & Nhạc nền (Cosmos • Chuông Gió • OST)',
-        title: `Phát âm thanh: ${track.title}`,
+        category: tPrimary('cmdCatSoundscape'),
+        title: formatMessage('cmdPlayAudio', { title: track.title }),
         subtitle: track.subtitle,
         badge: track.character.toUpperCase(),
         icon: <MusicNoteRoundedIcon fontSize="small" sx={{ color: '#f472b6' }} />,
         action: () => {
           playOstTrack(track.id)
-          toast.info(`🎵 Đang phát: ${track.title}`)
+          toast.info(formatMessage('nowPlayingToast', { title: track.title }))
         }
       })
     })
@@ -261,14 +261,14 @@ function CommandPalette() {
     if (isMusicBoxActive()) {
       list.push({
         id: 'ost-stop',
-        category: 'Âm thanh & Nhạc nền (Cosmos • Chuông Gió • OST)',
-        title: 'Tạm dừng phát âm thanh nền',
-        subtitle: 'Tắt phát nhạc hiện tại',
+        category: tPrimary('cmdCatSoundscape'),
+        title: tPrimary('cmdStopAudioTitle'),
+        subtitle: tPrimary('cmdStopAudioSub'),
         badge: 'Stop',
         icon: <MusicNoteRoundedIcon fontSize="small" color="error" />,
         action: () => {
           stopSoraMusicBox()
-          toast.info('🔇 Đã tạm dừng âm thanh nền')
+          toast.info(tPrimary('audioStoppedToast'))
         }
       })
     }
@@ -277,9 +277,9 @@ function CommandPalette() {
     list.push(
       {
         id: 'toggle-color-mode',
-        category: 'Giao diện & Điều hướng',
-        title: `Chuyển chế độ Sáng / Tối (Hiện tại: ${mode})`,
-        subtitle: 'Toggle Dark / Light mode',
+        category: tPrimary('cmdCatNavigation'),
+        title: formatMessage('cmdToggleColorMode', { mode }),
+        subtitle: tPrimary('cmdToggleColorModeSub'),
         badge: mode === 'dark' ? 'Light Mode' : 'Dark Mode',
         icon: <DarkModeOutlinedIcon fontSize="small" sx={{ color: '#7dd3fc' }} />,
         action: () => {
@@ -289,27 +289,27 @@ function CommandPalette() {
       },
       {
         id: 'nav-boards',
-        category: 'Giao diện & Điều hướng',
-        title: 'Về trang Danh sách Bảng (All Boards)',
-        subtitle: 'Quản lý toàn bộ các bảng Sprint & CR',
+        category: tPrimary('cmdCatNavigation'),
+        title: tPrimary('cmdNavBoardsTitle'),
+        subtitle: tPrimary('cmdNavBoardsSub'),
         badge: '/boards',
         icon: <SpaceDashboardIcon fontSize="small" color="primary" />,
         action: () => navigate('/boards')
       },
       {
         id: 'nav-account',
-        category: 'Giao diện & Điều hướng',
-        title: 'Cài đặt Tài khoản & Hồ sơ',
-        subtitle: 'Cập nhật tên hiển thị và ảnh đại diện',
+        category: tPrimary('cmdCatNavigation'),
+        title: tPrimary('cmdNavAccountTitle'),
+        subtitle: tPrimary('cmdNavAccountSub'),
         badge: '/settings/account',
         icon: <ManageAccountsOutlinedIcon fontSize="small" color="primary" />,
         action: () => navigate('/settings/account')
       },
       {
         id: 'nav-security',
-        category: 'Giao diện & Điều hướng',
-        title: 'Cài đặt Bảo mật & Mật khẩu',
-        subtitle: 'Đổi mật khẩu và bảo vệ tài khoản',
+        category: tPrimary('cmdCatNavigation'),
+        title: tPrimary('cmdNavSecurityTitle'),
+        subtitle: tPrimary('cmdNavSecuritySub'),
         badge: '/settings/security',
         icon: <LockOutlinedIcon fontSize="small" color="primary" />,
         action: () => navigate('/settings/security')
@@ -325,7 +325,7 @@ function CommandPalette() {
         item.category.toLowerCase().includes(q) ||
         item.badge.toLowerCase().includes(q)
     )
-  }, [board, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary])
+  }, [board, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary, formatMessage])
 
   const handleClose = () => setOpen(false)
 
@@ -371,7 +371,7 @@ function CommandPalette() {
           <TextField
             fullWidth
             autoFocus
-            placeholder="Tìm Ticket ID (VD: BNPL-945), mở CR Studio, xuất Excel Sprint, đổi ngôn ngữ VI/EN/JA/KO... (↑↓ Enter)"
+            placeholder={tPrimary('cmdSearchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -406,7 +406,7 @@ function CommandPalette() {
             <Box sx={{ py: 4, textAlign: 'center' }}>
               <SoraBunnyIcon sx={{ fontSize: 38, mb: 1, opacity: 0.7 }} />
               <Typography variant="body2" color="text.secondary">
-                Không tìm thấy lệnh hoặc Ticket ID phù hợp.
+                {tPrimary('cmdNoResult')}
               </Typography>
             </Box>
           )}
@@ -503,7 +503,7 @@ function CommandPalette() {
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
-            Phím tắt: <b>Ctrl + K</b>
+            {tPrimary('cmdShortcutLabel')}: <b>Ctrl + K</b>
           </Typography>
         </Box>
       </Box>

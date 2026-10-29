@@ -88,7 +88,7 @@ function Boards() {
   const [previewArt, setPreviewArt] = useState(null)
 
   const { globalPersonaKey, themeConfig, changePersona } = usePersonaTheme()
-  const { t } = useTranslation()
+  const { t, tPrimary } = useTranslation()
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -156,7 +156,7 @@ function Boards() {
   }
 
   if (!boards) {
-    return <PageLoadingSpinner caption='Đang tải Chella — A clone of "C"onfluence - tr"ELL"o - jir"A"...' />
+    return <PageLoadingSpinner caption={tPrimary('loadingWorkspace')} />
   }
 
   const starredBoards = boards.filter(b => b.isStarred)
@@ -279,7 +279,7 @@ function Boards() {
                 }
               }}
             >
-              {t('createBoard')}
+              {t('createNewSprintBoard')}
             </Button>
           </Grid>
         </Grid>
@@ -298,7 +298,7 @@ function Boards() {
               <SidebarItem onClick={handleOpenModal}>
                 <LibraryAddIcon fontSize="small" color="primary" />
                 <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
-                  {t('createBoard')}
+                  {t('createNewSprintBoard')}
                 </Typography>
               </SidebarItem>
             </Stack>
@@ -306,7 +306,7 @@ function Boards() {
             <Divider sx={{ my: 2.5 }} />
 
             <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', px: 1, display: 'block', mb: 1 }}>
-              MẪU SPRINT & CHỦ ĐỀ (1-CLICK)
+              {t('templatesSidebarTitle')}
             </Typography>
             <Stack direction="column" spacing={1}>
               {ANIME_BOARD_TEMPLATES.map((tpl) => (
@@ -360,10 +360,10 @@ function Boards() {
               </Box>
               <CardContent sx={{ p: 1.75, '&:last-child': { p: 1.75 } }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-                  Bộ Sưu Tập Chủ Đề & Ảnh Bìa
+                  {t('themeGalleryTitle')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
-                  Nhấn vào hình minh họa bất kỳ để phóng to xem chi tiết:
+                  {t('themeGallerySub')}
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.75 }}>
                   {SORA_PRESET_COVERS.map((art) => (
@@ -372,7 +372,7 @@ function Boards() {
                       component="img"
                       src={art.url}
                       alt={art.label}
-                      title={`${art.label} (Nhấn để xem lớn)`}
+                      title={`${art.label} (${tPrimary('clickToEnlarge')})`}
                       onClick={() => {
                         playUiChime('sparkle')
                         setPreviewArt(art)
@@ -403,7 +403,7 @@ function Boards() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <StarRoundedIcon sx={{ color: '#fbbf24' }} />
                   <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                    {t('starred')}
+                    {t('starredBoardsTitle')}
                   </Typography>
                 </Box>
                 <Grid container spacing={2.5}>
@@ -478,13 +478,13 @@ function Boards() {
               }}>
                 <SoraBunnyIcon sx={{ fontSize: 48, mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  Chưa có bảng Sprint nào được khởi tạo!
+                  {t('noBoardsCreatedTitle')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Hãy chọn một mẫu bảng 1-Click ở cột bên trái hoặc tạo bảng mới để bắt đầu theo dõi CR của Sprint.
+                  {t('noBoardsCreatedSub')}
                 </Typography>
                 <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={handleOpenModal}>
-                  {t('createBoard')}
+                  {t('createNewSprintBoard')}
                 </Button>
               </Box>
             }
@@ -616,7 +616,7 @@ function Boards() {
           <Box id="modal-modal-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SoraBunnyIcon />
             <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
-              {t('createBoard')} (Board = Sprint)
+              {t('createNewSprintBoard')} (Board = Sprint)
             </Typography>
           </Box>
           <Box id="modal-modal-description" sx={{ my: 2 }}>
@@ -625,7 +625,7 @@ function Boards() {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Tên Bảng Sprint (VD: Sprint 34 • Usage Limit & BNPL Core)"
+                    label={tPrimary('boardTitleInputLabel')}
                     type="text"
                     variant="outlined"
                     InputProps={{
@@ -637,8 +637,8 @@ function Boards() {
                     }}
                     {...register('title', {
                       required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
-                      maxLength: { value: 50, message: 'Tối đa 50 ký tự' }
+                      minLength: { value: 3, message: tPrimary('min3CharsMsg') },
+                      maxLength: { value: 50, message: tPrimary('max50CharsMsg') }
                     })}
                     error={!!errors['title']}
                   />
@@ -648,7 +648,7 @@ function Boards() {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Mô tả mục tiêu kỳ Sprint"
+                    label={tPrimary('boardDescInputLabel')}
                     type="text"
                     variant="outlined"
                     multiline
@@ -661,8 +661,8 @@ function Boards() {
                     }}
                     {...register('description', {
                       required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
-                      maxLength: { value: 256, message: 'Tối đa 256 ký tự' }
+                      minLength: { value: 3, message: tPrimary('min3CharsMsg') },
+                      maxLength: { value: 256, message: tPrimary('max256CharsMsg') }
                     })}
                     error={!!errors['description']}
                   />
@@ -671,7 +671,7 @@ function Boards() {
 
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                    Chọn Chủ đề Không gian:
+                    {t('selectThemeLabel')}:
                   </Typography>
                   <Controller
                     name="theme"
@@ -738,13 +738,13 @@ function Boards() {
                       <FormControlLabel
                         value={BOARD_TYPES.PUBLIC}
                         control={<Radio size="small" />}
-                        label="Public"
+                        label={tPrimary('publicBoardRadio')}
                         labelPlacement="start"
                       />
                       <FormControlLabel
                         value={BOARD_TYPES.PRIVATE}
                         control={<Radio size="small" />}
-                        label="Private"
+                        label={tPrimary('privateBoardRadio')}
                         labelPlacement="start"
                       />
                     </RadioGroup>
@@ -764,7 +764,7 @@ function Boards() {
                           size="small"
                         />
                       }
-                      label="Tự động tạo sẵn các cột chủ đề CR, thẻ mẫu (BNPL-945) & tài liệu FRD cho kỳ Sprint"
+                      label={tPrimary('seedTemplateCheckboxLabel')}
                     />
                   )}
                 />
@@ -777,7 +777,7 @@ function Boards() {
                     color="primary"
                     loading={isSubmitting}
                   >
-                    {t('createBoard')}
+                    {t('createBoardSubmitBtn')}
                   </LoadingButton>
                 </Box>
               </Box>
@@ -822,7 +822,7 @@ function Boards() {
                   </Typography>
                 </Box>
                 <Chip
-                  label="Nhấn bất kỳ đâu để đóng"
+                  label={`${tPrimary('clickAnywhereToClose')} ${themeConfig.name}`}
                   size="small"
                   sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.14)', fontWeight: 700 }}
                 />

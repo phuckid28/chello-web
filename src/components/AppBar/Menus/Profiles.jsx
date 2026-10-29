@@ -36,9 +36,9 @@ function Profiles() {
   const handleLogout = () => {
     handleClose()
     confirmLogout({
-      title: 'Log out of your account?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      title: tPrimary('logoutConfirmTitle'),
+      confirmationText: tPrimary('confirmBtn'),
+      cancellationText: tPrimary('cancelBtn')
     }).then(() => {
       dispatch(logoutUserAPI())
     }).catch(() => {})
@@ -46,7 +46,7 @@ function Profiles() {
 
   return (
     <Box>
-      <Tooltip title="Account settings">
+      <Tooltip title={tPrimary('accountSettingsTooltip')}>
         <IconButton
           onClick={handleClick}
           size="small"
@@ -81,7 +81,7 @@ function Profiles() {
               alt={currentUser?.displayName || 'User'}
               src={currentUser?.avatar || soraAvatar}
             />
-            {currentUser?.displayName || 'Profile'}
+            {currentUser?.displayName || tPrimary('profileMenu')}
           </MenuItem>
         </Link>
         <Divider />
@@ -89,7 +89,7 @@ function Profiles() {
           <ListItemIcon>
             <PersonAdd fontSize="small" />
           </ListItemIcon>
-          Add another account
+          {tPrimary('addAnotherAccount')}
         </MenuItem>
         <Link to="/settings/appearance" style={{ color: 'inherit', textDecoration: 'none' }}>
           <MenuItem>
@@ -104,7 +104,7 @@ function Profiles() {
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
-            Settings
+            {tPrimary('settingsMenu')}
           </MenuItem>
         </Link>
         <MenuItem onClick={handleLogout} sx={{
@@ -116,7 +116,7 @@ function Profiles() {
           <ListItemIcon>
             <Logout className='logout-icon' fontSize="small" />
           </ListItemIcon>
-          Logout
+          {tPrimary('logoutMenu')}
         </MenuItem>
       </Menu>
     </Box>

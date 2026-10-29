@@ -28,7 +28,7 @@ import { playUiChime } from '~/utils/soundEffects'
 import { setBoardThemeOverride } from '~/fx/fxThemeStore'
 
 const LABEL_KEYS = [
-  'newPage', 'newSubPage', 'searchPages', 'pageTitlePlaceholder', 'editBtn', 'previewBtn', 'saveBtn', 'deleteBtn',
+  'newPage', 'newSubPage', 'searchPages', 'pageTitlePlaceholder', 'editBtn', 'previewBtn', 'splitModeBtn', 'saveBtn', 'deleteBtn',
   'savingMsg', 'savedMsg', 'unsavedMsg', 'backlinks', 'outgoingLinks', 'noBacklinks', 'noOutgoingLinks', 'missingLink',
   'wikiHint', 'tagsLabel', 'lastEdited', 'pageOutline', 'insertCrLink',
   'draftRecoveredMsg', 'restoreBtn', 'discardBtn', 'contentLimitMsg'
@@ -202,7 +202,7 @@ function KnowledgeHub() {
       return <Box>{[60, 90, 75, 85].map((w, i) => <Skeleton key={i} height={34} width={`${w}%`} />)}</Box>
     }
     if (loadError) {
-      return <Alert severity="error" action={<Button onClick={loadPages}>Retry</Button>}>{tPrimary('loadFailed')}</Alert>
+      return <Alert severity="error" action={<Button onClick={loadPages}>{tPrimary('retryBtn')}</Button>}>{tPrimary('loadFailed')}</Alert>
     }
     if (pageId && !selectedPage) {
       return <Alert severity="warning">{tPrimary('pageNotFound')}</Alert>

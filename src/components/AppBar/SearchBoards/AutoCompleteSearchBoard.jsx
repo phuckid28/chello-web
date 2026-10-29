@@ -7,9 +7,11 @@ import SearchIcon from '@mui/icons-material/Search'
 import { createSearchParams, useNavigate } from 'react-router-dom'
 import { fetchBoardsAPI } from '~/apis'
 import { useDebounceFn } from '~/customHooks/useDebounceFn'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function AutoCompleteSearchBoard() {
   const navigate = useNavigate()
+  const { tPrimary } = useTranslation()
 
   const [open, setOpen] = useState(false)
   const [boards, setBoards] = useState(null)
@@ -49,7 +51,7 @@ function AutoCompleteSearchBoard() {
     <Autocomplete
       sx={{ width: 220 }}
       id="asynchronous-search-board"
-      noOptionsText={!boards ? 'Type to search board...' : 'No board found!'}
+      noOptionsText={!boards ? tPrimary('typeToSearchBoard') : tPrimary('noBoardFound')}
       open={open}
       onOpen={() => { setOpen(true) }}
       onClose={() => { setOpen(false) }}
@@ -62,7 +64,7 @@ function AutoCompleteSearchBoard() {
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Type to search..."
+          label={tPrimary('searchBoardsLabel')}
           size="small"
           InputProps={{
             ...params.InputProps,

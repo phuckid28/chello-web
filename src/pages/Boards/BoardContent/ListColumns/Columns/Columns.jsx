@@ -69,7 +69,7 @@ function Columns({ column }) {
   const [newCardTitle, setNewCardTitle] = useState('')
   const addNewCard = async () => {
     if (!newCardTitle) {
-      toast.error('Please enter CR title', { position: 'bottom-right' })
+      toast.error(tPrimary('pleaseEnterCrTitleToast'), { position: 'bottom-right' })
       return
     }
     const prefix = (column?.title || 'CR').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4) || 'CR'
@@ -112,10 +112,10 @@ function Columns({ column }) {
   const confirmDeleteColumn = useConfirm()
   const handleDeleteColumn = () => {
     confirmDeleteColumn({
-      title: 'Delete CR Topic Column?',
-      description: 'This action will permanently delete this Topic Column and its CR cards. Are you sure?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      title: tPrimary('deleteColumnTitle'),
+      description: tPrimary('deleteColumnDesc'),
+      confirmationText: tPrimary('confirmBtn'),
+      cancellationText: tPrimary('cancelBtn')
     }).then(() => {
       const newBoard = { ...board }
       newBoard.columns = newBoard.columns.filter(c => c._id !== column._id)
@@ -202,7 +202,7 @@ function Columns({ column }) {
             }}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <Tooltip title='More options'>
+            <Tooltip title={tPrimary('moreOptionsTooltip')}>
               <ExpandMoreIcon
                 sx={{ color: 'text.primary', cursor: 'pointer' }}
                 id="basic-column-dropdown"
@@ -236,15 +236,15 @@ function Columns({ column }) {
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><ContentCut fontSize="small" /></ListItemIcon>
-                <ListItemText>Cut</ListItemText>
+                <ListItemText>{tPrimary('cutMenu')}</ListItemText>
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><ContentCopy fontSize="small" /></ListItemIcon>
-                <ListItemText>Copy</ListItemText>
+                <ListItemText>{tPrimary('copyMenu')}</ListItemText>
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><ContentPaste fontSize="small" /></ListItemIcon>
-                <ListItemText>Paste</ListItemText>
+                <ListItemText>{tPrimary('pasteMenu')}</ListItemText>
               </MenuItem>
               <Divider />
               <MenuItem
@@ -257,11 +257,11 @@ function Columns({ column }) {
                 }}
               >
                 <ListItemIcon><DeleteForeverIcon className='delete-forever-icon' fontSize="small" /></ListItemIcon>
-                <ListItemText>Delete Topic Column</ListItemText>
+                <ListItemText>{tPrimary('deleteTopicColumnMenu')}</ListItemText>
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><Cloud fontSize="small" /></ListItemIcon>
-                <ListItemText>Archive Topic Column</ListItemText>
+                <ListItemText>{tPrimary('archiveTopicColumnMenu')}</ListItemText>
               </MenuItem>
             </Menu>
           </Box>

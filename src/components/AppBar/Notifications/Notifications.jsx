@@ -22,6 +22,7 @@ import {
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { API_ROOT, BOARD_INVITATION_STATUS } from '~/utils/constants'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function Notifications() {
   const [anchorEl, setAnchorEl] = useState(null)
@@ -35,6 +36,7 @@ function Notifications() {
 
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const { tPrimary } = useTranslation()
   const notifications = useSelector(selectCurrentNotifications)
   const currentUser = useSelector(selectCurrentUser)
 
@@ -81,7 +83,7 @@ function Notifications() {
 
   return (
     <Box>
-      <Tooltip title="Notifications">
+      <Tooltip title={tPrimary('notificationsTooltip')}>
         <Badge
           color="warning"
           variant={hasPendingNotifications ? 'dot' : 'standard'}
@@ -107,7 +109,7 @@ function Notifications() {
         MenuListProps={{ 'aria-labelledby': 'basic-button-open-notification' }}
       >
         {(!notifications || notifications.length === 0) &&
-          <MenuItem sx={{ minWidth: 200 }}>You do not have any new notifications.</MenuItem>
+          <MenuItem sx={{ minWidth: 200 }}>{tPrimary('noNotifications')}</MenuItem>
         }
         {notifications?.map((notification, index) =>
           <Box key={notification._id || index}>
@@ -119,7 +121,7 @@ function Notifications() {
               <Box sx={{ maxWidth: '100%', wordBreak: 'break-word', whiteSpace: 'pre-wrap', display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box><GroupAddIcon fontSize="small" /></Box>
-                  <Box><strong>{notification.inviter?.displayName}</strong> had invited you to join the board <strong>{notification.board?.title}</strong></Box>
+                  <Box><strong>{notification.inviter?.displayName}</strong> {tPrimary('invitedYouToBoard')} <strong>{notification.board?.title}</strong></Box>
                 </Box>
 
                 {notification.boardInvitation?.status === BOARD_INVITATION_STATUS.PENDING &&
@@ -132,7 +134,7 @@ function Notifications() {
                       size="small"
                       onClick={() => updateBoardInvitation(BOARD_INVITATION_STATUS.ACCEPTED, notification._id)}
                     >
-                      Accept
+                      {tPrimary('acceptBtn')}
                     </Button>
                     <Button
                       className="interceptor-loading"
@@ -142,17 +144,17 @@ function Notifications() {
                       size="small"
                       onClick={() => updateBoardInvitation(BOARD_INVITATION_STATUS.REJECTED, notification._id)}
                     >
-                      Reject
+                      {tPrimary('rejectBtn')}
                     </Button>
                   </Box>
                 }
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
                   {notification.boardInvitation?.status === BOARD_INVITATION_STATUS.ACCEPTED &&
-                    <Chip icon={<DoneIcon />} label="Accepted" color="success" size="small" />
+                    <Chip icon={<DoneIcon />} label={tPrimary('acceptedChip')} color="success" size="small" />
                   }
                   {notification.boardInvitation?.status === BOARD_INVITATION_STATUS.REJECTED &&
-                    <Chip icon={<NotInterestedIcon />} label="Rejected" size="small" />
+                    <Chip icon={<NotInterestedIcon />} label={tPrimary('rejectedChip')} size="small" />
                   }
                 </Box>
 

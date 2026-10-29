@@ -10,8 +10,10 @@ import { useForm } from 'react-hook-form'
 import { EMAIL_RULE, FIELD_REQUIRED_MESSAGE, EMAIL_RULE_MESSAGE } from '~/utils/validators'
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import { inviteUserToBoardAPI } from '~/apis'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function InviteBoardUser({ boardId }) {
+  const { tPrimary } = useTranslation()
   const [anchorPopoverElement, setAnchorPopoverElement] = useState(null)
   const isOpenPopover = Boolean(anchorPopoverElement)
   const popoverId = isOpenPopover ? 'invite-board-user-popover' : undefined
@@ -32,7 +34,7 @@ function InviteBoardUser({ boardId }) {
 
   return (
     <Box>
-      <Tooltip title="Invite user to this board!">
+      <Tooltip title={tPrimary('inviteTooltip')}>
         <Button
           aria-describedby={popoverId}
           onClick={handleTogglePopover}
@@ -40,7 +42,7 @@ function InviteBoardUser({ boardId }) {
           startIcon={<PersonAddAltIcon />}
           sx={{ color: 'white', borderColor: 'white', '&:hover': { borderColor: 'white' } }}
         >
-          Invite
+          {tPrimary('inviteBtn')}
         </Button>
       </Tooltip>
 
@@ -54,12 +56,12 @@ function InviteBoardUser({ boardId }) {
       >
         <form onSubmit={handleSubmit(submitInviteUserToBoard)} style={{ width: '320px' }}>
           <Box sx={{ p: '15px 20px 20px 20px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="span" sx={{ fontWeight: 'bold', fontSize: '16px' }}>Invite User To This Board!</Typography>
+            <Typography variant="span" sx={{ fontWeight: 'bold', fontSize: '16px' }}>{tPrimary('invitePopoverTitle')}</Typography>
             <Box>
               <TextField
                 autoFocus
                 fullWidth
-                label="Enter email to invite..."
+                label={tPrimary('inviteEmailLabel')}
                 type="text"
                 variant="outlined"
                 {...register('inviteeEmail', {
@@ -78,7 +80,7 @@ function InviteBoardUser({ boardId }) {
                 variant="contained"
                 color="info"
               >
-                Invite
+                {tPrimary('inviteBtn')}
               </Button>
             </Box>
           </Box>

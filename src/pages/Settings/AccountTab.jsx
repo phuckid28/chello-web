@@ -15,11 +15,13 @@ import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, updateUserAPI } from '~/redux/user/userSlice'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import { useTranslation } from '~/customHooks/useTranslation'
 import soraAvatar from '~/assets/sora.jpg'
 
 function AccountTab() {
   const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
+  const { t, tPrimary } = useTranslation()
 
   const initialGeneralForm = {
     displayName: currentUser?.displayName || '',
@@ -36,10 +38,10 @@ function AccountTab() {
 
     toast.promise(
       dispatch(updateUserAPI({ displayName, avatar })),
-      { pending: 'Updating...' }
+      { pending: tPrimary('updatingToast') }
     ).then(res => {
       if (!res.error) {
-        toast.success('User updated successfully!')
+        toast.success(tPrimary('userUpdatedToast'))
       }
     })
   }
@@ -79,7 +81,7 @@ function AccountTab() {
                 disabled
                 defaultValue={currentUser?.email}
                 fullWidth
-                label="Your Email"
+                label={tPrimary('yourEmailLabel')}
                 type="text"
                 variant="filled"
                 InputProps={{
@@ -97,7 +99,7 @@ function AccountTab() {
                 disabled
                 defaultValue={currentUser?.username}
                 fullWidth
-                label="Your Username"
+                label={tPrimary('yourUsernameLabel')}
                 type="text"
                 variant="filled"
                 InputProps={{
@@ -113,7 +115,7 @@ function AccountTab() {
             <Box>
               <TextField
                 fullWidth
-                label="Your Display Name"
+                label={tPrimary('yourDisplayNameLabel')}
                 type="text"
                 variant="outlined"
                 InputProps={{
@@ -134,7 +136,7 @@ function AccountTab() {
             <Box>
               <TextField
                 fullWidth
-                label="Avatar Image URL (optional)"
+                label={tPrimary('avatarUrlLabel')}
                 type="text"
                 variant="outlined"
                 InputProps={{
@@ -155,7 +157,7 @@ function AccountTab() {
                 variant="contained"
                 color="primary"
                 fullWidth>
-                Update
+                {t('updateBtn')}
               </Button>
             </Box>
           </Box>

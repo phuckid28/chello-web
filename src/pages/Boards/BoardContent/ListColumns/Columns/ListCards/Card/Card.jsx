@@ -31,11 +31,13 @@ import {
 import { getProgressColor } from '~/utils/progress'
 import { playUiChime } from '~/utils/soundEffects'
 import { DEFAULT_PRIORITY, getPriorityOption } from '~/utils/crMeta'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function Card({ card }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const board = useSelector(selectCurrentActiveBoard)
+  const { tPrimary } = useTranslation()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
     data: { ...card }
@@ -152,7 +154,7 @@ function Card({ card }) {
             />
           </Box>
 
-          <Tooltip title="Mở Trang Riêng CR Studio & Mô Phỏng Luồng">
+          <Tooltip title={tPrimary('openCrStudioTooltip')}>
             <Chip
               icon={<PlayCircleFilledWhiteRoundedIcon sx={{ fontSize: '13px !important' }} />}
               label="Studio"

@@ -107,7 +107,7 @@ function FilterPopover({ anchorEl, onClose, filters, onChange, roster = [], stat
           ))}
         </Section>
 
-        <Section title="Labels">
+        <Section title={tPrimary('labelsFilterTitle')}>
           {ELEMENTAL_LABELS.map(lbl => (
             <FilterChip key={lbl.id} label={lbl.title} color={lbl.color} selected={filters.text === lbl.id} onClick={() => update({ text: filters.text === lbl.id ? '' : lbl.id })} />
           ))}

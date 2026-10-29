@@ -22,10 +22,12 @@ import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import { useDispatch } from 'react-redux'
 import { loginUserAPI } from '~/redux/user/userSlice'
 import { toast } from 'react-toastify'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function LoginForm() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { t, tPrimary } = useTranslation()
 
   const { register, handleSubmit, formState: { errors } } = useForm()
   let [searchParams] = useSearchParams()
@@ -36,7 +38,7 @@ function LoginForm() {
     const { email, password } = data
     toast.promise(
       dispatch(loginUserAPI({ email, password })),
-      { pending: 'Logging in...' }
+      { pending: tPrimary('loggingInToast') }
     ).then(res => {
       if (!res.error) navigate('/')
     })
@@ -66,17 +68,17 @@ function LoginForm() {
           <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
             {verifiedEmail &&
             <Alert severity="success" sx={{ '.MuiAlert-message': { overflow: 'hidden' } }}>
-              Your email&nbsp;
+              {tPrimary('emailVerifiedPart1')}&nbsp;
               <Typography variant="span" sx={{ fontWeight: 'bold', '&:hover': { color: '#fdba26' } }}>{verifiedEmail}</Typography>
-              &nbsp;has been verified.<br />Now you can login to enjoy our services! Have a good day!
+              &nbsp;{tPrimary('emailVerifiedPart2')}
             </Alert>
             }
 
             {registeredEmail &&
             <Alert severity="info" sx={{ '.MuiAlert-message': { overflow: 'hidden' } }}>
-              An email has been sent to&nbsp;
+              {tPrimary('emailRegisteredPart1')}&nbsp;
               <Typography variant="span" sx={{ fontWeight: 'bold', '&:hover': { color: '#fdba26' } }}>{registeredEmail}</Typography>
-              <br />Please check and verify your account before logging in!
+              <br />{tPrimary('emailRegisteredPart2')}
             </Alert>
             }
           </Box>
@@ -85,7 +87,7 @@ function LoginForm() {
               <TextField
                 autoFocus
                 fullWidth
-                label="Enter Email..."
+                label={tPrimary('enterEmailLabel')}
                 type="text"
                 variant="outlined"
                 error={!!errors['email']}
@@ -102,7 +104,7 @@ function LoginForm() {
             <Box sx={{ marginTop: '1em' }}>
               <TextField
                 fullWidth
-                label="Enter Password..."
+                label={tPrimary('enterPasswordLabel')}
                 type="password"
                 variant="outlined"
                 error={!!errors['password']}
@@ -126,13 +128,13 @@ function LoginForm() {
               size="large"
               fullWidth
             >
-              Login
+              {t('loginBtn')}
             </Button>
           </CardActions>
           <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
-            <Typography>New to Chella?</Typography>
+            <Typography>{tPrimary('newToChella')}</Typography>
             <Link to="/register" style={{ textDecoration: 'none' }}>
-              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>Create account!</Typography>
+              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>{t('createAccountLink')}</Typography>
             </Link>
           </Box>
         </MuiCard>

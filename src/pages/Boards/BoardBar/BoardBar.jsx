@@ -37,6 +37,7 @@ import { updateBoardDetailsAPI } from '~/apis'
 import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { formatMessage } from '~/utils/i18nV5'
 import { usePomodoro, formatTimer } from '~/customHooks/usePomodoro'
 import { countActiveFilters } from '~/utils/crFilters'
 import {
@@ -122,7 +123,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
   const handleToggleBoardType = () => {
     const nextType = board?.type === 'public' ? 'private' : 'public'
     optimisticBoardUpdate({ type: nextType })
-      .then(() => toast.info(`Board visibility: ${capitalizeFirstLetter(nextType)}`))
+      .then(() => toast.info(formatMessage(tPrimary('boardVisibilityToast'), { type: capitalizeFirstLetter(nextType) })))
       .catch(() => {})
   }
 
@@ -180,7 +181,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
           </Box>
         </Tooltip>
 
-        <Tooltip title={board?.isStarred ? 'Unstar' : 'Star'}>
+        <Tooltip title={board?.isStarred ? tPrimary('unstarTooltip') : tPrimary('starTooltip')}>
           <IconButton
             size="small"
             onClick={handleToggleStarBoard}
@@ -276,7 +277,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
           clickable
         />
 
-        <Tooltip title="Public / Private">
+        <Tooltip title={tPrimary('boardVisibilityTooltip')}>
           <Chip
             size="small"
             sx={{ ...MENU_STYLES, display: { xs: 'none', xl: 'inline-flex' } }}

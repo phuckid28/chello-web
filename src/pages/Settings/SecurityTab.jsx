@@ -15,29 +15,31 @@ import { useConfirm } from 'material-ui-confirm'
 import { toast } from 'react-toastify'
 import { useDispatch } from 'react-redux'
 import { logoutUserAPI, updateUserAPI } from '~/redux/user/userSlice'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function SecurityTab() {
   const dispatch = useDispatch()
+  const { t, tPrimary } = useTranslation()
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
 
   const confirmChangePassword = useConfirm()
   const submitChangePassword = (data) => {
     confirmChangePassword({
       title: <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <LogoutIcon sx={{ color: 'warning.dark' }} /> Change Password
+        <LogoutIcon sx={{ color: 'warning.dark' }} /> {tPrimary('changePasswordConfirmTitle')}
       </Box>,
-      description: 'You have to login again after successfully changing your password. Continue?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      description: tPrimary('changePasswordConfirmDesc'),
+      confirmationText: tPrimary('confirmBtn'),
+      cancellationText: tPrimary('cancelBtn')
     }).then(() => {
       const { current_password, new_password } = data
 
       toast.promise(
         dispatch(updateUserAPI({ current_password, new_password })),
-        { pending: 'Updating...' }
+        { pending: tPrimary('updatingToast') }
       ).then(res => {
         if (!res.error) {
-          toast.success('Successfully changed your password, please login again!')
+          toast.success(tPrimary('passwordChangedToast'))
           dispatch(logoutUserAPI(false))
         }
       })
@@ -61,14 +63,14 @@ function SecurityTab() {
         gap: 3
       }}>
         <Box>
-          <Typography variant="h5">Security Dashboard</Typography>
+          <Typography variant="h5">{t('securityDashboardTitle')}</Typography>
         </Box>
         <form onSubmit={handleSubmit(submitChangePassword)}>
           <Box sx={{ width: '400px', display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
               <TextField
                 fullWidth
-                label="Current Password"
+                label={tPrimary('currentPasswordLabel')}
                 type="password"
                 variant="outlined"
                 InputProps={{
@@ -93,7 +95,7 @@ function SecurityTab() {
             <Box>
               <TextField
                 fullWidth
-                label="New Password"
+                label={tPrimary('newPasswordLabel')}
                 type="password"
                 variant="outlined"
                 InputProps={{
@@ -118,7 +120,7 @@ function SecurityTab() {
             <Box>
               <TextField
                 fullWidth
-                label="New Password Confirmation"
+                label={tPrimary('newPasswordConfirmLabel')}
                 type="password"
                 variant="outlined"
                 InputProps={{
@@ -131,7 +133,7 @@ function SecurityTab() {
                 {...register('new_password_confirmation', {
                   validate: (value) => {
                     if (value === watch('new_password')) return true
-                    return 'Password confirmation does not match.'
+                    return tPrimary('passwordMismatchMsg')
                   }
                 })}
                 error={!!errors['new_password_confirmation']}
@@ -146,7 +148,7 @@ function SecurityTab() {
                 variant="contained"
                 color="primary"
                 fullWidth>
-                Change
+                {t('changePasswordBtn')}
               </Button>
             </Box>
           </Box>

@@ -20,6 +20,8 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import { toast } from 'react-toastify'
 import { uploadFrdToGoogleDriveAPI } from '~/apis'
 import { downloadAttachedFrdFile } from '~/utils/excelExporter'
+import { useTranslation } from '~/customHooks/useTranslation'
+import { formatMessage } from '~/utils/i18nV5'
 import { playUiChime } from '~/utils/soundEffects'
 import LoadingButton from '~/components/Loading/LoadingButton'
 
@@ -61,6 +63,7 @@ function GoogleDriveFrdControls({
   onDeleteFrdDoc,
   onApplyFrdToDescription
 }) {
+  const { tPrimary } = useTranslation()
   const [uploadingDrive, setUploadingDrive] = useState(false)
   const [showDriveLinkInput, setShowDriveLinkInput] = useState(false)
   const [driveUrlInput, setDriveUrlInput] = useState('')
@@ -115,7 +118,7 @@ function GoogleDriveFrdControls({
         }
         await onAppendFrdDoc(newDoc, isTextOrMd ? textContent : '')
         playUiChime('complete')
-        toast.success(`☁️ Đã lưu "${file.name}" lên Google Drive Vault thành công!`)
+        toast.success(formatMessage(tPrimary('uploadedToDriveToast'), { name: file.name }))
         return
       }
 
@@ -134,7 +137,7 @@ function GoogleDriveFrdControls({
       if (driveRes?.message) {
         toast.info(driveRes.message, { autoClose: 7000 })
       } else {
-        toast.success(`Đã đính kèm tài liệu FRD "${file.name}" vào thẻ CR!`)
+        toast.success(formatMessage(tPrimary('savedLocalFrdFallbackToast'), { name: file.name }))
       }
     } catch (err) {
       // Handled by interceptor
@@ -146,7 +149,7 @@ function GoogleDriveFrdControls({
   const handleAttachExistingDriveLink = async () => {
     const fileId = extractGoogleDriveFileId(driveUrlInput)
     if (!fileId) {
-      toast.warning('Vui lòng dán đường dẫn hợp lệ từ Google Drive / Docs (có chứa /d/<ID>/)!')
+      toast.warning(tPrimary('enterValidDriveUrlToast'))
       return
     }
     const cleanTitle = driveTitleInput.trim() || `FRD_${activeCard?.crCode || 'CR'}_Drive.pdf`
@@ -168,7 +171,7 @@ function GoogleDriveFrdControls({
     setDriveTitleInput('')
     setShowDriveLinkInput(false)
     playUiChime('complete')
-    toast.success(`☁️ Đã liên kết tài liệu Google Drive "${cleanTitle}" vào CR!`)
+    toast.success(tPrimary('linkedDriveDocToast'))
   }
 
   const docs = activeCard?.frdDocuments || []
@@ -182,11 +185,11 @@ function GoogleDriveFrdControls({
           variant="contained"
           color="info"
           loading={uploadingDrive}
-          loadingLabel="Đang đẩy lên Drive..."
+          loadingLabel={tPrimary('uploadingDriveLabel')}
           startIcon={<CloudUploadRoundedIcon />}
           sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
         >
-          ☁️ Upload FRD lên Google Drive (.PDF / .DOCX / .MD)
+          {tPrimary('uploadFrdDriveBtn')}
           <input
             type="file"
             hidden
@@ -203,7 +206,7 @@ function GoogleDriveFrdControls({
           onClick={() => setShowDriveLinkInput((prev) => !prev)}
           sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
         >
-          Gắn link Google Drive có sẵn
+          {tPrimary('attachDriveLinkBtn')}
         </Button>
       </Stack>
 
@@ -222,13 +225,13 @@ function GoogleDriveFrdControls({
           <TextField
             size="small"
             fullWidth
-            label="Link Google Drive / Google Docs (https://drive.google.com/file/d/...)"
+            label={tPrimary('driveLinkInputLabel')}
             value={driveUrlInput}
             onChange={(e) => setDriveUrlInput(e.target.value)}
           />
           <TextField
             size="small"
-            label="Tên hiển thị (tuỳ chọn)"
+            label={tPrimary('driveTitleInputLabel')}
             value={driveTitleInput}
             onChange={(e) => setDriveTitleInput(e.target.value)}
             sx={{ minWidth: { xs: '100%', sm: 200 } }}
@@ -239,7 +242,7 @@ function GoogleDriveFrdControls({
             onClick={handleAttachExistingDriveLink}
             sx={{ textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}
           >
-            Liên kết Drive
+            {tPrimary('linkDriveBtn')}
           </Button>
         </Stack>
       )}
@@ -298,7 +301,7 @@ function GoogleDriveFrdControls({
                       onClick={() => setPreviewDoc(doc)}
                       sx={{ textTransform: 'none', fontSize: '0.74rem', fontWeight: 700, py: 0.25 }}
                     >
-                      Xem
+                      {tPrimary('viewBtn')}
                     </Button>
                   )}
                   {isDrive && doc.webViewLink && (
@@ -309,7 +312,7 @@ function GoogleDriveFrdControls({
                       href={doc.webViewLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title="Mở trên Google Drive"
+                      title={tPrimary('openInDriveTooltip')}
                     >
                       <OpenInNewRoundedIcon fontSize="small" />
                     </IconButton>
@@ -320,7 +323,7 @@ function GoogleDriveFrdControls({
                       onClick={() => onApplyFrdToDescription(doc)}
                       sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 700 }}
                     >
-                      Nạp vào Mô tả
+                      {tPrimary('applyToDescBtn')}
                     </Button>
                   )}
                   <IconButton
@@ -333,7 +336,7 @@ function GoogleDriveFrdControls({
                         downloadAttachedFrdFile(doc)
                       }
                     }}
-                    title="Tải xuống file FRD"
+                    title={tPrimary('downloadFrdTooltip')}
                   >
                     <DownloadRoundedIcon fontSize="small" />
                   </IconButton>
@@ -341,7 +344,7 @@ function GoogleDriveFrdControls({
                     size="small"
                     color="error"
                     onClick={() => onDeleteFrdDoc(doc.id)}
-                    title="Xóa file FRD"
+                    title={tPrimary('deleteFrdTooltip')}
                   >
                     <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
@@ -352,7 +355,7 @@ function GoogleDriveFrdControls({
         </Stack>
       ) : (
         <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 1.5 }}>
-          Chưa có file FRD đính kèm. Bạn có thể tải trực tiếp lên Google Drive Vault (.PDF, .DOCX, .XLSX, .MD) hoặc gắn link Drive có sẵn.
+          {tPrimary('noFrdAttachedMsg')}
         </Typography>
       )}
 
@@ -378,7 +381,7 @@ function GoogleDriveFrdControls({
               rel="noopener noreferrer"
               sx={{ textTransform: 'none', fontWeight: 700 }}
             >
-              Mở trên Google Drive
+              {tPrimary('openInDriveTooltip')}
             </Button>
           )}
         </DialogTitle>
@@ -404,13 +407,13 @@ function GoogleDriveFrdControls({
                 whiteSpace: 'pre-wrap'
               }}
             >
-              {previewDoc?.content || 'Không có nội dung văn bản xem trước.'}
+              {previewDoc?.content || '—'}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewDoc(null)} sx={{ textTransform: 'none', fontWeight: 700 }}>
-            Đóng
+            {tPrimary('closeBtn')}
           </Button>
         </DialogActions>
       </Dialog>

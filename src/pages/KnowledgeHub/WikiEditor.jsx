@@ -271,7 +271,7 @@ function WikiEditor({ page, cards, lang, labels, onSave, onDelete, resolveTarget
           sx={{ '& .MuiToggleButton-root': { textTransform: 'none', fontWeight: 700, px: 1.5 } }}
         >
           <ToggleButton value="edit">{labels.editBtn}</ToggleButton>
-          <ToggleButton value="split">Split</ToggleButton>
+          <ToggleButton value="split">{labels.splitModeBtn || 'Split'}</ToggleButton>
           <ToggleButton value="preview">{labels.previewBtn}</ToggleButton>
         </ToggleButtonGroup>
       </Box>

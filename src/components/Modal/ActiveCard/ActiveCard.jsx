@@ -114,7 +114,7 @@ function ActiveCard() {
   const currentUser = useSelector(selectCurrentUser)
   const board = useSelector(selectCurrentActiveBoard)
   const confirmDeleteCard = useConfirm()
-  const { t } = useTranslation()
+  const { t, tPrimary, formatMessage } = useTranslation()
 
   const defaultSprint = board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name
 
@@ -237,7 +237,7 @@ function ActiveCard() {
     }
     setNewRosterMemberName('')
     playUiChime('complete')
-    toast.success(`Đã gắn người phụ trách "${trimmed}" vào CR!`)
+    toast.success(formatMessage('addedMemberToRosterToast', { name: trimmed }))
   }
 
   const onSaveBaCrMetadata = async (event) => {
@@ -265,7 +265,7 @@ function ActiveCard() {
       })
       playUiChime('complete')
       if (isDone) fxCelebrate(targetEl)
-      toast.success(`Đã lưu thông tin CR [${crCode.trim() || activeCard?.title}]!`)
+      toast.success(tPrimary('savedCrInfoToast'))
     } finally {
       setSavingCr(false)
     }
@@ -292,35 +292,34 @@ function ActiveCard() {
     }
     await onAppendFrdDoc(newDoc, markdownText)
     playUiChime('complete')
-    toast.success(`Đã đính kèm tài liệu AI "${fileName}" vào danh sách FRD!`)
+    toast.success(tPrimary('savedAiFrdFileToast'))
   }
 
   const onDeleteFrdDocument = async (docId) => {
     const nextDocs = (activeCard?.frdDocuments || []).filter(d => d.id !== docId)
     await callApiUpdateCard({ frdDocuments: nextDocs })
-    toast.info('Đã gỡ file FRD khỏi thẻ CR.')
+    toast.info(tPrimary('removedFrdDocToast'))
   }
 
   const onApplyFrdToDescription = async (frdDoc) => {
     if (!frdDoc?.content || frdDoc.content.startsWith('data:')) {
-      toast.info('File nhị phân (PDF/DOCX) được hỗ trợ tải xuống trực tiếp.')
       return
     }
     await callApiUpdateCard({ description: frdDoc.content })
-    toast.success(`Đã nạp nội dung "${frdDoc.name}" vào khung Đặc tả FRD!`)
+    toast.success(formatMessage('appliedFrdToDescToast', { name: frdDoc.name }))
   }
 
   const onInsertBaFrdTemplate = async () => {
     const templateMd = GENERATE_BA_FRD_TEMPLATE(
       crCode || 'BNPL-945',
-      activeCard?.title || 'Đặc tả Change Request'
+      activeCard?.title || 'Change Request'
     )
     const nextDesc = activeCard?.description
       ? `${activeCard.description}\n\n---\n\n${templateMd}`
       : templateMd
     await callApiUpdateCard({ description: nextDesc })
     playUiChime('sparkle')
-    toast.success('Đã chèn khung đặc tả FRD & Sơ đồ Sequence!')
+    toast.success(tPrimary('appliedAiFrdToast'))
   }
 
   const onAddLinkedCard = async () => {
@@ -333,7 +332,7 @@ function ActiveCard() {
     await callApiUpdateCard({ linkedCardIds: [...currentLinks, selectedLinkCardId] })
     setSelectedLinkCardId('')
     playUiChime('sparkle')
-    toast.success('Đã liên kết tri thức CR thành công!')
+    toast.success(formatMessage('linkedWithCardToast', { code: 'CR' }))
   }
 
   const onRemoveLinkedCard = async (targetId) => {
@@ -411,10 +410,10 @@ function ActiveCard() {
 
   const handleDeleteCard = () => {
     confirmDeleteCard({
-      title: 'Xóa thẻ CR này?',
-      description: 'Hành động này sẽ xóa vĩnh viễn thẻ CR và các tài liệu đính kèm trên thẻ. Bạn có chắc chắn không?',
-      confirmationText: 'Xóa thẻ',
-      cancellationText: 'Hủy'
+      title: tPrimary('deleteCardConfirmTitle'),
+      description: formatMessage('deleteCardConfirmDesc', { title: activeCard?.title || 'CR' }),
+      confirmationText: tPrimary('deleteCrCardBtn'),
+      cancellationText: tPrimary('cancelBtn')
     }).then(() => {
       const cardId = activeCard._id
       const columnId = activeCard.columnId
@@ -433,8 +432,8 @@ function ActiveCard() {
       }
       dispatch(updateCurrentActiveBoard(newBoard))
 
-      deleteCardDetailsAPI(cardId).then(res => {
-        toast.success(res?.deleteResult || 'Đã xóa thẻ CR thành công')
+      deleteCardDetailsAPI(cardId).then(() => {
+        toast.success(tPrimary('deletedCrCardToast'))
       })
     }).catch(() => {})
   }
@@ -647,7 +646,7 @@ function ActiveCard() {
                   }}
                 >
                   <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 0.75, color: 'primary.main' }}>
-                    👤 Handle by — Chọn nhanh nhân sự phụ trách (Hỗ trợ gắn task trực tiếp chưa cần tài khoản):
+                    👤 {t('handleByQuickPickLabel')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mb: 1.25 }}>
                     {teamRoster.map((member) => {
@@ -671,15 +670,15 @@ function ActiveCard() {
                   </Box>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                     <TextField
-                      label="Handle by (Chuỗi xuất ra cột Handle by trên Excel)"
+                      label={tPrimary('handleByInputLabel')}
                       size="small"
                       fullWidth
                       value={assignee}
                       onChange={(e) => setAssignee(e.target.value)}
-                      placeholder="VD: Ho Thao Dieu, Hoang Vinh Son"
+                      placeholder="Ho Thao Dieu, Hoang Vinh Son"
                     />
                     <TextField
-                      label="Thêm tên nhân sự mới..."
+                      label={tPrimary('addNewMemberPlaceholder')}
                       size="small"
                       value={newRosterMemberName}
                       onChange={(e) => setNewRosterMemberName(e.target.value)}
@@ -698,20 +697,20 @@ function ActiveCard() {
                       onClick={handleAddUnregisteredMemberToRoster}
                       sx={{ textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}
                     >
-                      Gắn thêm
+                      {t('assignMoreBtn')}
                     </Button>
                   </Stack>
                 </Box>
 
                 <TextField
-                  label="Note (Ghi chú xuất ra báo cáo Excel Sprint)"
+                  label={tPrimary('noteInputLabel')}
                   size="small"
                   fullWidth
                   multiline
                   minRows={2}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Ghi chú tiến độ, vướng mắc, kết quả review FRD hoặc lưu ý UAT..."
+                  placeholder={tPrimary('noteInputPlaceholder')}
                 />
               </Stack>
             </Box>
@@ -730,7 +729,7 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DescriptionOutlinedIcon color="secondary" />
                   <Typography sx={{ fontWeight: 800, fontSize: '16px' }}>
-                    Tài liệu FRD Đính kèm (Google Drive Vault) & Liên kết Kiến thức (Obsidian WikiLinks)
+                    {t('frdDocsAndLinksSection')}
                   </Typography>
                 </Box>
                 <Button
@@ -740,7 +739,7 @@ function ActiveCard() {
                   onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
-                  Xuất CR ra .MD
+                  {t('downloadFrdBtn')}
                 </Button>
               </Box>
 
@@ -757,7 +756,7 @@ function ActiveCard() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <LinkRoundedIcon fontSize="small" color="primary" />
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  Liên kết CR / Module liên quan ({linkedCards.length})
+                  {formatMessage('relatedCrsInSystemTitle', { count: linkedCards.length })}
                 </Typography>
               </Box>
               {linkedCards.length > 0 && (
@@ -781,7 +780,7 @@ function ActiveCard() {
                   select
                   size="small"
                   fullWidth
-                  label="Chọn CR / Thẻ khác trên Board để liên kết kiến thức..."
+                  label={tPrimary('selectCrToLinkLabel')}
                   value={selectedLinkCardId}
                   onChange={(e) => setSelectedLinkCardId(e.target.value)}
                 >
@@ -792,7 +791,7 @@ function ActiveCard() {
                   ))}
                 </TextField>
                 <Button variant="outlined" size="small" onClick={onAddLinkedCard} sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}>
-                  Liên kết
+                  {t('linkCrBtn')}
                 </Button>
               </Stack>
             </Box>
@@ -802,7 +801,7 @@ function ActiveCard() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <LabelImportantOutlinedIcon fontSize="small" color="primary" />
                 <Typography sx={{ fontWeight: 700, color: 'primary.main', fontSize: '15px' }}>
-                  Phân loại Nhãn • Tags
+                  {t('tagsSectionTitle')}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -831,7 +830,7 @@ function ActiveCard() {
 
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1, fontSize: '15px' }}>
-                Tài khoản đã đăng ký tham gia thẻ • Registered Members
+                {t('registeredMembersTitle')}
               </Typography>
               <CardUserGroup
                 cardMemberIds={activeCard?.memberIds}
@@ -845,7 +844,7 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <FactCheckOutlinedIcon color="primary" />
                   <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
-                    Subtasks & UAT Checklist ({completedCount}/{checklist.length})
+                    {formatMessage('subtasksChecklistTitle', { done: completedCount, total: checklist.length })}
                   </Typography>
                 </Box>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
@@ -900,7 +899,7 @@ function ActiveCard() {
                 <TextField
                   size="small"
                   fullWidth
-                  placeholder="Thêm hạng mục công việc hoặc kịch bản nghiệm thu UAT..."
+                  placeholder={tPrimary('addSubtaskPlaceholder')}
                   value={newQuestTitle}
                   onChange={(e) => setNewQuestTitle(e.target.value)}
                   onKeyDown={(e) => {
@@ -928,7 +927,7 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <SubjectRoundedIcon color="primary" />
                   <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
-                    Đặc tả Chi tiết FRD & Mô hình hóa Nghiệp vụ
+                    {t('frdDetailSectionTitle')}
                   </Typography>
                 </Box>
                 <Button
@@ -938,7 +937,7 @@ function ActiveCard() {
                   onClick={onInsertBaFrdTemplate}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
-                  Chèn khung FRD & Sequence
+                  {t('insertFrdTemplateBtn')}
                 </Button>
               </Box>
               <CardDescriptionMdEditor
@@ -951,7 +950,7 @@ function ActiveCard() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <DvrOutlinedIcon color="primary" />
                 <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
-                  Nhật ký Trao đổi & Review • Thảo luận
+                  {t('activitySectionTitle')}
                 </Typography>
               </Box>
               <CardActivitySection
@@ -963,7 +962,7 @@ function ActiveCard() {
 
           <Grid xs={12} sm={3.5}>
             <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
-              Thao tác Nhanh • Actions
+              {t('quickActionsTitle')}
             </Typography>
             <Stack direction="column" spacing={1}>
               <SidebarItem
@@ -986,7 +985,7 @@ function ActiveCard() {
                   })}
                 >
                   <PersonOutlineOutlinedIcon fontSize="small" />
-                  <span>Nhận phụ trách (Join CR)</span>
+                  <span>{t('joinCardBtn')}</span>
                 </SidebarItem>
               }
               <SidebarItem
@@ -994,14 +993,14 @@ function ActiveCard() {
                 onClick={onInsertBaFrdTemplate}
               >
                 <AutoFixHighRoundedIcon fontSize="small" />
-                <span>Chèn mẫu FRD & Sequence</span>
+                <span>{t('insertFrdTemplateBtn')}</span>
               </SidebarItem>
               <SidebarItem
                 className="active"
                 onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
               >
                 <DownloadRoundedIcon fontSize="small" />
-                <span>Tải xuống FRD (.MD)</span>
+                <span>{t('downloadFrdBtn')}</span>
               </SidebarItem>
               <SidebarItem
                 className="active"
@@ -1011,7 +1010,7 @@ function ActiveCard() {
                 }}
               >
                 <ImageOutlinedIcon fontSize="small" />
-                <span>Ảnh bìa Thẻ (Cover)</span>
+                <span>{t('coverImageBtn')}</span>
               </SidebarItem>
 
               {showCoverInput &&
@@ -1019,7 +1018,7 @@ function ActiveCard() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <SoraBunnyIcon sx={{ fontSize: 16 }} />
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                      Chọn Ảnh bìa Thẻ CR:
+                      {t('selectCoverTitle')}:
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
@@ -1036,7 +1035,7 @@ function ActiveCard() {
                     ))}
                     {activeCard?.cover && (
                       <Chip
-                        label="Gỡ ảnh bìa"
+                        label={tPrimary('clearCoverBtn')}
                         size="small"
                         color="error"
                         variant="outlined"
@@ -1047,13 +1046,13 @@ function ActiveCard() {
                   </Box>
                   <TextField
                     size="small"
-                    label="Hoặc dán link ảnh https://..."
+                    label={tPrimary('pasteImageUrlLabel')}
                     value={coverUrlInput}
                     onChange={(e) => setCoverUrlInput(e.target.value)}
                   />
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                     <Button size="small" variant="contained" color="info" onClick={() => onUpdateCardCover()}>
-                      Lưu ảnh
+                      {t('applyBtn')}
                     </Button>
                   </Box>
                 </Box>
@@ -1062,14 +1061,13 @@ function ActiveCard() {
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Quản trị Thẻ</Typography>
             <Stack direction="column" spacing={1}>
               <SidebarItem
                 onClick={handleDeleteCard}
                 sx={{ color: 'error.main', '&:hover': { color: 'error.dark' } }}
               >
                 <DeleteOutlineIcon fontSize="small" />
-                <span>Xóa thẻ CR</span>
+                <span>{t('deleteCrCardBtn')}</span>
               </SidebarItem>
             </Stack>
           </Grid>

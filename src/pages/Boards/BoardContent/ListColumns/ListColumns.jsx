@@ -28,7 +28,7 @@ function ListColumns({ columns }) {
   const [newColumnTitle, setNewColumnTitle] = useState('')
   const addNewColumn = async () => {
     if (!newColumnTitle) {
-      toast.error('Please enter CR Topic title')
+      toast.error(tPrimary('pleaseEnterColumnTitleToast'))
       return
     }
     const newColumnData = {

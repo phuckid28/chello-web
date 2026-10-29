@@ -35,6 +35,7 @@ import {
 } from '~/redux/activeBoard/activeBoardSlice'
 import { updateCardDetailsAPI } from '~/apis'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { useTranslation } from '~/customHooks/useTranslation'
 import {
   BA_STATUS_OPTIONS,
   DEFAULT_SPRINT_CONFIG,
@@ -216,6 +217,7 @@ function CrStudio() {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
   const { themeConfig } = usePersonaTheme(board?.theme)
+  const { t, tPrimary, formatMessage } = useTranslation()
 
   const [scenario, setScenario] = useState('happy') // 'happy' | 'edge' | 'error'
   const [activeStepIdx, setActiveStepIdx] = useState(0)
@@ -284,7 +286,7 @@ function CrStudio() {
   }, [isPlaying, simulationSteps.length])
 
   if (!board) {
-    return <PageLoadingSpinner caption="Loading CR Studio & Interactive Flow Simulator..." />
+    return <PageLoadingSpinner caption={tPrimary('loadingWorkspace')} />
   }
 
   if (!card) {
@@ -293,10 +295,10 @@ function CrStudio() {
         <AppBar boardTheme={board?.theme} />
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
-            Không tìm thấy CR này trên Sprint Board
+            {t('crNotFoundOnBoard')}
           </Typography>
           <Button variant="contained" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate(`/boards/${boardId}`)}>
-            Quay lại Sprint Board
+            {t('backToSprintBoard')}
           </Button>
         </Box>
       </Container>
@@ -334,7 +336,7 @@ function CrStudio() {
       dispatch(updateCardInBoard(updated))
       playUiChime('complete')
       if (isDone) fxCelebrate(targetEl)
-      toast.success(`Đã lưu cập nhật cho [${card.crCode || card.title}]!`)
+      toast.success(tPrimary('savedCrAndSyncedToast'))
     } finally {
       setSavingCr(false)
     }
@@ -455,10 +457,10 @@ function CrStudio() {
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AutoFixHighRoundedIcon sx={{ color: themeConfig.accentColor }} />
-                  Trực Quan Hóa Kỹ Thuật & Mô Phỏng Luồng CR (Interactive CR Simulator)
+                  {t('simulatorTitle')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Mô phỏng trực quan từng bước xử lý hệ thống, kiểm tra Business Rules, Database Sync và các kịch bản Edge Case của [{card.crCode || 'CR'}]
+                  {t('simulatorSub')} [{card.crCode || 'CR'}]
                 </Typography>
               </Box>
 
@@ -523,7 +525,7 @@ function CrStudio() {
                   }}
                   sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '8px' }}
                 >
-                  {isPlaying ? 'Tạm dừng' : 'Chạy mô phỏng (Play)'}
+                  {isPlaying ? t('pauseSimulationBtn') : t('playSimulationBtn')}
                 </Button>
                 <Button
                   size="small"
@@ -536,7 +538,7 @@ function CrStudio() {
                   }}
                   sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)', textTransform: 'none', fontWeight: 700 }}
                 >
-                  Bước tiếp theo ({activeStepIdx + 1}/{simulationSteps.length})
+                  {t('nextStepBtn')} ({activeStepIdx + 1}/{simulationSteps.length})
                 </Button>
                 <Button
                   size="small"
@@ -553,7 +555,7 @@ function CrStudio() {
               </Stack>
 
               <Typography variant="caption" sx={{ color: '#38bdf8', fontWeight: 800 }}>
-                Đang quan sát: {currentStep.stage} — {currentStep.actor}
+                {formatMessage('observingStageLabel', { step: activeStepIdx + 1, total: simulationSteps.length })} {currentStep.stage} — {currentStep.actor}
               </Typography>
             </Box>
 
@@ -691,7 +693,7 @@ function CrStudio() {
               <CardContent sx={{ p: 2.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                    📋 Thông tin CR (Chuẩn Template Sprint {sprintConfig.sprintNumber || '34'}) & Đặc tả FRD
+                    {t('crTemplateInfoTitle')} (Sprint {sprintConfig.sprintNumber || '34'})
                   </Typography>
                   <LoadingButton
                     variant="contained"
@@ -701,7 +703,7 @@ function CrStudio() {
                     onClick={handleSaveCrMetadata}
                     sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '8px' }}
                   >
-                    Lưu cập nhật CR
+                    {t('saveCrUpdateBtn')}
                   </LoadingButton>
                 </Box>
 
@@ -724,7 +726,7 @@ function CrStudio() {
                     <TextField
                       fullWidth
                       size="small"
-                      label="Handle by (Có thể gắn nhiều người, phân cách bằng dấu phẩy)"
+                      label={tPrimary('handleByInputLabel')}
                       value={handleByVal}
                       onChange={(e) => setHandleByVal(e.target.value)}
                       placeholder="Ho Thao Dieu, Hoang Vinh Son"
@@ -734,10 +736,10 @@ function CrStudio() {
                     <TextField
                       fullWidth
                       size="small"
-                      label="Due date for dev (VD: 5/11)"
+                      label="Due date for dev"
                       value={dueDateVal}
                       onChange={(e) => setDueDateVal(e.target.value)}
-                      placeholder="2026-11-05 hoặc 5/11"
+                      placeholder="2026-11-05 / 5/11"
                     />
                   </Grid>
                   <Grid xs={6} sm={4}>
@@ -770,7 +772,7 @@ function CrStudio() {
                 <Divider sx={{ my: 2 }} />
 
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
-                  📄 Nội dung Đặc tả Kỹ thuật & Nghiệp vụ (FRD Markdown)
+                  {t('frdMarkdownContentTitle')}
                 </Typography>
                 <Box
                   sx={{
@@ -786,7 +788,7 @@ function CrStudio() {
                     overflowY: 'auto'
                   }}
                 >
-                  {card.description || 'Chưa có nội dung FRD chi tiết.'}
+                  {card.description || tPrimary('noFrdContentYet')}
                 </Box>
               </CardContent>
             </Card>
@@ -804,7 +806,7 @@ function CrStudio() {
 
                 {/* Assignees (Handle by) */}
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 0.75 }}>
-                  NGƯỜI CHỊU TRÁCH NHIỆM (HANDLE BY)
+                  {t('responsibleHandleByTitle')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2 }}>
                   {assignees.length > 0 ? assignees.map(person => (
@@ -816,13 +818,13 @@ function CrStudio() {
                       sx={{ fontWeight: 700 }}
                     />
                   )) : (
-                    <Typography variant="caption" color="text.secondary">Chưa gắn người phụ trách</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('noAssigneeYet')}</Typography>
                   )}
                 </Box>
 
                 {/* Progress & Due Date Telemetry */}
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                  TIẾN ĐỘ DEV PROGRESS & DUE DATE
+                  {t('devProgressDueDateTitle')}
                 </Typography>
                 <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: 'action.hover', mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -842,7 +844,7 @@ function CrStudio() {
 
                 {/* Attached FRDs */}
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 0.75 }}>
-                  TÀI LIỆU FRD ĐÍNH KÈM ({(card.frdDocuments || []).length})
+                  {formatMessage('attachedFrdDocsTitle', { count: (card.frdDocuments || []).length })}
                 </Typography>
                 <Stack spacing={0.75} sx={{ mb: 2 }}>
                   {(card.frdDocuments || []).map(doc => (
@@ -867,13 +869,13 @@ function CrStudio() {
                     </Box>
                   ))}
                   {(!card.frdDocuments || card.frdDocuments.length === 0) && (
-                    <Typography variant="caption" color="text.secondary">Chưa có file đính kèm</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('noAttachedFiles')}</Typography>
                   )}
                 </Stack>
 
                 {/* Connected CRs in same Topic or WikiLinked */}
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 0.75 }}>
-                  CÁC CR LIÊN QUAN TRONG HỆ THỐNG ({linkedCrs.length})
+                  {formatMessage('relatedCrsInSystemTitle', { count: linkedCrs.length })}
                 </Typography>
                 <Stack spacing={0.75}>
                   {linkedCrs.map(({ card: lc, columnTitle: lcCol }) => (

@@ -20,16 +20,18 @@ import {
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import { toast } from 'react-toastify'
 import { registerUserAPI } from '~/apis'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function RegisterForm() {
   const { register, handleSubmit, formState: { errors }, watch } = useForm()
   const navigate = useNavigate()
+  const { t, tPrimary } = useTranslation()
 
   const submitRegister = (data) => {
     const { email, password } = data
     toast.promise(
       registerUserAPI({ email, password }),
-      { pending: 'Registration is in progress...' }
+      { pending: tPrimary('registeringToast') }
     ).then(user => {
       navigate(`/login?registeredEmail=${user.email}`)
     })
@@ -61,7 +63,7 @@ function RegisterForm() {
               <TextField
                 autoFocus
                 fullWidth
-                label="Enter Email..."
+                label={tPrimary('enterEmailLabel')}
                 type="text"
                 variant="outlined"
                 error={!!errors['email']}
@@ -78,7 +80,7 @@ function RegisterForm() {
             <Box sx={{ marginTop: '1em' }}>
               <TextField
                 fullWidth
-                label="Enter Password..."
+                label={tPrimary('enterPasswordLabel')}
                 type="password"
                 variant="outlined"
                 error={!!errors['password']}
@@ -95,14 +97,14 @@ function RegisterForm() {
             <Box sx={{ marginTop: '1em' }}>
               <TextField
                 fullWidth
-                label="Enter Password Confirmation..."
+                label={tPrimary('enterPasswordConfirmLabel')}
                 type="password"
                 variant="outlined"
                 error={!!errors['password_confirmation']}
                 {...register('password_confirmation', {
                   validate: (value) => {
                     if (value === watch('password')) return true
-                    return 'Password does not match!'
+                    return tPrimary('passwordMismatchMsg')
                   }
                 })}
               />
@@ -118,13 +120,13 @@ function RegisterForm() {
               size="large"
               fullWidth
             >
-              Register
+              {t('registerBtn')}
             </Button>
           </CardActions>
           <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
-            <Typography>Already have a Chella account?</Typography>
+            <Typography>{tPrimary('alreadyHaveAccount')}</Typography>
             <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>Log in!</Typography>
+              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>{t('loginLink')}</Typography>
             </Link>
           </Box>
         </MuiCard>

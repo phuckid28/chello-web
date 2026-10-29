@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { verifyUserAPI } from '~/apis'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function AccountVerification() {
+  const { tPrimary } = useTranslation()
   // Lấy giá trị email và token từ URL
   let [searchParams] = useSearchParams()
   const { email, token } = Object.fromEntries([...searchParams])
@@ -25,7 +27,7 @@ function AccountVerification() {
 
   // Nếu chưa verify xong thì loading
   if (!verified) {
-    return <PageLoadingSpinner caption="Verifying your email..." />
+    return <PageLoadingSpinner caption={tPrimary('verifyingEmailCaption')} />
   }
 
   // Nếu hợp lệ và verify thành công thì điều hướng về trang login cùng giá trị verifiedEmail

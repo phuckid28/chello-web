@@ -79,7 +79,7 @@ function AppBar({ boardTheme }) {
     const info = getCurrentTrackInfo()
     setMusicOn(next)
     setActiveTrack(info)
-    toast.info(next ? `🎵 ${info.title}` : '🔇 Audio Paused')
+    toast.info(next ? `🎵 ${info.title}` : `🔇 ${tPrimary('audioStoppedToast')}`)
   }
 
   const handleSelectOstTrack = (track) => {
@@ -300,7 +300,7 @@ function AppBar({ boardTheme }) {
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     {item.flag} {item.nativeName} ({item.short})
                   </Typography>
-                  {active && <Chip label="Primary" size="small" color="info" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800 }} />}
+                  {active && <Chip label={tPrimary('primaryChip')} size="small" color="info" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800 }} />}
                 </Box>
               )
             })}
@@ -330,7 +330,7 @@ function AppBar({ boardTheme }) {
           {bilingual && (
             <Box sx={{ mt: 1 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                Ngôn ngữ phụ (Secondary):
+                {tPrimary('secondaryLangLabel')}
               </Typography>
               <Stack direction="row" spacing={0.75}>
                 {languages.filter(l => l.code !== lang).map(l => (

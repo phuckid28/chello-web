@@ -35,6 +35,8 @@ import {
 import { snapProgress } from '~/utils/progress'
 import ProgressSelect from '~/components/Modal/ProgressSelect'
 import LoadingButton from '~/components/Loading/LoadingButton'
+import { useTranslation } from '~/customHooks/useTranslation'
+import { formatMessage } from '~/utils/i18nV5'
 import { fxCelebrate } from '~/fx/fxEvents'
 import { playUiChime } from '~/utils/soundEffects'
 
@@ -163,6 +165,7 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
 function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const { tPrimary } = useTranslation()
 
   const defaultSprint = board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name
   const defaultAssignee = 'Ho Thao Dieu, Hoang Vinh Son'
@@ -282,11 +285,11 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
 
   const handleCreateTicketFromMarkdown = async () => {
     if (!selectedColumnId) {
-      toast.warning('Vui lòng chọn cột chủ đề CR (Column) để tạo Ticket!')
+      toast.warning(tPrimary('selectTargetColToast'))
       return
     }
     if (!title || title.trim().length < 3) {
-      toast.warning('CR Description cần tối thiểu 3 ký tự!')
+      toast.warning(tPrimary('min3CharsMsg'))
       return
     }
 
@@ -360,7 +363,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
       if (snapProgress(devProgress) >= 1 || baStatus === 'Deployed' || baStatus === 'Done testing') {
         fxCelebrate()
       }
-      toast.success(`Đã khởi tạo CR Ticket [${crCode}] thành công!`)
+      toast.success(formatMessage(tPrimary('importedMdSuccessToast'), { title: crCode || title.trim() }))
       onClose()
     } catch (error) {
       // Error handled by axios interceptor
@@ -386,10 +389,10 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
           <DescriptionRoundedIcon sx={{ color: accentColor }} />
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-              Import Markdown / CSV Template Sprint thành CR Ticket
+              {tPrimary('importModalTitle')}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Hỗ trợ cả file .MD (FRD) và file .CSV mẫu {defaultSprint} (Ticket ID, CR Description, Status, Handle by, Due date, Dev Progress 0%–100%)
+              {tPrimary('importModalSub')}
             </Typography>
           </Box>
         </Box>
@@ -400,7 +403,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             variant="contained"
             startIcon={<UploadFileRoundedIcon />}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
-            Tải file .MD / .CSV / .TXT
+            {tPrimary('uploadMdCsvTxtBtn')}
             <input type="file" hidden accept=".md,.markdown,.csv,.txt" onChange={handleUploadMdOrCsvFile} />
           </Button>
           <Button
@@ -410,7 +413,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             startIcon={<TableChartRoundedIcon />}
             onClick={handleLoadSprintCsvSample}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
-            Mẫu CSV {defaultSprint} (BNPL-945)
+            {tPrimary('sampleCsvBtn')} ({defaultSprint})
           </Button>
           <Button
             size="small"
@@ -418,7 +421,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             startIcon={<AutoFixHighRoundedIcon />}
             onClick={handleLoadSampleFrd}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
-            Mẫu FRD Markdown
+            {tPrimary('sampleFrdMdBtn')}
           </Button>
         </Stack>
       </DialogTitle>
@@ -427,26 +430,26 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
-              label="Ticket ID (VD: BNPL-945)"
+              label="Ticket ID"
               size="small"
               value={crCode}
               onChange={(e) => setCrCode(e.target.value)}
               sx={{ width: { xs: '100%', sm: '180px' } }}
             />
             <TextField
-              label="CR Description (Tên CR)"
+              label={tPrimary('crDescInputLabel')}
               size="small"
               fullWidth
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Usage Limit - Monthly 1 time synchronized update for user"
+              placeholder="Usage Limit - Monthly 1 time synchronized update for user"
             />
           </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               select
-              label="Column (Chủ đề CR)"
+              label={tPrimary('crTopicColumnLabel')}
               size="small"
               fullWidth
               value={selectedColumnId}
@@ -514,7 +517,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
 
           <Box sx={{ p: 1.25, borderRadius: '10px', border: '1px dashed rgba(56, 189, 248, 0.35)' }}>
             <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.75 }}>
-              👤 Handle by (Chọn nhanh thành viên chưa cần tài khoản):
+              👤 {tPrimary('handleByQuickPickLabel')}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mb: 1 }}>
               {teamRoster.map(m => {
@@ -545,7 +548,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
                 onChange={(e) => setAssignee(e.target.value)}
               />
               <TextField
-                label="Tên file đính kèm"
+                label={formatMessage(tPrimary('attachedFileNameLabel'), { name: '' }).replace(/:\s*$/, '')}
                 size="small"
                 fullWidth
                 value={uploadedFileName}
@@ -555,16 +558,16 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
           </Box>
 
           <TextField
-            label="Note (Ghi chú xuất ra báo cáo Excel Sprint)"
+            label={tPrimary('noteInputLabel')}
             size="small"
             fullWidth
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="VD: Đồng bộ hạn mức 1 lần/tháng cho user..."
+            placeholder={tPrimary('noteInputPlaceholder')}
           />
 
           <TextField
-            label="Nội dung tài liệu Markdown (.MD) hoặc CSV Template (.CSV)"
+            label="Markdown (.MD) / CSV (.CSV)"
             multiline
             minRows={7}
             maxRows={12}
@@ -583,7 +586,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
           {parsedChecklist.length > 0 && (
             <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'action.hover' }}>
               <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.75 }}>
-                Đã phát hiện {parsedChecklist.length} hạng mục Subtask / UAT Checklist:
+                {formatMessage(tPrimary('detectedSubtasksMsg'), { count: parsedChecklist.length })}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                 {parsedChecklist.map(item => (
@@ -604,15 +607,15 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
 
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600 }}>
-          Đóng
+          {tPrimary('closeBtn')}
         </Button>
         <LoadingButton
           variant="contained"
           loading={isSubmitting}
-          loadingLabel="Đang khởi tạo CR Ticket..."
+          loadingLabel={tPrimary('creatingCrLabel')}
           onClick={handleCreateTicketFromMarkdown}
           sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '10px', px: 2.5 }}>
-          {`Tạo CR Ticket [${crCode || 'CR'}] & Đính kèm FRD`}
+          {`${tPrimary('createCrAndAttachBtn')} [${crCode || 'CR'}]`}
         </LoadingButton>
       </DialogActions>
     </Dialog>

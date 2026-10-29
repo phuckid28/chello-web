@@ -9,9 +9,11 @@ import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness'
 import Box from '@mui/material/Box'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function ModeSelect() {
   const { mode, setMode } = useColorScheme()
+  const { tPrimary } = useTranslation()
   const handleChange = (event) => {
     const selectedMode = event.target.value
     setMode(selectedMode)
@@ -28,13 +30,13 @@ function ModeSelect() {
           }
         }}
       >
-        Mode
+        {tPrimary('modeLabel')}
       </InputLabel>
       <Select
         labelId="label-select-dark-light-mode"
         id="select-dark-light-mode"
         value={mode}
-        label="Mode"
+        label={tPrimary('modeLabel')}
         onChange={handleChange}
         sx={{
           color: 'white',
@@ -52,17 +54,17 @@ function ModeSelect() {
       >
         <MenuItem value='light'>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LightModeIcon fontSize="small" /> Light
+            <LightModeIcon fontSize="small" /> {tPrimary('modeLight')}
           </Box>
         </MenuItem>
         <MenuItem value='dark'>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DarkModeOutlinedIcon fontSize="small" /> Dark
+            <DarkModeOutlinedIcon fontSize="small" /> {tPrimary('modeDark')}
           </Box>
         </MenuItem>
         <MenuItem value='system'>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SettingsBrightnessIcon fontSize="small" /> System
+            <SettingsBrightnessIcon fontSize="small" /> {tPrimary('modeSystem')}
           </Box>
         </MenuItem>
       </Select>

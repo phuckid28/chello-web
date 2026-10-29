@@ -44,14 +44,14 @@ function Settings() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={activeTab} onChange={handleChangeTab} aria-label="Settings tabs">
           <Tab
-            label="Account"
+            label={t('tabAccount')}
             value={TABS.ACCOUNT}
             icon={<PersonIcon />}
             iconPosition="start"
             component={Link}
             to="/settings/account" />
           <Tab
-            label="Security"
+            label={t('tabSecurity')}
             value={TABS.SECURITY}
             icon={<SecurityIcon />}
             iconPosition="start"

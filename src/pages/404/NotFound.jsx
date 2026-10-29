@@ -7,8 +7,10 @@ import { ReactComponent as PlanetSvg } from '~/assets/404/planet.svg'
 import { ReactComponent as AstronautSvg } from '~/assets/404/astronaut.svg'
 import particlesBg from '~/assets/404/particles.png'
 import { Link } from 'react-router-dom'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function NotFound() {
+  const { t, tPrimary } = useTranslation()
   return (
     <Box sx={{
       width: '100vw',
@@ -34,22 +36,9 @@ function NotFound() {
         justifyContent: 'center'
       }}>
         <Typography variant="h1" sx={{ fontSize: '100px', fontWeight: 800 }}>404</Typography>
-        <Typography sx={{ fontSize: '18px !important', lineHeight: '25px', fontWeight: 400, maxWidth: '350px', textAlign: 'center' }}>
-          LOST IN&nbsp;
-          <Typography variant="span" sx={{
-            position: 'relative',
-            '&:after': {
-              position: 'absolute',
-              content: '""',
-              borderBottom: '3px solid #fdba26',
-              left: 0,
-              top: '43%',
-              width: '100%'
-            }
-          }}>
-            &nbsp;SPACE&nbsp;
-          </Typography>
-          &nbsp;<Typography variant="span" sx={{ color: '#fdba26', fontWeight: 500 }}>phuckid28</Typography>?<br />Hmm, looks like that page doesn&apos;t exist.
+        <Typography sx={{ fontSize: '18px !important', lineHeight: '25px', fontWeight: 400, maxWidth: '380px', textAlign: 'center' }}>
+          <Typography variant="span" sx={{ color: '#fdba26', fontWeight: 700 }}>Chella</Typography><br />
+          {tPrimary('notFoundSub')}
         </Typography>
         <Box sx={{ width: '390px', height: '390px', position: 'relative' }}>
           <SvgIcon component={AstronautSvg} inheritViewBox sx={{
@@ -73,7 +62,7 @@ function NotFound() {
               borderColor: 'white',
               '&:hover': { color: '#fdba26', borderColor: '#fdba26' }
             }}
-          >Go Home</Button>
+          >{t('goHomeBtn')}</Button>
         </Link>
       </Box>
     </Box>
