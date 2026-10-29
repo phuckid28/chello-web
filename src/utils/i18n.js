@@ -10,10 +10,10 @@ const BILINGUAL_STORAGE_KEY = 'chella_bilingual_mode'
 const SECONDARY_LANG_STORAGE_KEY = 'chella_secondary_lang'
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'vi', label: 'Tiếng Việt', short: 'VI', flag: '🇻🇳', nativeName: 'Tiếng Việt' },
-  { code: 'en', label: 'English', short: 'EN', flag: '🇬🇧', nativeName: 'English' },
-  { code: 'ja', label: '日本語', short: 'JA', flag: '🇯🇵', nativeName: '日本語' },
-  { code: 'ko', label: '한국어', short: 'KO', flag: '🇰🇷', nativeName: '한국어' }
+  { code: 'vi', name: 'Tiếng Việt', label: 'Tiếng Việt', short: 'VI', flag: '🇻🇳', nativeName: 'Tiếng Việt' },
+  { code: 'en', name: 'English', label: 'English', short: 'EN', flag: '🇬🇧', nativeName: 'English' },
+  { code: 'ja', name: '日本語', label: '日本語', short: 'JA', flag: '🇯🇵', nativeName: '日本語' },
+  { code: 'ko', name: '한국어', label: '한국어', short: 'KO', flag: '🇰🇷', nativeName: '한국어' }
 ]
 
 const BASE_TRANSLATIONS = {

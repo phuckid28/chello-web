@@ -729,7 +729,7 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DescriptionOutlinedIcon color="secondary" />
                   <Typography sx={{ fontWeight: 800, fontSize: '16px' }}>
-                    {t('frdDocsAndLinksSection')}
+                    {t('frdSectionTitle')}
                   </Typography>
                 </Box>
                 <Button
@@ -739,7 +739,7 @@ function ActiveCard() {
                   onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
-                  {t('downloadFrdBtn')}
+                  {t('exportCrMdBtn')}
                 </Button>
               </Box>
 
@@ -791,7 +791,7 @@ function ActiveCard() {
                   ))}
                 </TextField>
                 <Button variant="outlined" size="small" onClick={onAddLinkedCard} sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}>
-                  {t('linkCrBtn')}
+                  {t('linkBtn')}
                 </Button>
               </Stack>
             </Box>
@@ -937,7 +937,7 @@ function ActiveCard() {
                   onClick={onInsertBaFrdTemplate}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
-                  {t('insertFrdTemplateBtn')}
+                  {t('insertTemplateBtn')}
                 </Button>
               </Box>
               <CardDescriptionMdEditor
@@ -993,14 +993,14 @@ function ActiveCard() {
                 onClick={onInsertBaFrdTemplate}
               >
                 <AutoFixHighRoundedIcon fontSize="small" />
-                <span>{t('insertFrdTemplateBtn')}</span>
+                <span>{t('insertTemplateBtn')}</span>
               </SidebarItem>
               <SidebarItem
                 className="active"
                 onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
               >
                 <DownloadRoundedIcon fontSize="small" />
-                <span>{t('downloadFrdBtn')}</span>
+                <span>{t('exportCrMdBtn')}</span>
               </SidebarItem>
               <SidebarItem
                 className="active"
