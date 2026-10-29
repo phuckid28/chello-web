@@ -15,7 +15,6 @@ import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import LabelImportantOutlinedIcon from '@mui/icons-material/LabelImportantOutlined'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
-import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded'
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded'
@@ -57,7 +56,6 @@ import {
   DEFAULT_SPRINT_CONFIG,
   GENERATE_BA_FRD_TEMPLATE,
   collectBoardCardsWithColumn,
-  downloadAttachedFrdFile,
   exportCardAsFrdMarkdown,
   getDeadlineStatus,
   getSavedTeamRoster,
@@ -76,6 +74,7 @@ import { toast } from 'react-toastify'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { DEFAULT_PRIORITY, PRIORITY_OPTIONS, normalizePriority } from '~/utils/crMeta'
 import CrAssistantPanel from './CrAssistantPanel'
+import GoogleDriveFrdControls from './GoogleDriveFrdControls'
 
 // Converts a timestamp / ISO string into the YYYY-MM-DD value expected by <input type="date">
 const toDateInputValue = (value) => {
@@ -272,44 +271,28 @@ function ActiveCard() {
     }
   }
 
-  const onUploadFrdDocument = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (file.size > 3.5 * 1024 * 1024) {
-      toast.warning('Kích thước file FRD tối đa 3.5MB để đảm bảo tốc độ đồng bộ!')
-      event.target.value = ''
-      return
+  const onAppendFrdDoc = async (newDoc, autoDescriptionText = '') => {
+    const nextDocs = [...(activeCard?.frdDocuments || []), newDoc]
+    const updatePayload = { frdDocuments: nextDocs }
+    if (autoDescriptionText && !activeCard?.description) {
+      updatePayload.description = autoDescriptionText
     }
+    await callApiUpdateCard(updatePayload)
+  }
 
-    const isTextOrMd = /\.(md|markdown|txt|json|csv)$/i.test(file.name)
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const content = String(e.target?.result || '')
-      const newDoc = {
-        id: `frd-${Date.now()}`,
-        name: file.name,
-        type: file.type || (isTextOrMd ? 'text/markdown' : 'application/octet-stream'),
-        size: file.size,
-        content,
-        source: 'upload',
-        uploadedAt: Date.now()
-      }
-      const nextDocs = [...(activeCard?.frdDocuments || []), newDoc]
-      const updatePayload = { frdDocuments: nextDocs }
-      if (isTextOrMd && !activeCard?.description) {
-        updatePayload.description = content
-      }
-      await callApiUpdateCard(updatePayload)
-      playUiChime('complete')
-      toast.success(`Đã đính kèm tài liệu FRD "${file.name}"!`)
+  const onAttachAiMarkdownAsFrd = async (fileName, markdownText) => {
+    const newDoc = {
+      id: `frd-ai-${Date.now()}`,
+      name: fileName,
+      type: 'text/markdown',
+      size: markdownText.length,
+      content: markdownText,
+      source: 'antigravity-template',
+      uploadedAt: Date.now()
     }
-
-    if (isTextOrMd) {
-      reader.readAsText(file, 'UTF-8')
-    } else {
-      reader.readAsDataURL(file)
-    }
-    event.target.value = ''
+    await onAppendFrdDoc(newDoc, markdownText)
+    playUiChime('complete')
+    toast.success(`Đã đính kèm tài liệu AI "${fileName}" vào danh sách FRD!`)
   }
 
   const onDeleteFrdDocument = async (docId) => {
@@ -747,85 +730,27 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DescriptionOutlinedIcon color="secondary" />
                   <Typography sx={{ fontWeight: 800, fontSize: '16px' }}>
-                    Tài liệu FRD Đính kèm & Liên kết Kiến thức Hệ thống (Obsidian WikiLinks)
+                    Tài liệu FRD Đính kèm (Google Drive Vault) & Liên kết Kiến thức (Obsidian WikiLinks)
                   </Typography>
                 </Box>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                  <Button
-                    component="label"
-                    size="small"
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<UploadFileRoundedIcon />}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
-                  >
-                    Đính kèm FRD (.MD / .PDF / .DOCX)
-                    <input type="file" hidden accept=".md,.markdown,.pdf,.docx,.doc,.txt,.json" onChange={onUploadFrdDocument} />
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<DownloadRoundedIcon />}
-                    onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
-                  >
-                    Xuất CR ra .MD
-                  </Button>
-                </Stack>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<DownloadRoundedIcon />}
+                  onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                >
+                  Xuất CR ra .MD
+                </Button>
               </Box>
 
-              {/* Attached FRD list */}
-              {(activeCard?.frdDocuments?.length > 0) ? (
-                <Stack spacing={1} sx={{ mb: 2 }}>
-                  {activeCard.frdDocuments.map((doc) => (
-                    <Box
-                      key={doc.id}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        p: 1,
-                        borderRadius: '8px',
-                        border: '1px solid rgba(148, 163, 184, 0.25)',
-                        bgcolor: 'background.paper'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                        <DescriptionOutlinedIcon fontSize="small" color="info" />
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
-                            {doc.name}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {Math.max(1, Math.round((doc.size || 512) / 1024))} KB • {doc.source === 'antigravity-template' ? 'Antigravity Spec' : 'FRD Document'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
-                        {!String(doc.content || '').startsWith('data:') && (
-                          <Button
-                            size="small"
-                            onClick={() => onApplyFrdToDescription(doc)}
-                            sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 700 }}
-                          >
-                            Nạp vào Mô tả
-                          </Button>
-                        )}
-                        <IconButton size="small" color="primary" onClick={() => downloadAttachedFrdFile(doc)} title="Tải xuống file FRD">
-                          <DownloadRoundedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => onDeleteFrdDocument(doc.id)} title="Xóa file FRD">
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 1.5 }}>
-                  Chưa có file FRD đính kèm. Bạn có thể tải lên file .MD (bao gồm tài liệu từ Antigravity), .PDF hoặc .DOCX để lưu trữ và tải về bất cứ lúc nào.
-                </Typography>
-              )}
+              <GoogleDriveFrdControls
+                boardId={board?._id}
+                activeCard={activeCard}
+                onAppendFrdDoc={onAppendFrdDoc}
+                onDeleteFrdDoc={onDeleteFrdDocument}
+                onApplyFrdToDescription={onApplyFrdToDescription}
+              />
 
               {/* Knowledge Linking between CRs */}
               <Divider sx={{ my: 1.5 }} />
@@ -989,7 +914,13 @@ function ActiveCard() {
                   {t('addBtn')}
                 </Button>
               </Box>
-              <CrAssistantPanel card={activeCard} onAddItems={onAddSuggestedSubtasks} />
+              <CrAssistantPanel
+                card={activeCard}
+                boardCards={allBoardCards}
+                onAddItems={onAddSuggestedSubtasks}
+                onApplyMarkdownToDescription={onUpdateCardDescription}
+                onAttachMarkdownAsFrd={onAttachAiMarkdownAsFrd}
+              />
             </Box>
 
             <Box sx={{ mb: 3 }}>

@@ -101,3 +101,24 @@ export const deleteWikiPageAPI = async (pageId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/wiki-pages/${pageId}`)
   return response.data
 }
+
+// External Integrations (Gemini AI, Google Drive FRD Vault, Telegram)
+export const fetchIntegrationStatusAPI = async () => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/integrations/status`)
+  return response.data
+}
+
+export const generateAiCrAssistanceAPI = async (payload) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/integrations/ai/assist`, payload)
+  return response.data
+}
+
+export const uploadFrdToGoogleDriveAPI = async (payload) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/integrations/drive/upload`, payload)
+  return response.data
+}
+
+export const sendTelegramNotificationAPI = async (payload) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/integrations/telegram/notify`, payload)
+  return response.data
+}
