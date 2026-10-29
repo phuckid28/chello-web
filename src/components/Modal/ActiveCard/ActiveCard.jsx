@@ -203,11 +203,12 @@ function ActiveCard() {
   const handleAddUnregisteredMemberToRoster = () => {
     const trimmed = newRosterMemberName.trim()
     if (!trimmed) return
-    const existsInRoster = teamRoster.some(
-      m => m.name.toLowerCase() === trimmed.toLowerCase()
-    )
+    const existsInRoster = teamRoster.some((m) => {
+      const mName = typeof m === 'string' ? m : m?.name || ''
+      return mName.toLowerCase() === trimmed.toLowerCase()
+    })
     if (!existsInRoster) {
-      const nextRoster = [...teamRoster, { name: trimmed, resourcePoint: 1 }]
+      const nextRoster = [...teamRoster, trimmed]
       setTeamRoster(nextRoster)
       saveTeamRoster(nextRoster)
     }
@@ -613,17 +614,19 @@ function ActiveCard() {
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mb: 1.25 }}>
                     {teamRoster.map((member) => {
+                      const memberName = typeof member === 'string' ? member : member?.name || ''
+                      if (!memberName) return null
                       const isAssigned = selectedAssigneesList.some(
-                        n => n.toLowerCase() === member.name.toLowerCase()
+                        n => n.toLowerCase() === memberName.toLowerCase()
                       )
                       return (
                         <Chip
-                          key={member.name}
-                          label={isAssigned ? `✓ ${member.name}` : member.name}
+                          key={memberName}
+                          label={isAssigned ? `✓ ${memberName}` : memberName}
                           size="small"
                           color={isAssigned ? 'primary' : 'default'}
                           variant={isAssigned ? 'filled' : 'outlined'}
-                          onClick={() => handleToggleRosterAssignee(member.name)}
+                          onClick={() => handleToggleRosterAssignee(memberName)}
                           sx={{ fontWeight: 700, cursor: 'pointer' }}
                         />
                       )

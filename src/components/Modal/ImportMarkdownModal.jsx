@@ -478,17 +478,19 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mb: 1 }}>
               {teamRoster.map(m => {
+                const mName = typeof m === 'string' ? m : m?.name || ''
+                if (!mName) return null
                 const isSelected = selectedAssigneesList.some(
-                  n => n.toLowerCase() === m.name.toLowerCase()
+                  n => n.toLowerCase() === mName.toLowerCase()
                 )
                 return (
                   <Chip
-                    key={m.name}
-                    label={isSelected ? `✓ ${m.name}` : m.name}
+                    key={mName}
+                    label={isSelected ? `✓ ${mName}` : mName}
                     size="small"
                     color={isSelected ? 'primary' : 'default'}
                     variant={isSelected ? 'filled' : 'outlined'}
-                    onClick={() => handleToggleAssigneeChip(m.name)}
+                    onClick={() => handleToggleAssigneeChip(mName)}
                     sx={{ fontWeight: 700, cursor: 'pointer' }}
                   />
                 )

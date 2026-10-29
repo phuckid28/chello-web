@@ -52,6 +52,13 @@ export const getStatusOption = (rawStatus) => {
   return BA_STATUS_OPTIONS.find(o => o.value === norm) || BA_STATUS_OPTIONS[0]
 }
 
+const normalizeRosterItem = (item) => {
+  if (!item) return ''
+  if (typeof item === 'string') return item.trim()
+  if (typeof item === 'object' && item.name) return String(item.name).trim()
+  return ''
+}
+
 export const getSavedTeamRoster = (board) => {
   const boardRoster = board?.sprintConfig?.teamRoster
   let localRoster = []
@@ -63,19 +70,24 @@ export const getSavedTeamRoster = (board) => {
   }
   const merged = new Set([
     ...DEFAULT_TEAM_ROSTER,
-    ...(Array.isArray(boardRoster) ? boardRoster : []),
-    ...(Array.isArray(localRoster) ? localRoster : [])
+    ...(Array.isArray(boardRoster) ? boardRoster.map(normalizeRosterItem) : []),
+    ...(Array.isArray(localRoster) ? localRoster.map(normalizeRosterItem) : [])
   ])
   return Array.from(merged).filter(Boolean)
 }
 
 export const saveTeamRosterLocal = (rosterArray) => {
   try {
-    localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(rosterArray))
+    const normalized = (Array.isArray(rosterArray) ? rosterArray : [])
+      .map(normalizeRosterItem)
+      .filter(Boolean)
+    localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(normalized))
   } catch (e) {
     // Ignore
   }
 }
+
+export const saveTeamRoster = saveTeamRosterLocal
 
 export const parseAssigneeList = (assigneeStr) => {
   if (!assigneeStr) return []
