@@ -21,7 +21,6 @@ import BoardAnalyticsView from './BoardAnalyticsView'
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
-import { soraChibi } from '~/utils/animeTheme'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { playUiChime } from '~/utils/soundEffects'
 import Avatar from '@mui/material/Avatar'
@@ -30,13 +29,26 @@ import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
 import CloseFullscreenRoundedIcon from '@mui/icons-material/CloseFullscreenRounded'
 
-const SORA_COMPANION_LINES = [
-  '“Usagi plush is watching over your tasks today... 🐰”',
-  '“Under the distant sky of Okukozome, take one gentle step at a time. ☁️”',
-  '“Don’t forget to rest and check your flip-phone messages. 💌”',
-  '“Every card completed brings us closer to the promised horizon. 🎀”',
-  '“Press Ctrl + K anytime to summon the Okukozome Command Center! ✨”'
-]
+const COMPANION_LINES_BY_THEME = {
+  furina: [
+    '“Chào mừng đến Opera Epiclese! Mọi CR trong Sprint 34 đều xứng đáng một màn trình diễn hoàn hảo! 💧”',
+    '“Đừng quên kiểm tra các tài liệu FRD trước giờ mở màn nghiệm thu UAT nhé! 🎩”',
+    '“Bấm Xuất Excel Sprint trên thanh công cụ bất cứ lúc nào để tổng hợp báo cáo tiến độ! 🍰”',
+    '“Nhấn Ctrl + K để triệu hồi bảng điều khiển nhanh của Fontaine! ✨”'
+  ],
+  nahida: [
+    '“Mỗi tài liệu FRD và quy tắc nghiệp vụ là một nhánh tri thức quý giá trong cây Irminsul. 🌿”',
+    '“Hãy liên kết các CR có chung luồng hệ thống lại với nhau để dễ dàng tra cứu nhé! 📖”',
+    '“Bạn có thể Import trực tiếp file Markdown (.md) thành CR Ticket chỉ với 1 cú nhấp chuột! 🍀”',
+    '“Nhấn Ctrl + K để tra cứu nhanh bất kỳ CR hay tài liệu nào trên bảng! ✨”'
+  ],
+  default: [
+    '“Thỏ bông Usagi luôn đồng hành cùng bạn theo dõi các CR trong kỳ Sprint 34 này... 🐰”',
+    '“Dưới bầu trời bình yên, hãy hoàn thiện từng đặc tả FRD một cách thật tỉ mỉ nhé. ☁️”',
+    '“Đừng quên kiểm tra cảnh báo Deadline trên thanh công cụ để không bỏ lỡ mốc UAT nào. 💌”',
+    '“Nhấn Ctrl + K bất cứ lúc nào để mở nhanh Trung tâm Điều khiển! 🎀”'
+  ]
+}
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
@@ -61,27 +73,23 @@ function BoardContent({
   moveCardInTheSameColumn,
   moveCardToDifferentColumn
 }) {
-  const { themeConfig } = usePersonaTheme(board?.theme)
-  // Yêu cầu di chuyển chuột 10px mới kích hoạt event, tránh bị gọi event khi click only
+  const { personaKey, themeConfig } = usePersonaTheme(board?.theme)
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 10 } })
-
-  // Nhấn giữ 250ms và dung sai của cảm ứng 500px mới kích hoạt event
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 500 } })
-
   const sensors = useSensors(mouseSensor, touchSensor)
 
   const [orderedColumns, setOrderedColumns] = useState([])
   const [quoteIdx, setQuoteIdx] = useState(0)
   const [minimizedMascot, setMinimizedMascot] = useState(false)
 
-  // Cùng 1 thời điểm chỉ có 1 phần tử đang được kéo, column hoặc card
   const [activeDragItemId, setActiveDragItemId] = useState(null)
   const [activeDragItemType, setActiveDragItemType] = useState(null)
   const [activeDragItemData, setActiveDragItemData] = useState(null)
   const [oldColumnWhenDraggingCard, setOldColumnWhenDraggingCard] = useState(null)
 
-  // Điểm va chạm cuối cùng trước đó (xử lý thuật toán phát hiện va chạm)
   const lastOverId = useRef(null)
+
+  const companionLines = COMPANION_LINES_BY_THEME[personaKey] || COMPANION_LINES_BY_THEME.default
 
   useEffect(() => {
     setOrderedColumns(board.columns)
@@ -94,12 +102,10 @@ function BoardContent({
     setOldColumnWhenDraggingCard(null)
   }
 
-  // Tìm 1 column theo cardId
   const findColumnByCardId = (cardId) => {
     return orderedColumns.find(column => column?.cards?.map(card => card._id)?.includes(cardId))
   }
 
-  // Tính toán mảng columns mới khi di chuyển card giữa các column khác nhau
   const computeNextColumnsForCardMove = (
     prevColumns,
     overColumn,
@@ -149,7 +155,6 @@ function BoardContent({
     return { nextColumns, nextOverColumn }
   }
 
-  // Function xử lý việc cập nhật lại state trong trường hợp di chuyển card giữa các column khác nhau
   const moveCardBetweenDifferentColumns = (
     overColumn,
     overCardId,
@@ -198,7 +203,6 @@ function BoardContent({
     })
   }
 
-  // Trigger khi bắt đầu kéo phần tử
   const handleDragStart = (event) => {
     setActiveDragItemId(event?.active?.id)
     setActiveDragItemType(event?.active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN)
@@ -209,7 +213,6 @@ function BoardContent({
     }
   }
 
-  // Trigger trong quá trình kéo -> thả 1 phần tử
   const handleDragOver = (event) => {
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) return
 
@@ -238,7 +241,6 @@ function BoardContent({
     }
   }
 
-  // Trigger khi thả phần tử
   const handleDragEnd = (event) => {
     const { active, over } = event
 
@@ -247,7 +249,6 @@ function BoardContent({
       return
     }
 
-    // Xử lý kéo thả card
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
       const { id: activeDraggingCardId, data: { current: activeDraggingCardData } } = active
       const { id: overCardId } = over
@@ -261,7 +262,6 @@ function BoardContent({
       }
 
       if (oldColumnWhenDraggingCard?._id !== overColumn._id) {
-        // Hành động kéo thả card giữa 2 column khác nhau
         moveCardBetweenDifferentColumns(
           overColumn,
           overCardId,
@@ -273,7 +273,6 @@ function BoardContent({
           'handleDragEnd'
         )
       } else {
-        // Hành động kéo thả card trong cùng 1 column
         const oldCardIndex = oldColumnWhenDraggingCard?.cards?.findIndex(c => c._id === activeDragItemId)
         const newCardIndex = overColumn?.cards?.findIndex(c => c._id === overCardId)
 
@@ -296,7 +295,6 @@ function BoardContent({
       }
     }
 
-    // Xử lý kéo thả column trong 1 boardContent
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
       if (active.id !== over.id) {
         const oldColumnIndex = orderedColumns.findIndex(c => c._id === active.id)
@@ -311,7 +309,6 @@ function BoardContent({
     resetDragState()
   }
 
-  // Animation khi drop phần tử
   const CustomDropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
@@ -322,7 +319,6 @@ function BoardContent({
     })
   }
 
-  // Custom thuật toán phát hiện va chạm tối ưu cho việc kéo thả card giữa nhiều columns
   const collisionDetectionStrategy = useCallback((args) => {
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
       return closestCorners({ ...args })
@@ -356,10 +352,13 @@ function BoardContent({
         if (card.FE_PlaceholderCard) return true
         const q = cardFilterText.trim().toLowerCase()
         const matchTitle = card.title?.toLowerCase().includes(q)
+        const matchCrCode = card.crCode?.toLowerCase().includes(q)
+        const matchAssignee = card.assignee?.toLowerCase().includes(q)
+        const matchSprint = card.sprint?.toLowerCase().includes(q)
         const matchLabel = card.labels?.some(
           l => l.id?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)
         )
-        return matchTitle || matchLabel
+        return matchTitle || matchCrCode || matchAssignee || matchSprint || matchLabel
       })
     }))
     : orderedColumns
@@ -413,12 +412,12 @@ function BoardContent({
           )}
         </Box>
 
-        {/* Visual Novel Style Chibi Sora & Usagi Plush Mascot HUD */}
+        {/* Visual Novel Style Character Chibi Mascot HUD */}
         {minimizedMascot ? (
-          <Tooltip title="Expand Chibi Sora & Usagi Dialogue Box" placement="left">
+          <Tooltip title={`Mở hộp thoại ${themeConfig.characterName}`} placement="left">
             <Avatar
-              src={soraChibi}
-              alt="Chibi Sora"
+              src={themeConfig.mascotImage}
+              alt={themeConfig.characterName}
               onClick={() => {
                 playUiChime('sparkle')
                 setMinimizedMascot(false)
@@ -431,7 +430,7 @@ function BoardContent({
                 width: 48,
                 height: 48,
                 cursor: 'pointer',
-                border: `2px solid ${themeConfig.secondaryAccent}`,
+                border: `2px solid ${themeConfig.accentColor}`,
                 animation: 'chelloPulseHalo 2.6s infinite',
                 transition: 'transform 0.2s ease',
                 '&:hover': { transform: 'scale(1.08)' }
@@ -459,44 +458,44 @@ function BoardContent({
               transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
               '&:hover': {
                 transform: 'translateY(-3px)',
-                borderColor: '#f472b6'
+                borderColor: themeConfig.secondaryAccent
               }
             }}
           >
             <Avatar
-              src={soraChibi}
-              alt="Chibi Sora & Usagi"
+              src={themeConfig.mascotImage}
+              alt={themeConfig.characterName}
               onClick={() => {
                 playUiChime('sparkle')
-                setQuoteIdx((prev) => (prev + 1) % SORA_COMPANION_LINES.length)
+                setQuoteIdx((prev) => (prev + 1) % companionLines.length)
               }}
               sx={{
                 width: 46,
                 height: 46,
                 cursor: 'pointer',
-                border: `2px solid ${themeConfig.secondaryAccent}`,
+                border: `2px solid ${themeConfig.accentColor}`,
                 animation: 'chelloPulseHalo 3s infinite'
               }}
             />
             <Box
               onClick={() => {
                 playUiChime('sparkle')
-                setQuoteIdx((prev) => (prev + 1) % SORA_COMPANION_LINES.length)
+                setQuoteIdx((prev) => (prev + 1) % companionLines.length)
               }}
-              sx={{ maxWidth: 235, cursor: 'pointer' }}
+              sx={{ maxWidth: 255, cursor: 'pointer' }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
                 <SoraBunnyIcon sx={{ fontSize: 15 }} />
-                <Typography variant="caption" sx={{ fontWeight: 800, color: themeConfig.accentColor, letterSpacing: 0.3 }}>
-                  【 春日野 穹 • Sora & Usagi 】
+                <Typography variant="caption" sx={{ fontWeight: 800, color: themeConfig.accentColor, letterSpacing: 0.3 }} noWrap>
+                  【 {themeConfig.characterName} 】
                 </Typography>
                 <SoraRibbonIcon sx={{ fontSize: 13 }} />
               </Box>
               <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.92)', display: 'block', lineHeight: 1.3 }}>
-                {SORA_COMPANION_LINES[quoteIdx]}
+                {companionLines[quoteIdx % companionLines.length]}
               </Typography>
             </Box>
-            <Tooltip title="Minimize Mascot Box">
+            <Tooltip title="Thu gọn hộp thoại nhân vật">
               <IconButton
                 size="small"
                 onClick={() => setMinimizedMascot(true)}

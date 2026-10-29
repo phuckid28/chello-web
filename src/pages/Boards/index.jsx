@@ -39,12 +39,16 @@ import {
   ANIME_THEMES,
   PRIMARY_THEMES_LIST,
   ANIME_BOARD_TEMPLATES,
-  SORA_PRESET_COVERS,
-  soraChibi
+  SORA_PRESET_COVERS
 } from '~/utils/animeTheme'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
-import { playUiChime } from '~/utils/soundEffects'
+import {
+  getDefaultTrackForTheme,
+  isMusicBoxActive,
+  playOstTrack,
+  playUiChime
+} from '~/utils/soundEffects'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -111,6 +115,14 @@ function Boards() {
     reset()
   }
 
+  const handleSwitchGlobalPersona = (themeKey) => {
+    playUiChime('theme')
+    changePersona(themeKey)
+    if (isMusicBoxActive()) {
+      playOstTrack(getDefaultTrackForTheme(themeKey))
+    }
+  }
+
   const submitCreateNewBoard = (data) => {
     createNewBoardAPI(data).then((createdBoard) => {
       handleCloseModal()
@@ -123,7 +135,7 @@ function Boards() {
   }
 
   const handleQuickCreateTemplate = (tpl) => {
-    changePersona(tpl.theme)
+    handleSwitchGlobalPersona(tpl.theme)
     createNewBoardAPI({
       title: tpl.title,
       description: tpl.description,
@@ -138,7 +150,7 @@ function Boards() {
   }
 
   if (!boards) {
-    return <PageLoadingSpinner caption="Connecting to Okukozome Summer Sky (春日野 穹)..." />
+    return <PageLoadingSpinner caption="Đang tải không gian quản trị BA & Anime Workspaces..." />
   }
 
   const starredBoards = boards.filter(b => b.isStarred)
@@ -147,7 +159,7 @@ function Boards() {
     <Container disableGutters maxWidth={false}>
       <AppBar />
 
-      {/* Sora Kasugano (Yosuga no Sora) Hero Banner */}
+      {/* Multi-Character (Sora • Furina • Nahida) Hero Banner */}
       <Box sx={{
         position: 'relative',
         mx: { xs: 2, md: 4 },
@@ -167,11 +179,11 @@ function Boards() {
           <Grid xs={12} md={8}>
             <Chip
               icon={<SoraRibbonIcon fontSize="small" />}
-              label={`${themeConfig.jpTitle} • ${themeConfig.element}`}
+              label={`${themeConfig.jpTitle} • Sprint 34 (22/10 - 05/11)`}
               size="small"
               sx={{
                 mb: 1.5,
-                bgcolor: 'rgba(15, 23, 42, 0.65)',
+                bgcolor: 'rgba(15, 23, 42, 0.68)',
                 color: '#f8fafc',
                 border: `1px solid ${themeConfig.accentColor}`,
                 fontWeight: 700,
@@ -189,13 +201,15 @@ function Boards() {
                 <Button
                   key={p.id}
                   size="small"
-                  startIcon={<SoraBunnyIcon fontSize="small" />}
+                  startIcon={<Avatar src={p.mascotImage} sx={{ width: 20, height: 20 }} />}
                   variant={globalPersonaKey === p.id ? 'contained' : 'outlined'}
-                  onClick={() => changePersona(p.id)}
+                  onClick={() => handleSwitchGlobalPersona(p.id)}
                   sx={{
                     color: 'white',
+                    textTransform: 'none',
+                    fontWeight: 700,
                     borderColor: p.accentColor,
-                    bgcolor: globalPersonaKey === p.id ? p.accentColor : 'rgba(15, 23, 42, 0.55)',
+                    bgcolor: globalPersonaKey === p.id ? p.accentColor : 'rgba(15, 23, 42, 0.58)',
                     backdropFilter: 'blur(6px)',
                     '&:hover': {
                       bgcolor: p.accentColor,
@@ -221,16 +235,16 @@ function Boards() {
               border: `1px solid ${themeConfig.accentColor}`
             }}>
               <Avatar
-                src={soraChibi}
-                alt="Chibi Sora & Usagi"
-                sx={{ width: 54, height: 54, border: `2px solid ${themeConfig.secondaryAccent}` }}
+                src={themeConfig.mascotImage}
+                alt={themeConfig.characterName}
+                sx={{ width: 54, height: 54, border: `2px solid ${themeConfig.accentColor}` }}
               />
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.2 }}>
-                  Chibi Sora & Usagi
+                  {themeConfig.characterName}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.78)' }}>
-                  春日野 穹 • ぬいぐるみ相棒
+                  BA Companion • Theo dõi CR & FRD
                 </Typography>
               </Box>
             </Box>
@@ -244,16 +258,17 @@ function Boards() {
                 px: 3,
                 py: 1.4,
                 fontWeight: 800,
+                textTransform: 'none',
                 borderRadius: '12px',
                 color: '#0f172a',
-                background: 'linear-gradient(135deg, #f8fafc 0%, #7dd3fc 50%, #f472b6 100%)',
+                background: `linear-gradient(135deg, #f8fafc 0%, ${themeConfig.accentColor} 55%, ${themeConfig.secondaryAccent} 100%)`,
                 boxShadow: '0 8px 25px rgba(125, 211, 252, 0.45)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, #ec4899 100%)'
+                  opacity: 0.94
                 }
               }}
             >
-              Create Sora Board
+              Khởi tạo Bảng Sprint / BA Mới
             </Button>
           </Grid>
         </Grid>
@@ -265,18 +280,18 @@ function Boards() {
             <Stack direction="column" spacing={1}>
               <SidebarItem className="active">
                 <SpaceDashboardIcon fontSize="small" />
-                All Boards • ボード一覧
+                Tất cả Bảng • All Boards
               </SidebarItem>
               <SidebarItem onClick={handleOpenModal}>
                 <LibraryAddIcon fontSize="small" color="primary" />
-                Create New Board • 新規作成
+                Tạo Bảng Mới • New Board
               </SidebarItem>
             </Stack>
 
             <Divider sx={{ my: 2.5 }} />
 
             <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', px: 1, display: 'block', mb: 1 }}>
-              1-CLICK SORA TEMPLATES • 穹のテンプレート
+              MẪU BẢNG BA & CHỦ ĐỀ NHÂN VẬT (1-CLICK)
             </Typography>
             <Stack direction="column" spacing={1}>
               {ANIME_BOARD_TEMPLATES.map((tpl) => (
@@ -296,7 +311,7 @@ function Boards() {
 
             <Divider sx={{ my: 2.5 }} />
 
-            {/* Chibi Sora & Usagi Plush Sanctuary Widget */}
+            {/* Character Chibi & Artwork Gallery Widget */}
             <Card sx={{
               borderRadius: '14px',
               overflow: 'hidden',
@@ -307,7 +322,7 @@ function Boards() {
             }}>
               <Box sx={{
                 height: 165,
-                backgroundImage: `url(${soraChibi})`,
+                backgroundImage: `url(${themeConfig.mascotImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 position: 'relative',
@@ -317,23 +332,23 @@ function Boards() {
               }}>
                 <Chip
                   icon={<SoraBunnyIcon fontSize="small" />}
-                  label="Usagi Plush Companion"
+                  label={themeConfig.characterName}
                   size="small"
                   sx={{
                     fontWeight: 700,
                     fontSize: '0.7rem',
                     color: 'white',
-                    bgcolor: 'rgba(15, 23, 42, 0.75)',
+                    bgcolor: 'rgba(15, 23, 42, 0.78)',
                     backdropFilter: 'blur(6px)'
                   }}
                 />
               </Box>
               <CardContent sx={{ p: 1.75, '&:last-child': { p: 1.75 } }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-                  Sora Kasugano Gallery • 春日野 穹
+                  Bộ Sưu Tập Sora • Furina • Nahida
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
-                  Click any verified SFW Sora & Usagi artwork to inspect full-screen:
+                  Nhấn vào hình minh họa bất kỳ để phóng to xem chi tiết:
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.75 }}>
                   {SORA_PRESET_COVERS.map((art) => (
@@ -342,7 +357,7 @@ function Boards() {
                       component="img"
                       src={art.url}
                       alt={art.label}
-                      title={`${art.label} (Click to preview)`}
+                      title={`${art.label} (Nhấn để xem lớn)`}
                       onClick={() => {
                         playUiChime('sparkle')
                         setPreviewArt(art)
@@ -373,7 +388,7 @@ function Boards() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <StarRoundedIcon sx={{ color: '#fbbf24' }} />
                   <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                    Starred Boards • お気に入り
+                    Bảng Đánh Dấu Sao • Starred Boards
                   </Typography>
                 </Box>
                 <Grid container spacing={2.5}>
@@ -435,7 +450,7 @@ function Boards() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <SoraRibbonIcon />
               <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                Okukozome Workspaces & Boards • すべてのボード
+                Không Gian Làm Việc BA & Quản Lý CR • All Boards
               </Typography>
             </Box>
 
@@ -448,13 +463,13 @@ function Boards() {
               }}>
                 <SoraBunnyIcon sx={{ fontSize: 48, mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  No boards in Okukozome yet!
+                  Chưa có bảng nào được khởi tạo!
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Start with a 1-click Sora Kasugano or Usagi Plush template on the left, or create a custom board.
+                  Hãy chọn một mẫu bảng 1-Click (Sora, Furina hoặc Nahida) ở cột bên trái hoặc tạo bảng mới để bắt đầu theo dõi CR kỳ Sprint 34.
                 </Typography>
                 <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={handleOpenModal}>
-                  Create Your First Sora Board
+                  Tạo Bảng Đầu Tiên
                 </Button>
               </Box>
             }
@@ -518,7 +533,7 @@ function Boards() {
                               color: 'primary.main',
                               '&:hover': { color: 'primary.light' }
                             }}>
-                            Open Sky Board <ArrowRightIcon fontSize="small" />
+                            Mở Bảng <ArrowRightIcon fontSize="small" />
                           </Box>
                         </CardContent>
                       </Card>
@@ -562,7 +577,7 @@ function Boards() {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 600,
+          width: 640,
           maxWidth: '94vw',
           bgcolor: 'white',
           boxShadow: 24,
@@ -586,7 +601,7 @@ function Boards() {
           <Box id="modal-modal-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SoraBunnyIcon />
             <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
-              Create Sora Kasugano Board • 新規ボード作成
+              Khởi tạo Bảng Quản lý CR & Sprint Mới
             </Typography>
           </Box>
           <Box id="modal-modal-description" sx={{ my: 2 }}>
@@ -595,7 +610,7 @@ function Boards() {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Board Title"
+                    label="Tên Bảng (VD: Sprint 34 • BNPL & Core Payment)"
                     type="text"
                     variant="outlined"
                     InputProps={{
@@ -607,8 +622,8 @@ function Boards() {
                     }}
                     {...register('title', {
                       required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: 'Min Length is 3 characters' },
-                      maxLength: { value: 50, message: 'Max Length is 50 characters' }
+                      minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
+                      maxLength: { value: 50, message: 'Tối đa 50 ký tự' }
                     })}
                     error={!!errors['title']}
                   />
@@ -618,7 +633,7 @@ function Boards() {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Description"
+                    label="Mô tả mục tiêu bảng / kỳ Sprint"
                     type="text"
                     variant="outlined"
                     multiline
@@ -631,8 +646,8 @@ function Boards() {
                     }}
                     {...register('description', {
                       required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: 'Min Length is 3 characters' },
-                      maxLength: { value: 256, message: 'Max Length is 256 characters' }
+                      minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
+                      maxLength: { value: 256, message: 'Tối đa 256 ký tự' }
                     })}
                     error={!!errors['description']}
                   />
@@ -641,7 +656,7 @@ function Boards() {
 
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                    Select Sora Kasugano Aesthetic • 穹のテーマ:
+                    Chọn Chủ đề Nhân vật (Sora Kasugano • Furina • Nahida):
                   </Typography>
                   <Controller
                     name="theme"
@@ -657,17 +672,27 @@ function Boards() {
                         <FormControlLabel
                           value="sora-sky"
                           control={<Radio size="small" />}
-                          label="☁️ Sora Sky (Distant Sky)"
+                          label="☁️ Sora (Distant Sky)"
+                        />
+                        <FormControlLabel
+                          value="furina"
+                          control={<Radio size="small" />}
+                          label="💧 Furina (Fontaine Opera)"
+                        />
+                        <FormControlLabel
+                          value="nahida"
+                          control={<Radio size="small" />}
+                          label="🌿 Nahida (Sumeru Wisdom)"
                         />
                         <FormControlLabel
                           value="sora-twilight"
                           control={<Radio size="small" />}
-                          label="🎀 Moonlit Ribbon (Gothic)"
+                          label="🎀 Sora (Moonlit Ribbon)"
                         />
                         <FormControlLabel
                           value="sora-usagi"
                           control={<Radio size="small" />}
-                          label="🐰 Usagi Plush (Sanctuary)"
+                          label="🐰 Sora & Usagi Plush"
                         />
                       </RadioGroup>
                     )}
@@ -714,7 +739,7 @@ function Boards() {
                           size="small"
                         />
                       }
-                      label="Auto-populate Okukozome columns, Sora artwork cover & Usagi checklist"
+                      label="Tự động tạo sẵn các cột BA, CR mẫu (BNPL-1, BNPL-2) & tài liệu FRD kỳ Sprint 34"
                     />
                   )}
                 />
@@ -726,7 +751,7 @@ function Boards() {
                     variant="contained"
                     color="primary"
                   >
-                    Create Board
+                    Tạo Bảng
                   </Button>
                 </Box>
               </Box>
@@ -735,7 +760,7 @@ function Boards() {
         </Box>
       </Modal>
 
-      {/* Full-Resolution Sora Kasugano Artwork Lightbox Modal */}
+      {/* Full-Resolution Character Artwork Lightbox Modal */}
       <Modal open={Boolean(previewArt)} onClose={() => setPreviewArt(null)}>
         <Box
           onClick={() => setPreviewArt(null)}
@@ -767,11 +792,11 @@ function Boards() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <SoraBunnyIcon />
                   <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    {previewArt.label} • 春日野 穹 (Yosuga no Sora)
+                    {previewArt.label}
                   </Typography>
                 </Box>
                 <Chip
-                  label="Click anywhere to close"
+                  label="Nhấn bất kỳ đâu để đóng"
                   size="small"
                   sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.14)', fontWeight: 700 }}
                 />

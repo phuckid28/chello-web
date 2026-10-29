@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Modal from '@mui/material/Modal'
 import Typography from '@mui/material/Typography'
@@ -13,7 +13,15 @@ import DvrOutlinedIcon from '@mui/icons-material/DvrOutlined'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import LabelImportantOutlinedIcon from '@mui/icons-material/LabelImportantOutlined'
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
+import LinkRoundedIcon from '@mui/icons-material/LinkRounded'
+import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded'
+import SaveRoundedIcon from '@mui/icons-material/SaveRounded'
 import TextField from '@mui/material/TextField'
+import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Checkbox from '@mui/material/Checkbox'
@@ -41,6 +49,15 @@ import {
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { CARD_MEMBER_ACTIONS } from '~/utils/constants'
 import { ELEMENTAL_LABELS, SORA_PRESET_COVERS, resolveCardCoverUrl } from '~/utils/animeTheme'
+import {
+  BA_STATUS_OPTIONS,
+  DEFAULT_SPRINT_CONFIG,
+  GENERATE_BA_FRD_TEMPLATE,
+  collectBoardCardsWithColumn,
+  downloadAttachedFrdFile,
+  exportCardAsFrdMarkdown,
+  getDeadlineStatus
+} from '~/utils/excelExporter'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { playUiChime } from '~/utils/soundEffects'
 import { useConfirm } from 'material-ui-confirm'
@@ -76,9 +93,42 @@ function ActiveCard() {
   const board = useSelector(selectCurrentActiveBoard)
   const confirmDeleteCard = useConfirm()
 
+  const defaultSprint = board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name
+
   const [showCoverInput, setShowCoverInput] = useState(false)
   const [coverUrlInput, setCoverUrlInput] = useState('')
   const [newQuestTitle, setNewQuestTitle] = useState('')
+
+  // BA CR Metadata local form states
+  const [crCode, setCrCode] = useState('')
+  const [sprint, setSprint] = useState(defaultSprint)
+  const [assignee, setAssignee] = useState('')
+  const [baStatus, setBaStatus] = useState('In Analysis')
+  const [deadline, setDeadline] = useState('')
+  const [note, setNote] = useState('')
+  const [selectedLinkCardId, setSelectedLinkCardId] = useState('')
+
+  useEffect(() => {
+    if (activeCard) {
+      setCrCode(activeCard.crCode || '')
+      setSprint(activeCard.sprint || defaultSprint)
+      setAssignee(activeCard.assignee || currentUser?.displayName || '')
+      setBaStatus(activeCard.baStatus || 'In Analysis')
+      if (activeCard.deadline) {
+        setDeadline(activeCard.deadline)
+      } else if (activeCard.dueDate) {
+        const d = new Date(activeCard.dueDate)
+        if (!Number.isNaN(d.getTime())) {
+          setDeadline(d.toISOString().slice(0, 10))
+        } else {
+          setDeadline('')
+        }
+      } else {
+        setDeadline('')
+      }
+      setNote(activeCard.note || '')
+    }
+  }, [activeCard, defaultSprint, currentUser])
 
   const handleCloseModal = () => {
     setShowCoverInput(false)
@@ -98,6 +148,108 @@ function ActiveCard() {
 
   const onUpdateCardDescription = (newDescription) => {
     callApiUpdateCard({ description: newDescription })
+  }
+
+  const onSaveBaCrMetadata = async () => {
+    const dueDateTs = deadline ? new Date(`${deadline}T17:00:00`).getTime() : null
+    await callApiUpdateCard({
+      crCode: crCode.trim(),
+      sprint: sprint.trim() || defaultSprint,
+      assignee: assignee.trim(),
+      baStatus,
+      deadline: deadline || null,
+      dueDate: !Number.isNaN(dueDateTs) ? dueDateTs : null,
+      isCompleted: baStatus === 'Done',
+      note: note.trim()
+    })
+    playUiChime('complete')
+    toast.success(`Đã lưu thông tin CR [${crCode.trim() || activeCard?.title}]!`)
+  }
+
+  const onUploadFrdDocument = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (file.size > 3.5 * 1024 * 1024) {
+      toast.warning('Kích thước file FRD tối đa 3.5MB để đảm bảo tốc độ đồng bộ!')
+      event.target.value = ''
+      return
+    }
+
+    const isTextOrMd = /\.(md|markdown|txt|json|csv)$/i.test(file.name)
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const content = String(e.target?.result || '')
+      const newDoc = {
+        id: `frd-${Date.now()}`,
+        name: file.name,
+        type: file.type || (isTextOrMd ? 'text/markdown' : 'application/octet-stream'),
+        size: file.size,
+        content,
+        source: 'upload',
+        uploadedAt: Date.now()
+      }
+      const nextDocs = [...(activeCard?.frdDocuments || []), newDoc]
+      const updatePayload = { frdDocuments: nextDocs }
+      if (isTextOrMd && !activeCard?.description) {
+        updatePayload.description = content
+      }
+      await callApiUpdateCard(updatePayload)
+      playUiChime('complete')
+      toast.success(`Đã đính kèm tài liệu FRD "${file.name}"!`)
+    }
+
+    if (isTextOrMd) {
+      reader.readAsText(file, 'UTF-8')
+    } else {
+      reader.readAsDataURL(file)
+    }
+    event.target.value = ''
+  }
+
+  const onDeleteFrdDocument = async (docId) => {
+    const nextDocs = (activeCard?.frdDocuments || []).filter(d => d.id !== docId)
+    await callApiUpdateCard({ frdDocuments: nextDocs })
+    toast.info('Đã gỡ file FRD khỏi thẻ CR.')
+  }
+
+  const onApplyFrdToDescription = async (frdDoc) => {
+    if (!frdDoc?.content || frdDoc.content.startsWith('data:')) {
+      toast.info('File nhị phân (PDF/DOCX) được hỗ trợ tải xuống trực tiếp.')
+      return
+    }
+    await callApiUpdateCard({ description: frdDoc.content })
+    toast.success(`Đã nạp nội dung "${frdDoc.name}" vào khung Đặc tả FRD!`)
+  }
+
+  const onInsertBaFrdTemplate = async () => {
+    const templateMd = GENERATE_BA_FRD_TEMPLATE(
+      crCode || 'BNPL-1',
+      activeCard?.title || 'Đặc tả Change Request'
+    )
+    const nextDesc = activeCard?.description
+      ? `${activeCard.description}\n\n---\n\n${templateMd}`
+      : templateMd
+    await callApiUpdateCard({ description: nextDesc })
+    playUiChime('sparkle')
+    toast.success('Đã chèn khung đặc tả FRD & Sơ đồ Sequence chuẩn BA!')
+  }
+
+  const onAddLinkedCard = async () => {
+    if (!selectedLinkCardId) return
+    const currentLinks = activeCard?.linkedCardIds || []
+    if (currentLinks.includes(selectedLinkCardId)) {
+      setSelectedLinkCardId('')
+      return
+    }
+    await callApiUpdateCard({ linkedCardIds: [...currentLinks, selectedLinkCardId] })
+    setSelectedLinkCardId('')
+    playUiChime('sparkle')
+    toast.success('Đã liên kết tri thức CR thành công!')
+  }
+
+  const onRemoveLinkedCard = async (targetId) => {
+    const nextLinks = (activeCard?.linkedCardIds || []).filter(id => id !== targetId)
+    await callApiUpdateCard({ linkedCardIds: nextLinks })
   }
 
   const onUpdateCardCover = (presetOrUrl) => {
@@ -162,10 +314,10 @@ function ActiveCard() {
 
   const handleDeleteCard = () => {
     confirmDeleteCard({
-      title: 'Delete this card?',
-      description: 'This action will permanently delete this card. Are you sure?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      title: 'Xóa thẻ CR này?',
+      description: 'Hành động này sẽ xóa vĩnh viễn thẻ CR và các tài liệu đính kèm trên thẻ. Bạn có chắc chắn không?',
+      confirmationText: 'Xóa thẻ',
+      cancellationText: 'Hủy'
     }).then(() => {
       const cardId = activeCard._id
       const columnId = activeCard.columnId
@@ -185,7 +337,7 @@ function ActiveCard() {
       dispatch(updateCurrentActiveBoard(newBoard))
 
       deleteCardDetailsAPI(cardId).then(res => {
-        toast.success(res?.deleteResult || 'Card deleted successfully')
+        toast.success(res?.deleteResult || 'Đã xóa thẻ CR thành công')
       })
     }).catch(() => {})
   }
@@ -194,6 +346,18 @@ function ActiveCard() {
   const checklist = activeCard?.checklist || []
   const completedCount = checklist.filter(i => i.isCompleted).length
   const progressPercent = checklist.length > 0 ? Math.round((completedCount / checklist.length) * 100) : 0
+  const deadlineInfo = getDeadlineStatus({
+    ...activeCard,
+    baStatus,
+    deadline
+  })
+
+  const allBoardCards = collectBoardCardsWithColumn(board)
+    .map(item => item.card)
+    .filter(c => c._id !== activeCard?._id)
+  const linkedCards = (activeCard?.linkedCardIds || [])
+    .map(id => allBoardCards.find(c => c._id === id))
+    .filter(Boolean)
 
   return (
     <Modal
@@ -203,15 +367,15 @@ function ActiveCard() {
       sx={{ overflowY: 'auto' }}>
       <Box sx={{
         position: 'relative',
-        width: 920,
-        maxWidth: '95vw',
+        width: 980,
+        maxWidth: '96vw',
         bgcolor: 'white',
         boxShadow: 24,
-        borderRadius: '14px',
-        border: '1px solid rgba(56, 189, 248, 0.3)',
+        borderRadius: '16px',
+        border: '1px solid rgba(56, 189, 248, 0.35)',
         outline: 0,
-        padding: '40px 24px 24px',
-        margin: '40px auto',
+        padding: '36px 24px 24px',
+        margin: '32px auto',
         backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#fff'
       }}>
         <Box sx={{
@@ -224,31 +388,283 @@ function ActiveCard() {
         </Box>
 
         {resolvedCover &&
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 3 }}>
             <img
-              style={{ width: '100%', height: '280px', borderRadius: '10px', objectFit: 'cover' }}
+              style={{ width: '100%', height: '240px', borderRadius: '12px', objectFit: 'cover' }}
               src={resolvedCover}
               alt="card-cover"
             />
           </Box>
         }
 
-        <Box sx={{ mb: 2, mt: -2, pr: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ mb: 2, pr: 2.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <SoraRibbonIcon />
-          <ToggleFocusInput
-            inputFontSize='22px'
-            value={activeCard?.title || ''}
-            onChangedValue={onUpdateCardTitle} />
+          {crCode && (
+            <Chip
+              label={crCode}
+              size="small"
+              color="info"
+              sx={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.82rem' }}
+            />
+          )}
+          <Box sx={{ flex: 1, minWidth: 240 }}>
+            <ToggleFocusInput
+              inputFontSize='22px'
+              value={activeCard?.title || ''}
+              onChangedValue={onUpdateCardTitle} />
+          </Box>
+          <Chip
+            label={deadlineInfo.label}
+            size="small"
+            sx={{
+              fontWeight: 700,
+              color: deadlineInfo.color,
+              bgcolor: deadlineInfo.bgColor,
+              border: `1px solid ${deadlineInfo.color}66`
+            }}
+          />
         </Box>
 
         <Grid container spacing={2.5} sx={{ mb: 2 }}>
           <Grid xs={12} sm={8.5}>
-            {/* Sora & Usagi Labels Section */}
+            {/* Business Analyst (BA) Change Request (CR) Metadata Hub */}
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                borderRadius: '12px',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.65)' : 'rgba(240, 249, 255, 0.65)'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AssignmentOutlinedIcon color="primary" />
+                  <Typography sx={{ fontWeight: 800, fontSize: '16px', color: 'primary.main' }}>
+                    Thông tin Change Request (CR) & Theo dõi Tiến độ BA
+                  </Typography>
+                </Box>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<SaveRoundedIcon />}
+                  onClick={onSaveBaCrMetadata}
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                >
+                  Lưu thông tin CR
+                </Button>
+              </Box>
+
+              <Stack spacing={1.5}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                  <TextField
+                    label="Mã CR (VD: BNPL-1)"
+                    size="small"
+                    value={crCode}
+                    onChange={(e) => setCrCode(e.target.value)}
+                    sx={{ width: { xs: '100%', sm: '170px' } }}
+                  />
+                  <TextField
+                    label="Kỳ Sprint (2 tuần)"
+                    size="small"
+                    value={sprint}
+                    onChange={(e) => setSprint(e.target.value)}
+                    placeholder="Sprint 34"
+                    sx={{ width: { xs: '100%', sm: '170px' } }}
+                  />
+                  <TextField
+                    label="Người phụ trách (PIC)"
+                    size="small"
+                    fullWidth
+                    value={assignee}
+                    onChange={(e) => setAssignee(e.target.value)}
+                    placeholder="VD: Thanh Phuc (BA)"
+                  />
+                </Stack>
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                  <TextField
+                    select
+                    label="Trạng thái BA (Status)"
+                    size="small"
+                    fullWidth
+                    value={baStatus}
+                    onChange={(e) => setBaStatus(e.target.value)}
+                  >
+                    {BA_STATUS_OPTIONS.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
+                  </TextField>
+
+                  <TextField
+                    label="Deadline hoàn thành"
+                    type="date"
+                    size="small"
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                  />
+                </Stack>
+
+                <TextField
+                  label="Note cần thiết (Ghi chú xuất ra báo cáo Excel Sprint)"
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Ghi chú tiến độ, vướng mắc, kết quả review FRD hoặc lưu ý UAT..."
+                />
+              </Stack>
+            </Box>
+
+            {/* FRD Documents & Knowledge Linking Section */}
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                borderRadius: '12px',
+                border: '1px solid rgba(167, 139, 250, 0.3)',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 27, 75, 0.25)' : 'rgba(245, 243, 255, 0.6)'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <DescriptionOutlinedIcon color="secondary" />
+                  <Typography sx={{ fontWeight: 800, fontSize: '16px' }}>
+                    Tài liệu FRD Đính kèm & Liên kết Kiến thức Hệ thống
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    component="label"
+                    size="small"
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<UploadFileRoundedIcon />}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                  >
+                    Đính kèm FRD (.MD / .PDF / .DOCX)
+                    <input type="file" hidden accept=".md,.markdown,.pdf,.docx,.doc,.txt,.json" onChange={onUploadFrdDocument} />
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<DownloadRoundedIcon />}
+                    onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                  >
+                    Xuất CR ra .MD
+                  </Button>
+                </Stack>
+              </Box>
+
+              {/* Attached FRD list */}
+              {(activeCard?.frdDocuments?.length > 0) ? (
+                <Stack spacing={1} sx={{ mb: 2 }}>
+                  {activeCard.frdDocuments.map((doc) => (
+                    <Box
+                      key={doc.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        borderRadius: '8px',
+                        border: '1px solid rgba(148, 163, 184, 0.25)',
+                        bgcolor: 'background.paper'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                        <DescriptionOutlinedIcon fontSize="small" color="info" />
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                            {doc.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {Math.max(1, Math.round((doc.size || 512) / 1024))} KB • {doc.source === 'antigravity-template' ? 'Antigravity Spec' : 'FRD Document'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Stack direction="row" spacing={0.5}>
+                        {!String(doc.content || '').startsWith('data:') && (
+                          <Button
+                            size="small"
+                            onClick={() => onApplyFrdToDescription(doc)}
+                            sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 700 }}
+                          >
+                            Nạp vào Mô tả
+                          </Button>
+                        )}
+                        <IconButton size="small" color="primary" onClick={() => downloadAttachedFrdFile(doc)} title="Tải xuống file FRD">
+                          <DownloadRoundedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => onDeleteFrdDocument(doc.id)} title="Xóa file FRD">
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 1.5 }}>
+                  Chưa có file FRD đính kèm. Bạn có thể tải lên file .MD (bao gồm tài liệu từ Antigravity), .PDF hoặc .DOCX để lưu trữ và tải về bất cứ lúc nào.
+                </Typography>
+              )}
+
+              {/* Knowledge Linking between CRs */}
+              <Divider sx={{ my: 1.5 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <LinkRoundedIcon fontSize="small" color="primary" />
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  Liên kết CR / Module liên quan ({linkedCards.length})
+                </Typography>
+              </Box>
+              {linkedCards.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+                  {linkedCards.map(lc => (
+                    <Chip
+                      key={lc._id}
+                      label={`${lc.crCode ? `[${lc.crCode}] ` : ''}${lc.title}`}
+                      onClick={() => dispatch(updateCurrentActiveCard(lc))}
+                      onDelete={() => onRemoveLinkedCard(lc._id)}
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontWeight: 700, cursor: 'pointer' }}
+                    />
+                  ))}
+                </Box>
+              )}
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  select
+                  size="small"
+                  fullWidth
+                  label="Chọn CR / Thẻ khác trên Board để liên kết kiến thức..."
+                  value={selectedLinkCardId}
+                  onChange={(e) => setSelectedLinkCardId(e.target.value)}
+                >
+                  {allBoardCards.map(c => (
+                    <MenuItem key={c._id} value={c._id}>
+                      {c.crCode ? `[${c.crCode}] ` : ''}{c.title}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <Button variant="outlined" size="small" onClick={onAddLinkedCard} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                  Liên kết
+                </Button>
+              </Stack>
+            </Box>
+
+            {/* Tags Section */}
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <LabelImportantOutlinedIcon fontSize="small" color="primary" />
                 <Typography sx={{ fontWeight: 700, color: 'primary.main', fontSize: '15px' }}>
-                  Sora & Usagi Tags • 穹のタグ
+                  Phân loại Nhãn • Tags
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -277,7 +693,7 @@ function ActiveCard() {
 
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1, fontSize: '15px' }}>
-                Party Members • メンバー
+                Thành viên tham gia • Members
               </Typography>
               <CardUserGroup
                 cardMemberIds={activeCard?.memberIds}
@@ -285,13 +701,13 @@ function ActiveCard() {
               />
             </Box>
 
-            {/* Quest Objectives / Checklist Section */}
+            {/* Subtasks / Acceptance Criteria Checklist Section */}
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <FactCheckOutlinedIcon color="primary" />
                   <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
-                    Quest Objectives • 任務目標 ({completedCount}/{checklist.length})
+                    Subtasks & UAT Checklist ({completedCount}/{checklist.length})
                   </Typography>
                 </Box>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
@@ -346,7 +762,7 @@ function ActiveCard() {
                 <TextField
                   size="small"
                   fullWidth
-                  placeholder="Add a new quest objective..."
+                  placeholder="Thêm hạng mục công việc BA hoặc kịch bản nghiệm thu UAT..."
                   value={newQuestTitle}
                   onChange={(e) => setNewQuestTitle(e.target.value)}
                   onKeyDown={(e) => {
@@ -357,17 +773,28 @@ function ActiveCard() {
                   }}
                 />
                 <Button variant="contained" size="small" onClick={onAddChecklistItem}>
-                  Add
+                  Thêm
                 </Button>
               </Box>
             </Box>
 
             <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <SubjectRoundedIcon color="primary" />
-                <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
-                  Description • 詳細
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <SubjectRoundedIcon color="primary" />
+                  <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
+                    Đặc tả Chi tiết FRD & Mô hình hóa Nghiệp vụ
+                  </Typography>
+                </Box>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<AutoFixHighRoundedIcon />}
+                  onClick={onInsertBaFrdTemplate}
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                >
+                  Chèn khung FRD chuẩn BA
+                </Button>
               </Box>
               <CardDescriptionMdEditor
                 cardDescriptionProp={activeCard?.description}
@@ -379,7 +806,7 @@ function ActiveCard() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <DvrOutlinedIcon color="primary" />
                 <Typography variant="span" sx={{ fontWeight: 700, fontSize: '18px' }}>
-                  Akasha Activity Log • コメント
+                  Nhật ký Trao đổi & Review • Thảo luận
                 </Typography>
               </Box>
               <CardActivitySection
@@ -391,7 +818,7 @@ function ActiveCard() {
 
           <Grid xs={12} sm={3.5}>
             <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
-              Quick Actions • 操作
+              Thao tác Nhanh • Actions
             </Typography>
             <Stack direction="column" spacing={1}>
               {currentUser?._id && !activeCard?.memberIds?.includes(currentUser._id) &&
@@ -403,9 +830,23 @@ function ActiveCard() {
                   })}
                 >
                   <PersonOutlineOutlinedIcon fontSize="small" />
-                  <span>Join Party</span>
+                  <span>Nhận phụ trách (Join CR)</span>
                 </SidebarItem>
               }
+              <SidebarItem
+                className="active"
+                onClick={onInsertBaFrdTemplate}
+              >
+                <AutoFixHighRoundedIcon fontSize="small" />
+                <span>Chèn mẫu FRD & Sequence</span>
+              </SidebarItem>
+              <SidebarItem
+                className="active"
+                onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
+              >
+                <DownloadRoundedIcon fontSize="small" />
+                <span>Tải xuống FRD (.MD)</span>
+              </SidebarItem>
               <SidebarItem
                 className="active"
                 onClick={() => {
@@ -414,7 +855,7 @@ function ActiveCard() {
                 }}
               >
                 <ImageOutlinedIcon fontSize="small" />
-                <span>Anime Cover Art</span>
+                <span>Ảnh bìa Nhân vật (Cover)</span>
               </SidebarItem>
 
               {showCoverInput &&
@@ -422,7 +863,7 @@ function ActiveCard() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <SoraBunnyIcon sx={{ fontSize: 16 }} />
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                      1-Click Sora & Usagi Covers:
+                      Ảnh bìa Sora • Furina • Nahida:
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
@@ -439,7 +880,7 @@ function ActiveCard() {
                     ))}
                     {activeCard?.cover && (
                       <Chip
-                        label="Remove"
+                        label="Gỡ ảnh bìa"
                         size="small"
                         color="error"
                         variant="outlined"
@@ -450,13 +891,13 @@ function ActiveCard() {
                   </Box>
                   <TextField
                     size="small"
-                    label="Or custom https:// image URL..."
+                    label="Hoặc dán link ảnh https://..."
                     value={coverUrlInput}
                     onChange={(e) => setCoverUrlInput(e.target.value)}
                   />
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                     <Button size="small" variant="contained" color="info" onClick={() => onUpdateCardCover()}>
-                      Save URL
+                      Lưu ảnh
                     </Button>
                   </Box>
                 </Box>
@@ -465,14 +906,14 @@ function ActiveCard() {
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Danger Zone</Typography>
+            <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Quản trị Thẻ</Typography>
             <Stack direction="column" spacing={1}>
               <SidebarItem
                 onClick={handleDeleteCard}
                 sx={{ color: 'error.main', '&:hover': { color: 'error.dark' } }}
               >
                 <DeleteOutlineIcon fontSize="small" />
-                <span>Delete Card</span>
+                <span>Xóa thẻ CR</span>
               </SidebarItem>
             </Stack>
           </Grid>

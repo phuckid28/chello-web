@@ -4,17 +4,35 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
+import Button from '@mui/material/Button'
 import LinearProgress from '@mui/material/LinearProgress'
 import Avatar from '@mui/material/Avatar'
 import Stack from '@mui/material/Stack'
-import { useDispatch } from 'react-redux'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TableViewRoundedIcon from '@mui/icons-material/TableViewRounded'
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
+import { useDispatch, useSelector } from 'react-redux'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
-import { resolveCardCoverUrl, soraChibi } from '~/utils/animeTheme'
+import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import {
+  DEFAULT_SPRINT_CONFIG,
+  downloadAttachedFrdFile,
+  exportSprintCrsToExcel,
+  formatDateVN,
+  getDeadlineStatus
+} from '~/utils/excelExporter'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { playUiChime } from '~/utils/soundEffects'
 
 function BoardAnalyticsView({ columns = [], themeConfig }) {
   const dispatch = useDispatch()
+  const board = useSelector(selectCurrentActiveBoard)
+  const sprintConfig = board?.sprintConfig || DEFAULT_SPRINT_CONFIG
 
   const allRealCards = []
   columns.forEach((col) => {
@@ -30,14 +48,17 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
 
   let totalChecklistItems = 0
   let completedChecklistItems = 0
-  let cardsWithCoverOrTags = 0
+  let totalFrdDocs = 0
+  let overdueOrSoonCount = 0
 
   allRealCards.forEach((card) => {
     const list = card.checklist || []
     totalChecklistItems += list.length
     completedChecklistItems += list.filter((i) => i.isCompleted).length
-    if (card.cover || (card.labels && card.labels.length > 0)) {
-      cardsWithCoverOrTags++
+    totalFrdDocs += (card.frdDocuments || []).length
+    const dl = getDeadlineStatus(card)
+    if (dl.code === 'overdue' || dl.code === 'due-soon') {
+      overdueOrSoonCount++
     }
   })
 
@@ -53,7 +74,7 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
 
   const glassCardSx = {
     borderRadius: '16px',
-    bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.86)' : 'rgba(255, 255, 255, 0.90)'),
+    bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.92)'),
     backdropFilter: 'blur(18px) saturate(160%)',
     border: `1px solid ${themeConfig.columnBorder}`,
     boxShadow: '0 12px 32px rgba(0, 0, 0, 0.22)',
@@ -77,7 +98,7 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 0.5 }}>
-                  TOTAL CARDS • 総カード数
+                  TỔNG SỐ CR ({sprintConfig.name.toUpperCase()})
                 </Typography>
                 <SoraBunnyIcon fontSize="small" />
               </Box>
@@ -85,7 +106,7 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                 {allRealCards.length}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Across {columns.length} workflow columns
+                Chu kỳ: {sprintConfig.startDate} – {sprintConfig.endDate}
               </Typography>
             </CardContent>
           </Card>
@@ -96,7 +117,7 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 0.5 }}>
-                  QUEST PROGRESS • 達成率
+                  TIẾN ĐỘ SUBTASKS & UAT
                 </Typography>
                 <SoraRibbonIcon fontSize="small" />
               </Box>
@@ -117,15 +138,15 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 0.5 }}>
-                  CHECKLIST ITEMS • 目標項目
+                  TÀI LIỆU FRD ĐÍNH KÈM
                 </Typography>
                 <SoraBunnyIcon fontSize="small" />
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 800 }}>
-                {completedChecklistItems}/{totalChecklistItems}
+                {totalFrdDocs}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Completed objectives in this board
+                Đặc tả .MD / .PDF liên kết trực tiếp
               </Typography>
             </CardContent>
           </Card>
@@ -135,19 +156,19 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
           <Card sx={glassCardSx}>
             <CardContent sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
               <Avatar
-                src={soraChibi}
-                alt="Chibi Sora"
-                sx={{ width: 56, height: 56, border: `2px solid ${themeConfig.secondaryAccent}` }}
+                src={themeConfig.mascotImage}
+                alt={themeConfig.name}
+                sx={{ width: 56, height: 56, border: `2px solid ${themeConfig.accentColor}` }}
               />
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block' }}>
-                  STYLIZED CARDS • 装飾済み
+                  CẢNH BÁO DEADLINE
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                  {cardsWithCoverOrTags}
+                <Typography variant="h4" sx={{ fontWeight: 800, color: overdueOrSoonCount > 0 ? '#f59e0b' : '#10b981' }}>
+                  {overdueOrSoonCount} CR
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  With Sora covers or tags
+                  Quá hạn hoặc còn ≤ 2 ngày
                 </Typography>
               </Box>
             </CardContent>
@@ -155,18 +176,135 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
         </Grid>
       </Grid>
 
+      {/* BA Sprint CR Tracking Matrix Table (Matches Excel Export Schema) */}
+      <Card sx={{ ...glassCardSx, mb: 3 }}>
+        <CardContent sx={{ p: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                📋 Bảng Theo Dõi Change Request (CR) & FRD — {sprintConfig.name} ({sprintConfig.startDate} - {sprintConfig.endDate})
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Cập nhật tới ngày: {formatDateVN(new Date())} • Nhấn vào dòng bất kỳ để mở đặc tả FRD & chỉnh sửa CR
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<TableViewRoundedIcon />}
+              onClick={() => exportSprintCrsToExcel(board)}
+              sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '10px' }}
+            >
+              Xuất File Excel ({sprintConfig.name})
+            </Button>
+          </Box>
+
+          <TableContainer sx={{ borderRadius: '12px', border: '1px solid rgba(148, 163, 184, 0.24)' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'rgba(15, 23, 42, 0.75)' }}>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Kỳ Sprint</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Bắt đầu - Kết thúc</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Mã CR</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Tên CR</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Người phụ trách</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Trạng thái (Status)</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Deadline</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>FRD</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 800 }}>Note cần thiết</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {allRealCards.map((card, idx) => {
+                  const dl = getDeadlineStatus(card)
+                  const frdList = card.frdDocuments || []
+                  return (
+                    <TableRow
+                      key={card._id}
+                      hover
+                      onClick={() => handleOpenCard(card)}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        {card.sprint || sprintConfig.name}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.76rem', color: 'text.secondary' }}>
+                        {sprintConfig.startDate} – {sprintConfig.endDate}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={card.crCode || `CR-${idx + 1}`}
+                          size="small"
+                          color="info"
+                          sx={{ fontFamily: 'monospace', fontWeight: 800, height: 22 }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, maxWidth: 260 }}>
+                        {card.title}
+                      </TableCell>
+                      <TableCell>
+                        {card.assignee || board?.owners?.[0]?.displayName || 'Chưa phân công'}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={card.baStatus ? `${card.baStatus} (${card.columnTitle})` : card.columnTitle}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontWeight: 700, height: 22 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={dl.shortLabel}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            height: 22,
+                            color: dl.color,
+                            bgcolor: dl.bgColor,
+                            border: `1px solid ${dl.color}55`
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        {frdList.length > 0 ? (
+                          <Chip
+                            icon={<DownloadRoundedIcon sx={{ fontSize: '14px !important' }} />}
+                            label={`${frdList.length} file`}
+                            size="small"
+                            color="secondary"
+                            onClick={() => downloadAttachedFrdFile(frdList[0])}
+                            clickable
+                            sx={{ height: 22, fontWeight: 700 }}
+                          />
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">—</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 240, fontSize: '0.78rem', color: 'text.secondary' }}>
+                        {card.note || '—'}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+
+      {/* Stage Distribution Card */}
       <Grid container spacing={2.5}>
-        {/* Column Distribution Bento Card */}
-        <Grid xs={12} md={4}>
-          <Card sx={{ ...glassCardSx, height: '100%' }}>
+        <Grid xs={12}>
+          <Card sx={glassCardSx}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <SoraRibbonIcon fontSize="small" />
                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                  Stage Distribution • カラム別分布
+                  Phân bổ CR theo Cột Trạng thái (Workflow Distribution)
                 </Typography>
               </Box>
-              <Stack spacing={2}>
+              <Stack spacing={1.5}>
                 {columns.map((col) => {
                   const realCount = (col.cards || []).filter((c) => !c.FE_PlaceholderCard).length
                   const ratio = allRealCards.length > 0 ? Math.round((realCount / allRealCards.length) * 100) : 0
@@ -177,7 +315,7 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                           {col.title}
                         </Typography>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                          {realCount} cards ({ratio}%)
+                          {realCount} CR ({ratio}%)
                         </Typography>
                       </Box>
                       <LinearProgress
@@ -185,125 +323,6 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                         value={ratio}
                         sx={{ height: 7, borderRadius: 4 }}
                       />
-                    </Box>
-                  )
-                })}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Interactive Card Directory */}
-        <Grid xs={12} md={8}>
-          <Card sx={glassCardSx}>
-            <CardContent sx={{ p: 2.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <SoraBunnyIcon fontSize="small" />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    Interactive Card Directory • 全カード一覧 (Click to open)
-                  </Typography>
-                </Box>
-                <Chip
-                  label={`${allRealCards.length} Total`}
-                  size="small"
-                  sx={{ fontWeight: 800 }}
-                />
-              </Box>
-
-              {allRealCards.length === 0 && (
-                <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-                  No cards match the current filter. Switch back to Kanban view to add cards!
-                </Typography>
-              )}
-
-              <Stack spacing={1.25}>
-                {allRealCards.map((card) => {
-                  const coverUrl = resolveCardCoverUrl(card.cover)
-                  const cTotal = card.checklist?.length || 0
-                  const cDone = card.checklist?.filter((i) => i.isCompleted)?.length || 0
-                  return (
-                    <Box
-                      key={card._id}
-                      onClick={() => handleOpenCard(card)}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 2,
-                        p: 1.5,
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(148, 163, 184, 0.22)',
-                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                        '&:hover': {
-                          transform: 'translateX(4px)',
-                          borderColor: themeConfig.accentColor,
-                          bgcolor: (theme) => (
-                            theme.palette.mode === 'dark' ? 'rgba(125, 211, 252, 0.08)' : 'rgba(2, 132, 199, 0.05)'
-                          )
-                        }
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-                        {coverUrl ? (
-                          <Avatar
-                            variant="rounded"
-                            src={coverUrl}
-                            sx={{ width: 44, height: 44, borderRadius: '8px' }}
-                          />
-                        ) : (
-                          <Box
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              bgcolor: 'rgba(125, 211, 252, 0.14)'
-                            }}
-                          >
-                            <SoraBunnyIcon fontSize="small" />
-                          </Box>
-                        )}
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="body1" sx={{ fontWeight: 700 }} noWrap>
-                            {card.title}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mt: 0.25 }}>
-                            <Chip
-                              label={card.columnTitle}
-                              size="small"
-                              variant="outlined"
-                              sx={{ height: 19, fontSize: '0.68rem', fontWeight: 700 }}
-                            />
-                            {(card.labels || []).map((lbl) => (
-                              <Chip
-                                key={lbl.id}
-                                label={lbl.title}
-                                size="small"
-                                sx={{
-                                  height: 19,
-                                  fontSize: '0.66rem',
-                                  fontWeight: 700,
-                                  color: 'white',
-                                  bgcolor: lbl.color || '#0284c7'
-                                }}
-                              />
-                            ))}
-                          </Box>
-                        </Box>
-                      </Box>
-
-                      {cTotal > 0 && (
-                        <Chip
-                          label={`${cDone}/${cTotal}`}
-                          size="small"
-                          color={cDone === cTotal ? 'success' : 'primary'}
-                          sx={{ fontWeight: 800, height: 22 }}
-                        />
-                      )}
                     </Box>
                   )
                 })}

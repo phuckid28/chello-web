@@ -8,6 +8,7 @@ import Chip from '@mui/material/Chip'
 import SearchIcon from '@mui/icons-material/Search'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import MusicNoteRoundedIcon from '@mui/icons-material/MusicNoteRounded'
+import TableViewRoundedIcon from '@mui/icons-material/TableViewRounded'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
@@ -18,8 +19,15 @@ import { selectCurrentActiveBoard, updateCurrentActiveBoard } from '~/redux/acti
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { PRIMARY_THEMES_LIST } from '~/utils/animeTheme'
+import { exportSprintCrsToExcel } from '~/utils/excelExporter'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
-import { playUiChime, toggleSoraMusicBox, isMusicBoxActive } from '~/utils/soundEffects'
+import {
+  OST_TRACK_CATALOG,
+  playOstTrack,
+  playUiChime,
+  stopSoraMusicBox,
+  isMusicBoxActive
+} from '~/utils/soundEffects'
 import { updateBoardDetailsAPI } from '~/apis'
 import { toast } from 'react-toastify'
 
@@ -68,17 +76,33 @@ function CommandPalette() {
   const commands = useMemo(() => {
     const list = []
 
-    // 1. Cards in current active board
+    // 1. BA Actions & Cards in current active board
+    if (board?._id) {
+      list.push({
+        id: 'ba-export-excel',
+        category: 'Business Analyst (BA) & Sprint Tools',
+        title: `Xuất File Excel Báo cáo CR (${board?.sprintConfig?.name || 'Sprint 34'})`,
+        subtitle: 'Bao gồm Kỳ Sprint, Bắt đầu/Kết thúc, Ngày cập nhật, Mã CR, Tên CR, PIC, Status, Deadline, Note',
+        badge: 'Excel .XLS',
+        icon: <TableViewRoundedIcon fontSize="small" color="success" />,
+        action: () => {
+          exportSprintCrsToExcel(board)
+          playUiChime('complete')
+          toast.success('Đã xuất file Excel báo cáo CR thành công!')
+        }
+      })
+    }
+
     if (board?.columns?.length) {
       board.columns.forEach((col) => {
         (col.cards || []).forEach((card) => {
           if (!card.FE_PlaceholderCard) {
             list.push({
               id: `card-${card._id}`,
-              category: 'Active Board Cards • カード検索',
-              title: card.title,
-              subtitle: `Column: ${col.title}`,
-              badge: 'Open Card',
+              category: 'Change Requests (CR) & Cards trên Bảng',
+              title: `${card.crCode ? `[${card.crCode}] ` : ''}${card.title}`,
+              subtitle: `Cột: ${col.title} • PIC: ${card.assignee || 'Chưa phân công'}`,
+              badge: card.crCode || 'Mở CR',
               icon: <SoraRibbonIcon fontSize="small" />,
               action: () => {
                 dispatch(updateCurrentActiveCard(card))
@@ -91,12 +115,12 @@ function CommandPalette() {
       })
     }
 
-    // 2. Sora Kasugano Theme Moods
+    // 2. Character Themes (Sora / Furina / Nahida)
     PRIMARY_THEMES_LIST.forEach((t) => {
       list.push({
         id: `theme-${t.id}`,
-        category: 'Sora Kasugano Aesthetic • テーマ切替',
-        title: `Switch to ${t.name}`,
+        category: 'Chủ đề Nhân vật (Sora • Furina • Nahida)',
+        title: `Chuyển sang chủ đề: ${t.name}`,
         subtitle: t.jpTitle,
         badge: t.element,
         icon: <SoraBunnyIcon fontSize="small" />,
@@ -107,65 +131,79 @@ function CommandPalette() {
             updateBoardDetailsAPI(board._id, { theme: t.id })
           }
           playUiChime('theme')
-          toast.info(`Switched aesthetic to ${t.name}`)
+          toast.info(`Đã chuyển chủ đề sang ${t.name}`)
         }
       })
     })
 
-    // 3. Ambient Music Box & Color Mode
-    list.push({
-      id: 'toggle-music-box',
-      category: 'Okukozome Atmosphere • 環境演出',
-      title: isMusicBoxActive()
-        ? 'Pause Sora’s Music Box (オルゴール停止)'
-        : 'Play Sora’s Music Box Melody (春日野 穹のオルゴール)',
-      subtitle: 'Gentle wind-up celesta melody inspired by Yosuga no Sora OST',
-      badge: 'Audio',
-      icon: <MusicNoteRoundedIcon fontSize="small" sx={{ color: '#f472b6' }} />,
-      action: () => {
-        const playing = toggleSoraMusicBox()
-        toast.info(playing ? '🎵 Playing Sora’s Music Box (Kioku Melody)...' : '🔇 Paused Music Box')
-      }
+    // 3. OST Tracks (Toui Sora e, Inori, Tomadoi no Naka, Sinner's Finale, Sumeru)
+    OST_TRACK_CATALOG.forEach((track) => {
+      list.push({
+        id: `ost-${track.id}`,
+        category: 'Nhạc nền OST (Yosuga no Sora • Fontaine • Sumeru)',
+        title: `Phát nhạc: ${track.title}`,
+        subtitle: track.subtitle,
+        badge: track.character.toUpperCase(),
+        icon: <MusicNoteRoundedIcon fontSize="small" sx={{ color: '#f472b6' }} />,
+        action: () => {
+          playOstTrack(track.id)
+          toast.info(`🎵 Đang phát: ${track.title}`)
+        }
+      })
     })
 
-    list.push({
-      id: 'toggle-color-mode',
-      category: 'Okukozome Atmosphere • 環境演出',
-      title: `Switch Color Mode (Current: ${mode})`,
-      subtitle: 'Toggle between Dark Moonlit mode and Light Morning Sky mode',
-      badge: mode === 'dark' ? 'Light Mode' : 'Dark Mode',
-      icon: <DarkModeOutlinedIcon fontSize="small" sx={{ color: '#7dd3fc' }} />,
-      action: () => {
-        setMode(mode === 'dark' ? 'light' : 'dark')
-        playUiChime('sparkle')
-      }
-    })
+    if (isMusicBoxActive()) {
+      list.push({
+        id: 'ost-stop',
+        category: 'Nhạc nền OST (Yosuga no Sora • Fontaine • Sumeru)',
+        title: 'Tạm dừng nhạc nền OST',
+        subtitle: 'Tắt phát nhạc hiện tại',
+        badge: 'Stop',
+        icon: <MusicNoteRoundedIcon fontSize="small" color="error" />,
+        action: () => {
+          stopSoraMusicBox()
+          toast.info('🔇 Đã tạm dừng nhạc nền')
+        }
+      })
+    }
 
-    // 4. Navigation
+    // 4. Color Mode & Navigation
     list.push(
       {
+        id: 'toggle-color-mode',
+        category: 'Giao diện & Điều hướng',
+        title: `Chuyển chế độ Sáng / Tối (Hiện tại: ${mode})`,
+        subtitle: 'Toggle Dark / Light mode',
+        badge: mode === 'dark' ? 'Light Mode' : 'Dark Mode',
+        icon: <DarkModeOutlinedIcon fontSize="small" sx={{ color: '#7dd3fc' }} />,
+        action: () => {
+          setMode(mode === 'dark' ? 'light' : 'dark')
+          playUiChime('sparkle')
+        }
+      },
+      {
         id: 'nav-boards',
-        category: 'Navigation • ナビゲーション',
-        title: 'Go to All Boards Dashboard',
-        subtitle: 'Browse all workspaces, starred boards & 1-click Sora templates',
+        category: 'Giao diện & Điều hướng',
+        title: 'Về trang Danh sách Bảng (All Boards)',
+        subtitle: 'Quản lý toàn bộ các bảng & mẫu CR kỳ Sprint',
         badge: '/boards',
         icon: <SpaceDashboardIcon fontSize="small" color="primary" />,
         action: () => navigate('/boards')
       },
       {
         id: 'nav-account',
-        category: 'Navigation • ナビゲーション',
-        title: 'Account & Profile Settings',
-        subtitle: 'Update display name and avatar',
+        category: 'Giao diện & Điều hướng',
+        title: 'Cài đặt Tài khoản & Hồ sơ',
+        subtitle: 'Cập nhật tên hiển thị và ảnh đại diện',
         badge: '/settings/account',
         icon: <ManageAccountsOutlinedIcon fontSize="small" color="primary" />,
         action: () => navigate('/settings/account')
       },
       {
         id: 'nav-security',
-        category: 'Navigation • ナビゲーション',
-        title: 'Security & Password Settings',
-        subtitle: 'Manage password and account security',
+        category: 'Giao diện & Điều hướng',
+        title: 'Cài đặt Bảo mật & Mật khẩu',
+        subtitle: 'Đổi mật khẩu và bảo vệ tài khoản',
         badge: '/settings/security',
         icon: <LockOutlinedIcon fontSize="small" color="primary" />,
         action: () => navigate('/settings/security')
@@ -208,9 +246,9 @@ function CommandPalette() {
           top: '14%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 640,
+          width: 660,
           maxWidth: '94vw',
-          maxHeight: '72vh',
+          maxHeight: '74vh',
           display: 'flex',
           flexDirection: 'column',
           borderRadius: '18px',
@@ -227,7 +265,7 @@ function CommandPalette() {
           <TextField
             fullWidth
             autoFocus
-            placeholder="Type a command, search cards, or switch Sora mood... (↑↓ to navigate, Enter to run)"
+            placeholder="Tìm Mã CR (VD: BNPL-1), xuất Excel Sprint, đổi theme Sora/Furina/Nahida, phát OST... (↑↓ Enter)"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -252,7 +290,7 @@ function CommandPalette() {
                   />
                 </InputAdornment>
               ),
-              sx: { fontSize: '0.98rem', fontWeight: 600 }
+              sx: { fontSize: '0.96rem', fontWeight: 600 }
             }}
           />
         </Box>
@@ -262,7 +300,7 @@ function CommandPalette() {
             <Box sx={{ py: 4, textAlign: 'center' }}>
               <SoraBunnyIcon sx={{ fontSize: 38, mb: 1, opacity: 0.7 }} />
               <Typography variant="body2" color="text.secondary">
-                No matching commands or cards found in Okukozome.
+                Không tìm thấy lệnh hoặc mã CR phù hợp.
               </Typography>
             </Box>
           )}
@@ -354,11 +392,11 @@ function CommandPalette() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <SoraBunnyIcon sx={{ fontSize: 16 }} />
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              Okukozome Command Center • 春日野 穹
+              Chello Command Center • BA & Anime Workspace
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
-            Shortcut: <b>Ctrl + K</b>
+            Phím tắt: <b>Ctrl + K</b>
           </Typography>
         </Box>
       </Box>
