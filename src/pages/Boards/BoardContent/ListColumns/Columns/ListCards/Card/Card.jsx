@@ -3,27 +3,37 @@ import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import LinearProgress from '@mui/material/LinearProgress'
+import Tooltip from '@mui/material/Tooltip'
 import { Card as MuiCard } from '@mui/material'
 import CardActions from '@mui/material/CardActions'
 import CardContent from '@mui/material/CardContent'
 import CardMedia from '@mui/material/CardMedia'
-import GroupIcon from '@mui/icons-material/Group'
 import CommentIcon from '@mui/icons-material/Comment'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded'
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded'
+import PlayCircleFilledWhiteRoundedIcon from '@mui/icons-material/PlayCircleFilledWhiteRounded'
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
+import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { resolveCardCoverUrl } from '~/utils/animeTheme'
-import { getDeadlineStatus } from '~/utils/excelExporter'
+import {
+  getCardDevProgress,
+  getCardResourceUsed,
+  getDeadlineStatus,
+  getStatusOption
+} from '~/utils/excelExporter'
 import { playUiChime } from '~/utils/soundEffects'
 
 function Card({ card }) {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const board = useSelector(selectCurrentActiveBoard)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
     data: { ...card }
@@ -38,26 +48,27 @@ function Card({ card }) {
 
   const checklistTotal = card?.checklist?.length || 0
   const checklistDone = card?.checklist?.filter(item => item.isCompleted)?.length || 0
-  const checklistPercent = checklistTotal > 0 ? Math.round((checklistDone / checklistTotal) * 100) : 0
+  const devProg = getCardDevProgress(card)
+  const devPercent = Math.min(100, Math.round(devProg * 100))
+  const resourceUsed = getCardResourceUsed(card)
   const frdCount = card?.frdDocuments?.length || 0
   const linkedCount = card?.linkedCardIds?.length || 0
   const deadlineInfo = getDeadlineStatus(card)
-
-  const shouldShowCardActions = () => {
-    return (
-      !!card?.memberIds?.length ||
-      !!card?.comments?.length ||
-      frdCount > 0 ||
-      linkedCount > 0 ||
-      checklistTotal > 0 ||
-      deadlineInfo.code !== 'none'
-    )
-  }
+  const statusOpt = getStatusOption(card?.baStatus)
 
   const setActiveCard = () => {
     playUiChime('sparkle')
     dispatch(updateCurrentActiveCard(card))
     dispatch(showModalActiveCard())
+  }
+
+  const handleOpenCrStudio = (e) => {
+    e.stopPropagation()
+    playUiChime('complete')
+    const targetBoardId = card?.boardId || board?._id
+    if (targetBoardId) {
+      navigate(`/boards/${targetBoardId}/cr/${card._id}`)
+    }
   }
 
   const coverUrl = resolveCardCoverUrl(card?.cover)
@@ -93,18 +104,18 @@ function Card({ card }) {
       }}
     >
       {coverUrl && (
-        <Box sx={{ overflow: 'hidden', height: 142 }}>
+        <Box sx={{ overflow: 'hidden', height: 136 }}>
           <CardMedia
             className='card-cover-img'
             component='img'
-            sx={{ height: 142, width: '100%', objectFit: 'cover' }}
+            sx={{ height: 136, width: '100%', objectFit: 'cover' }}
             image={coverUrl}
           />
         </Box>
       )}
       <CardContent sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}>
-        {(card?.crCode || card?.baStatus || card?.sprint) && (
-          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, mb: 0.75 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5, mb: 0.75 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
             {card?.crCode && (
               <Chip
                 label={card.crCode}
@@ -120,32 +131,44 @@ function Card({ card }) {
                 }}
               />
             )}
-            {card?.baStatus && (
-              <Chip
-                label={card.baStatus}
-                size="small"
-                sx={{
-                  height: '20px',
-                  fontSize: '0.66rem',
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  bgcolor: 'action.hover'
-                }}
-              />
-            )}
+            <Chip
+              label={statusOpt.value}
+              size="small"
+              sx={{
+                height: '20px',
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                color: statusOpt.color,
+                bgcolor: `${statusOpt.color}1f`
+              }}
+            />
           </Box>
-        )}
+
+          <Tooltip title="Mở Trang Riêng CR Studio & Mô Phỏng Luồng">
+            <Chip
+              icon={<PlayCircleFilledWhiteRoundedIcon sx={{ fontSize: '13px !important' }} />}
+              label="Studio"
+              size="small"
+              color="info"
+              variant="outlined"
+              onClick={handleOpenCrStudio}
+              clickable
+              sx={{ height: '20px', fontSize: '0.64rem', fontWeight: 800 }}
+            />
+          </Tooltip>
+        </Box>
 
         {!!card?.labels?.length && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.85 }}>
             {card.labels.map((lbl) => (
               <Chip
                 key={lbl.id}
                 label={lbl.title}
                 size="small"
                 sx={{
-                  height: '20px',
-                  fontSize: '0.68rem',
+                  height: '19px',
+                  maxWidth: '100%',
+                  fontSize: '0.65rem',
                   fontWeight: 700,
                   color: 'white',
                   bgcolor: lbl.color || '#0284c7'
@@ -155,38 +178,56 @@ function Card({ card }) {
           </Box>
         )}
 
-        <Typography sx={{ fontWeight: 600, lineHeight: 1.38 }}>
+        <Typography sx={{ fontWeight: 600, lineHeight: 1.38, wordBreak: 'break-word' }}>
           {card?.title}
         </Typography>
 
         {card?.assignee && (
-          <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary', fontWeight: 600 }}>
-            PIC: {card.assignee}
+          <Typography
+            variant="caption"
+            sx={{
+              display: 'block',
+              mt: 0.6,
+              color: 'text.secondary',
+              fontWeight: 700,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            👤 {card.assignee}
           </Typography>
         )}
 
-        {checklistTotal > 0 && (
-          <Box sx={{ mt: 1.25 }}>
-            <LinearProgress
-              variant="determinate"
-              value={checklistPercent}
-              color={checklistDone === checklistTotal ? 'success' : 'primary'}
-              sx={{ height: 4, borderRadius: 2 }}
-            />
+        <Box sx={{ mt: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
+            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 700 }}>
+              Dev Progress: {devProg}
+            </Typography>
+            {resourceUsed > 0 && (
+              <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>
+                Res: {resourceUsed}
+              </Typography>
+            )}
           </Box>
-        )}
+          <LinearProgress
+            variant="determinate"
+            value={devPercent}
+            color={devProg >= 1 ? 'success' : 'primary'}
+            sx={{ height: 4, borderRadius: 2 }}
+          />
+        </Box>
       </CardContent>
 
-      {shouldShowCardActions() &&
-      <CardActions sx={{ p: '0 8px 8px 8px', flexWrap: 'wrap', gap: 0.5 }}>
+      <CardActions sx={{ p: '0 10px 10px 10px', flexWrap: 'wrap', gap: 0.5 }}>
         {deadlineInfo.code !== 'none' && (
           <Chip
             icon={<AccessTimeRoundedIcon sx={{ fontSize: '13px !important', color: `${deadlineInfo.color} !important` }} />}
             label={deadlineInfo.shortLabel}
             size="small"
             sx={{
-              height: '22px',
-              fontSize: '0.68rem',
+              height: '21px',
+              fontSize: '0.66rem',
               fontWeight: 700,
               color: deadlineInfo.color,
               bgcolor: deadlineInfo.bgColor,
@@ -201,7 +242,7 @@ function Card({ card }) {
             size="small"
             color="info"
             variant="outlined"
-            sx={{ height: '22px', fontSize: '0.68rem', fontWeight: 700 }}
+            sx={{ height: '21px', fontSize: '0.66rem', fontWeight: 700 }}
           />
         )}
         {linkedCount > 0 && (
@@ -210,7 +251,7 @@ function Card({ card }) {
             label={linkedCount}
             size="small"
             variant="outlined"
-            sx={{ height: '22px', fontSize: '0.68rem', fontWeight: 700 }}
+            sx={{ height: '21px', fontSize: '0.66rem', fontWeight: 700 }}
           />
         )}
         {checklistTotal > 0 && (
@@ -218,17 +259,17 @@ function Card({ card }) {
             size="small"
             color={checklistDone === checklistTotal ? 'success' : 'primary'}
             startIcon={<FactCheckOutlinedIcon />}
-            sx={{ minWidth: 'unset', px: 0.75, fontSize: '0.72rem' }}
+            sx={{ minWidth: 'unset', px: 0.6, py: 0.2, fontSize: '0.7rem' }}
           >
             {checklistDone}/{checklistTotal}
           </Button>
         )}
-        {!!card?.memberIds?.length &&
-        <Button size="small" startIcon={<GroupIcon />} sx={{ minWidth: 'unset', px: 0.75 }}>{card?.memberIds?.length}</Button>}
-        {!!card?.comments?.length &&
-        <Button size="small" startIcon={<CommentIcon />} sx={{ minWidth: 'unset', px: 0.75 }}>{card?.comments?.length}</Button>}
+        {!!card?.comments?.length && (
+          <Button size="small" startIcon={<CommentIcon />} sx={{ minWidth: 'unset', px: 0.6, py: 0.2, fontSize: '0.7rem' }}>
+            {card?.comments?.length}
+          </Button>
+        )}
       </CardActions>
-      }
     </MuiCard>
   )
 }

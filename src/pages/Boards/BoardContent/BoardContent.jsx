@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Columns from './ListColumns/Columns/Columns'
 import Card from './ListColumns/Columns/ListCards/Card/Card'
 import BoardAnalyticsView from './BoardAnalyticsView'
+import ObsidianGraphView from './ObsidianGraphView'
 
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
@@ -30,22 +31,32 @@ import IconButton from '@mui/material/IconButton'
 import CloseFullscreenRoundedIcon from '@mui/icons-material/CloseFullscreenRounded'
 
 const COMPANION_LINES_BY_THEME = {
+  cosmos: [
+    '“Dưới dải ngân hà và vòng tròn hoàng đạo, mỗi CR và chủ đề đều là một vì sao được kết nối chặt chẽ. 🌌”',
+    '“Mở Obsidian Graph trên thanh công cụ để quan sát toàn bộ mạng lưới CR và người phụ trách! ✦”',
+    '“Nhấn vào nút CR Studio trên thẻ bất kỳ để chạy mô phỏng luồng hệ thống trực quan! 🪐”'
+  ],
+  'wind-chime': [
+    '“Gió nhẹ thoang thoảng tiếng chuông gió Furin... hãy thong thả rà soát từng CR trong kỳ Sprint 34 nhé. 🎐”',
+    '“Mỗi cột tương ứng một Chủ đề CR, mỗi thẻ là một CR gắn trực tiếp với người phụ trách (Handle by). 🍃”',
+    '“Bấm Xuất Excel Sprint để tải về báo cáo khớp 100% với file template mẫu! ☁️”'
+  ],
   furina: [
     '“Chào mừng đến Opera Epiclese! Mọi CR trong Sprint 34 đều xứng đáng một màn trình diễn hoàn hảo! 💧”',
-    '“Đừng quên kiểm tra các tài liệu FRD trước giờ mở màn nghiệm thu UAT nhé! 🎩”',
+    '“Đừng quên kiểm tra các tài liệu FRD trước giờ mở màn nghiệm thu nhé! 🎩”',
     '“Bấm Xuất Excel Sprint trên thanh công cụ bất cứ lúc nào để tổng hợp báo cáo tiến độ! 🍰”',
     '“Nhấn Ctrl + K để triệu hồi bảng điều khiển nhanh của Fontaine! ✨”'
   ],
   nahida: [
-    '“Mỗi tài liệu FRD và quy tắc nghiệp vụ là một nhánh tri thức quý giá trong cây Irminsul. 🌿”',
-    '“Hãy liên kết các CR có chung luồng hệ thống lại với nhau để dễ dàng tra cứu nhé! 📖”',
-    '“Bạn có thể Import trực tiếp file Markdown (.md) thành CR Ticket chỉ với 1 cú nhấp chuột! 🍀”',
+    '“Mỗi tài liệu FRD và quy tắc hệ thống là một nhánh tri thức quý giá trong cây Irminsul. 🌿”',
+    '“Hãy mở chế độ Obsidian Graph để kết nối các CR có chung luồng nghiệp vụ lại với nhau nhé! 📖”',
+    '“Bạn có thể Import trực tiếp file Markdown (.md) hoặc CSV thành CR Ticket chỉ với 1 cú nhấp chuột! 🍀”',
     '“Nhấn Ctrl + K để tra cứu nhanh bất kỳ CR hay tài liệu nào trên bảng! ✨”'
   ],
   default: [
     '“Thỏ bông Usagi luôn đồng hành cùng bạn theo dõi các CR trong kỳ Sprint 34 này... 🐰”',
     '“Dưới bầu trời bình yên, hãy hoàn thiện từng đặc tả FRD một cách thật tỉ mỉ nhé. ☁️”',
-    '“Đừng quên kiểm tra cảnh báo Deadline trên thanh công cụ để không bỏ lỡ mốc UAT nào. 💌”',
+    '“Đừng quên kiểm tra cảnh báo Due date trên thanh công cụ để không bỏ lỡ mốc hoàn thành nào. 💌”',
     '“Nhấn Ctrl + K bất cứ lúc nào để mở nhanh Trung tâm Điều khiển! 🎀”'
   ]
 }
@@ -407,6 +418,8 @@ function BoardContent({
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%' }}>
           {boardViewMode === 'overview' ? (
             <BoardAnalyticsView columns={displayedColumns} themeConfig={themeConfig} />
+          ) : boardViewMode === 'graph' ? (
+            <ObsidianGraphView columns={displayedColumns} themeConfig={themeConfig} />
           ) : (
             <ListColumns columns={displayedColumns} />
           )}

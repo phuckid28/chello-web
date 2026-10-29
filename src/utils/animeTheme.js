@@ -11,10 +11,18 @@ import furinaSwan from '~/assets/anime/furina-swan.png'
 import nahidaHero from '~/assets/anime/nahida-hero.jpg'
 import nahidaChibi from '~/assets/anime/nahida-chibi.jpg'
 import nahidaLibrary from '~/assets/anime/nahida-library.jpg'
+import cosmosHero from '~/assets/themes/cosmos-hero.jpg'
+import cosmosNebula from '~/assets/themes/cosmos-nebula.jpg'
+import cosmosStarlight from '~/assets/themes/cosmos-starlight.jpg'
+import windSkyHero from '~/assets/themes/wind-sky-hero.jpg'
+import windMeadow from '~/assets/themes/wind-meadow.jpg'
+import windBreeze from '~/assets/themes/wind-breeze.jpg'
 
 const PERSONA_STORAGE_KEY = 'chello_sora_persona_theme'
 
 export const PRIMARY_THEME_KEYS = [
+  'cosmos',
+  'wind-chime',
   'sora-sky',
   'sora-twilight',
   'sora-usagi',
@@ -23,10 +31,62 @@ export const PRIMARY_THEME_KEYS = [
 ]
 
 export const ANIME_THEMES = {
+  cosmos: {
+    id: 'cosmos',
+    name: 'Astral Cosmos • Milky Way & Zodiac',
+    jpTitle: '星河と黄道十二宮 • 占星術の宙',
+    element: 'Astral Zodiac',
+    characterName: 'Celestial Observatory (星河の観測所)',
+    defaultTrackId: 'cosmos-astral-harmony',
+    quote: '“Across the tranquil Milky Way and twelve zodiac constellations, every requirement and system node aligns in quiet harmony.”',
+    heroImage: cosmosHero,
+    portraitImage: cosmosNebula,
+    mascotImage: cosmosStarlight,
+    accentColor: '#f5d061',
+    secondaryAccent: '#a78bfa',
+    badgeBg: 'rgba(245, 208, 97, 0.20)',
+    // Medium-dark cosmic indigo & slate (comfortable on the eyes, never harsh pitch-black)
+    appBarBgLight: 'linear-gradient(135deg, #1b203d 0%, #242b52 50%, #2e3666 100%)',
+    appBarBgDark: 'linear-gradient(135deg, #151930 0%, #1d2342 55%, #262e57 100%)',
+    boardBarBgLight: 'linear-gradient(135deg, rgba(27, 32, 61, 0.88) 0%, rgba(36, 43, 82, 0.84) 55%, rgba(46, 54, 102, 0.82) 100%)',
+    boardBarBgDark: 'linear-gradient(135deg, rgba(21, 25, 48, 0.90) 0%, rgba(29, 35, 66, 0.86) 60%, rgba(38, 46, 87, 0.84) 100%)',
+    boardOverlayLight: 'linear-gradient(180deg, rgba(23, 28, 54, 0.48) 0%, rgba(28, 34, 64, 0.72) 100%)',
+    boardOverlayDark: 'linear-gradient(180deg, rgba(19, 23, 45, 0.56) 0%, rgba(25, 30, 58, 0.78) 100%)',
+    columnBgLight: 'rgba(241, 245, 255, 0.90)',
+    columnBgDark: 'rgba(24, 29, 54, 0.86)',
+    columnBorder: 'rgba(245, 208, 97, 0.42)',
+    particleSymbols: ['✦', '🌌', '♈', '♌', '♎', '♓', '⭐']
+  },
+  'wind-chime': {
+    id: 'wind-chime',
+    name: 'Azure Breeze • Sky & Wind Chime',
+    jpTitle: '青空と風鈴 • 涼風の調べ',
+    element: 'Breeze & Furin',
+    characterName: 'Summer Furin Veranda (風鈴の縁側)',
+    defaultTrackId: 'wind-breeze-furin',
+    quote: '“A cool breeze drifts across the clear blue sky and fresh green meadow, carrying the gentle ring of glass wind chimes.”',
+    heroImage: windSkyHero,
+    portraitImage: windMeadow,
+    mascotImage: windBreeze,
+    accentColor: '#38bdf8',
+    secondaryAccent: '#34d399',
+    badgeBg: 'rgba(52, 211, 153, 0.22)',
+    // Refreshing sky-blue and mint-green gradient
+    appBarBgLight: 'linear-gradient(135deg, #0369a1 0%, #0284c7 48%, #0d9488 100%)',
+    appBarBgDark: 'linear-gradient(135deg, #075985 0%, #0369a1 52%, #0f766e 100%)',
+    boardBarBgLight: 'linear-gradient(135deg, rgba(3, 105, 161, 0.85) 0%, rgba(2, 132, 199, 0.82) 52%, rgba(13, 148, 136, 0.80) 100%)',
+    boardBarBgDark: 'linear-gradient(135deg, rgba(7, 89, 133, 0.88) 0%, rgba(3, 105, 161, 0.85) 55%, rgba(15, 118, 110, 0.84) 100%)',
+    boardOverlayLight: 'linear-gradient(180deg, rgba(14, 116, 144, 0.28) 0%, rgba(15, 118, 110, 0.48) 100%)',
+    boardOverlayDark: 'linear-gradient(180deg, rgba(12, 74, 110, 0.50) 0%, rgba(17, 94, 89, 0.72) 100%)',
+    columnBgLight: 'rgba(240, 253, 250, 0.92)',
+    columnBgDark: 'rgba(13, 42, 56, 0.86)',
+    columnBorder: 'rgba(52, 211, 153, 0.46)',
+    particleSymbols: ['🎐', '🍃', '☁️', '🌿', '✧']
+  },
   'sora-sky': {
     id: 'sora-sky',
     name: 'Sora • Beyond the Distant Sky',
-    jpTitle: '春日野 穹 • 遠い空へ (Yosuga no Sora)',
+    jpTitle: '春日野 穹 • 遠い空へ',
     element: 'Distant Sky',
     characterName: 'Sora Kasugano (春日野 穹)',
     defaultTrackId: 'sora-toui-sora-e',
@@ -150,22 +210,26 @@ export const ANIME_THEMES = {
   }
 }
 
-// Backward-compatible alias
-ANIME_THEMES.celestia = ANIME_THEMES['sora-usagi']
-
 export const PRIMARY_THEMES_LIST = PRIMARY_THEME_KEYS.map(key => ANIME_THEMES[key])
 
 export const ELEMENTAL_LABELS = [
+  { id: 'cosmos', title: '🌌 Astral Zodiac • Core Architecture', color: '#8b5cf6' },
+  { id: 'breeze', title: '🎐 Azure Breeze • Ready for Deploy', color: '#0d9488' },
   { id: 'sky', title: '☁️ Distant Sky • Core CR', color: '#0284c7' },
   { id: 'ribbon', title: '🎀 Black Ribbon • High Priority', color: '#6366f1' },
-  { id: 'usagi', title: '🐰 Usagi Plush • BA Analysis', color: '#db2777' },
-  { id: 'hydro', title: '💧 Fontaine Hydro • FRD Ready', color: '#0ea5e9' },
-  { id: 'dendro', title: '🌿 Sumeru Dendro • Knowledge Link', color: '#10b981' },
-  { id: 'message', title: '💌 UAT & Sign-off • Review', color: '#d97706' },
-  { id: 'urgent', title: '⚡ Blocker / Overdue Risk', color: '#e11d48' }
+  { id: 'usagi', title: '🐰 Usagi Plush • In Testing', color: '#db2777' },
+  { id: 'hydro', title: '💧 Fontaine Hydro • FRD Linked', color: '#0ea5e9' },
+  { id: 'dendro', title: '🌿 Sumeru Dendro • Knowledge Graph', color: '#10b981' },
+  { id: 'urgent', title: '⚡ Blocking / Due Soon Risk', color: '#e11d48' }
 ]
 
 export const SORA_PRESET_COVERS = [
+  { key: 'preset:cosmos-hero', label: '🌌 Milky Way & Starlight Sail', url: cosmosHero },
+  { key: 'preset:cosmos-nebula', label: '🪐 Andromeda Galaxy Nebula', url: cosmosNebula },
+  { key: 'preset:cosmos-starlight', label: '🌠 Shooting Star & Zodiac Sky', url: cosmosStarlight },
+  { key: 'preset:wind-sky', label: '🎐 Azure Sky & Summer Clouds', url: windSkyHero },
+  { key: 'preset:wind-meadow', label: '🍃 Emerald Breeze Meadow', url: windMeadow },
+  { key: 'preset:wind-breeze', label: '☁️ Gentle Horizon Breeze', url: windBreeze },
   { key: 'preset:sora-sky', label: '🌸 Sora & Usagi Bloom', url: soraUsagiBloom },
   { key: 'preset:sora-twilight', label: '🎀 Sora Black Ribbon', url: soraRibbon },
   { key: 'preset:sora-usagi', label: '🐰 Usagi Plush Sofa', url: soraBunniesSofa },
@@ -181,37 +245,51 @@ export const SORA_PRESET_COVERS = [
 
 export const ANIME_BOARD_TEMPLATES = [
   {
+    id: 'cosmos-zodiac-sprint',
+    title: 'Sprint 34 • Astral Cosmos & Zodiac Hub',
+    description: 'Không gian quản lý Sprint 34, theo dõi CR và sơ đồ tri thức dưới bầu trời sao & dải ngân hà.',
+    theme: 'cosmos',
+    badge: '🌌 Cosmos • Zodiac'
+  },
+  {
+    id: 'wind-chime-sprint',
+    title: 'Sprint 34 • Azure Breeze & Furin Workspace',
+    description: 'Bảng điều phối Sprint 34 thanh mát sắc xanh bầu trời, đồng cỏ và tiếng chuông gió Furin.',
+    theme: 'wind-chime',
+    badge: '🎐 Sky • Wind Chime'
+  },
+  {
     id: 'sora-okukozome',
-    title: 'Sprint 34 • Sora Distant Sky BA Hub',
-    description: 'Theo dõi CR, FRD và tiến độ Sprint 34 với sắc trắng bạc & xanh bầu trời của Sora Kasugano.',
+    title: 'Sprint 34 • Sora Distant Sky Hub',
+    description: 'Theo dõi CR, tài liệu FRD và tiến độ Sprint 34 với sắc trắng bạc & xanh bầu trời của Sora Kasugano.',
     theme: 'sora-sky',
     badge: '☁️ Sora • Distant Sky'
   },
   {
     id: 'furina-salon-solitaire',
-    title: 'Fontaine Opera • Furina CR & Product Hub',
-    description: 'Không gian quản trị CR & nghiệm thu UAT lộng lẫy sắc xanh Hydro vùng Fontaine cùng Chibi Furina.',
+    title: 'Sprint 34 • Fontaine Opera CR Hub',
+    description: 'Không gian quản trị CR & nghiệm thu lộng lẫy sắc xanh Hydro vùng Fontaine cùng Furina.',
     theme: 'furina',
     badge: '💧 Furina • Fontaine'
   },
   {
     id: 'nahida-irminsul-kb',
-    title: 'Sanctuary of Surasthana • Nahida FRD Hub',
-    description: 'Tập trung tri thức hệ thống, mô hình hóa nghiệp vụ và liên kết tài liệu FRD cùng Chibi Nahida.',
+    title: 'Sprint 34 • Surasthana Knowledge Graph',
+    description: 'Tập trung tri thức hệ thống, mô hình hóa nghiệp vụ và liên kết tài liệu FRD cùng Nahida.',
     theme: 'nahida',
     badge: '🌿 Nahida • Sumeru'
   },
   {
     id: 'sora-moonlit-ribbon',
-    title: 'Moonlit Black Ribbon • BA Studio',
-    description: 'Bảng phân tích nghiệp vụ tĩnh lặng dưới ánh trăng tím bạc cùng dải ruy-băng đen của Sora.',
+    title: 'Sprint 34 • Moonlit Black Ribbon Studio',
+    description: 'Bảng phân tích hệ thống tĩnh lặng dưới ánh trăng tím bạc cùng dải ruy-băng đen của Sora.',
     theme: 'sora-twilight',
     badge: '🎀 Sora • Black Ribbon'
   },
   {
     id: 'sora-usagi-sanctuary',
-    title: 'Usagi Plush • Sprint Backlog Sanctuary',
-    description: 'Không gian quản lý backlog nhẹ nhàng cùng Chibi Sora và thỏ bông Usagi.',
+    title: 'Sprint 34 • Usagi Plush Sanctuary',
+    description: 'Không gian quản lý backlog nhẹ nhàng cùng Sora và thỏ bông Usagi.',
     theme: 'sora-usagi',
     badge: '🐰 Sora • Usagi Plush'
   }
@@ -243,6 +321,12 @@ export const savePersonaTheme = (themeKey) => {
 
 export const resolveCardCoverUrl = (coverValue) => {
   if (!coverValue) return null
+  if (coverValue === 'preset:cosmos' || coverValue === 'preset:cosmos-hero') return cosmosHero
+  if (coverValue === 'preset:cosmos-nebula') return cosmosNebula
+  if (coverValue === 'preset:cosmos-starlight') return cosmosStarlight
+  if (coverValue === 'preset:wind-chime' || coverValue === 'preset:wind-sky') return windSkyHero
+  if (coverValue === 'preset:wind-meadow') return windMeadow
+  if (coverValue === 'preset:wind-breeze') return windBreeze
   if (coverValue === 'preset:sora-sky') return soraUsagiBloom
   if (coverValue === 'preset:sora-twilight') return soraRibbon
   if (coverValue === 'preset:sora-usagi') return soraBunniesSofa
@@ -271,5 +355,11 @@ export {
   furinaSwan,
   nahidaHero,
   nahidaChibi,
-  nahidaLibrary
+  nahidaLibrary,
+  cosmosHero,
+  cosmosNebula,
+  cosmosStarlight,
+  windSkyHero,
+  windMeadow,
+  windBreeze
 }

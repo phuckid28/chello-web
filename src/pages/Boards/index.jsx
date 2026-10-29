@@ -42,6 +42,7 @@ import {
   SORA_PRESET_COVERS
 } from '~/utils/animeTheme'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { useTranslation } from '~/customHooks/useTranslation'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import {
   getDefaultTrackForTheme,
@@ -84,6 +85,7 @@ function Boards() {
   const [previewArt, setPreviewArt] = useState(null)
 
   const { globalPersonaKey, themeConfig, changePersona } = usePersonaTheme()
+  const { t } = useTranslation()
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -150,7 +152,7 @@ function Boards() {
   }
 
   if (!boards) {
-    return <PageLoadingSpinner caption="Đang tải không gian quản trị BA & Anime Workspaces..." />
+    return <PageLoadingSpinner caption='Đang tải Chella — A clone of "C"onfluence - tr"ELL"o - jir"A"...' />
   }
 
   const starredBoards = boards.filter(b => b.isStarred)
@@ -159,7 +161,7 @@ function Boards() {
     <Container disableGutters maxWidth={false}>
       <AppBar />
 
-      {/* Multi-Character (Sora • Furina • Nahida) Hero Banner */}
+      {/* Chella Multi-Theme Hero Banner */}
       <Box sx={{
         position: 'relative',
         mx: { xs: 2, md: 4 },
@@ -179,15 +181,20 @@ function Boards() {
           <Grid xs={12} md={8}>
             <Chip
               icon={<SoraRibbonIcon fontSize="small" />}
-              label={`${themeConfig.jpTitle} • Sprint 34 (22/10 - 05/11)`}
+              label={`Chella — A clone of "C"onfluence - tr"ELL"o - jir"A" • Sprint 34 (22/10 - 05/11)`}
               size="small"
               sx={{
                 mb: 1.5,
+                maxWidth: '100%',
                 bgcolor: 'rgba(15, 23, 42, 0.68)',
                 color: '#f8fafc',
                 border: `1px solid ${themeConfig.accentColor}`,
                 fontWeight: 700,
-                backdropFilter: 'blur(8px)'
+                backdropFilter: 'blur(8px)',
+                '& .MuiChip-label': {
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }
               }}
             />
             <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
@@ -244,7 +251,7 @@ function Boards() {
                   {themeConfig.characterName}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.78)' }}>
-                  BA Companion • Theo dõi CR & FRD
+                  Chella Companion • Sprint & CR Studio
                 </Typography>
               </Box>
             </Box>
@@ -268,7 +275,7 @@ function Boards() {
                 }
               }}
             >
-              Khởi tạo Bảng Sprint / BA Mới
+              {t('createBoard')}
             </Button>
           </Grid>
         </Grid>
@@ -280,24 +287,28 @@ function Boards() {
             <Stack direction="column" spacing={1}>
               <SidebarItem className="active">
                 <SpaceDashboardIcon fontSize="small" />
-                Tất cả Bảng • All Boards
+                <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                  {t('allBoards')}
+                </Typography>
               </SidebarItem>
               <SidebarItem onClick={handleOpenModal}>
                 <LibraryAddIcon fontSize="small" color="primary" />
-                Tạo Bảng Mới • New Board
+                <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                  {t('createBoard')}
+                </Typography>
               </SidebarItem>
             </Stack>
 
             <Divider sx={{ my: 2.5 }} />
 
             <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', px: 1, display: 'block', mb: 1 }}>
-              MẪU BẢNG BA & CHỦ ĐỀ NHÂN VẬT (1-CLICK)
+              MẪU SPRINT & CHỦ ĐỀ (1-CLICK)
             </Typography>
             <Stack direction="column" spacing={1}>
               {ANIME_BOARD_TEMPLATES.map((tpl) => (
                 <SidebarItem key={tpl.id} onClick={() => handleQuickCreateTemplate(tpl)}>
-                  <SoraBunnyIcon fontSize="small" />
-                  <Box sx={{ overflow: 'hidden' }}>
+                  <SoraBunnyIcon fontSize="small" sx={{ flexShrink: 0 }} />
+                  <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                       {tpl.title}
                     </Typography>
@@ -311,7 +322,7 @@ function Boards() {
 
             <Divider sx={{ my: 2.5 }} />
 
-            {/* Character Chibi & Artwork Gallery Widget */}
+            {/* Theme & Artwork Gallery Widget */}
             <Card sx={{
               borderRadius: '14px',
               overflow: 'hidden',
@@ -345,7 +356,7 @@ function Boards() {
               </Box>
               <CardContent sx={{ p: 1.75, '&:last-child': { p: 1.75 } }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-                  Bộ Sưu Tập Sora • Furina • Nahida
+                  Bộ Sưu Tập Chủ Đề & Ảnh Bìa
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
                   Nhấn vào hình minh họa bất kỳ để phóng to xem chi tiết:
@@ -388,7 +399,7 @@ function Boards() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <StarRoundedIcon sx={{ color: '#fbbf24' }} />
                   <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                    Bảng Đánh Dấu Sao • Starred Boards
+                    {t('starred')}
                   </Typography>
                 </Box>
                 <Grid container spacing={2.5}>
@@ -450,7 +461,7 @@ function Boards() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <SoraRibbonIcon />
               <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                Không Gian Làm Việc BA & Quản Lý CR • All Boards
+                {t('allBoards')} • Chella Sprint Boards
               </Typography>
             </Box>
 
@@ -463,13 +474,13 @@ function Boards() {
               }}>
                 <SoraBunnyIcon sx={{ fontSize: 48, mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  Chưa có bảng nào được khởi tạo!
+                  Chưa có bảng Sprint nào được khởi tạo!
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Hãy chọn một mẫu bảng 1-Click (Sora, Furina hoặc Nahida) ở cột bên trái hoặc tạo bảng mới để bắt đầu theo dõi CR kỳ Sprint 34.
+                  Hãy chọn một mẫu bảng 1-Click ở cột bên trái hoặc tạo bảng mới để bắt đầu theo dõi CR kỳ Sprint 34.
                 </Typography>
                 <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={handleOpenModal}>
-                  Tạo Bảng Đầu Tiên
+                  {t('createBoard')}
                 </Button>
               </Box>
             }
@@ -533,7 +544,7 @@ function Boards() {
                               color: 'primary.main',
                               '&:hover': { color: 'primary.light' }
                             }}>
-                            Mở Bảng <ArrowRightIcon fontSize="small" />
+                            {t('openBoard')} <ArrowRightIcon fontSize="small" />
                           </Box>
                         </CardContent>
                       </Card>
@@ -577,7 +588,7 @@ function Boards() {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 640,
+          width: 660,
           maxWidth: '94vw',
           bgcolor: 'white',
           boxShadow: 24,
@@ -601,7 +612,7 @@ function Boards() {
           <Box id="modal-modal-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SoraBunnyIcon />
             <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
-              Khởi tạo Bảng Quản lý CR & Sprint Mới
+              {t('createBoard')} (Board = Sprint)
             </Typography>
           </Box>
           <Box id="modal-modal-description" sx={{ my: 2 }}>
@@ -610,7 +621,7 @@ function Boards() {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Tên Bảng (VD: Sprint 34 • BNPL & Core Payment)"
+                    label="Tên Bảng Sprint (VD: Sprint 34 • Usage Limit & BNPL Core)"
                     type="text"
                     variant="outlined"
                     InputProps={{
@@ -633,7 +644,7 @@ function Boards() {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Mô tả mục tiêu bảng / kỳ Sprint"
+                    label="Mô tả mục tiêu kỳ Sprint"
                     type="text"
                     variant="outlined"
                     multiline
@@ -656,7 +667,7 @@ function Boards() {
 
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                    Chọn Chủ đề Nhân vật (Sora Kasugano • Furina • Nahida):
+                    Chọn Chủ đề Không gian:
                   </Typography>
                   <Controller
                     name="theme"
@@ -669,6 +680,16 @@ function Boards() {
                         onChange={(event, value) => field.onChange(value)}
                         value={field.value}
                       >
+                        <FormControlLabel
+                          value="cosmos"
+                          control={<Radio size="small" />}
+                          label="🌌 Vũ Trụ & Hoàng Đạo (Cosmos)"
+                        />
+                        <FormControlLabel
+                          value="wind-chime"
+                          control={<Radio size="small" />}
+                          label="🎐 Bầu Trời Xanh & Chuông Gió (Furin)"
+                        />
                         <FormControlLabel
                           value="sora-sky"
                           control={<Radio size="small" />}
@@ -739,7 +760,7 @@ function Boards() {
                           size="small"
                         />
                       }
-                      label="Tự động tạo sẵn các cột BA, CR mẫu (BNPL-1, BNPL-2) & tài liệu FRD kỳ Sprint 34"
+                      label="Tự động tạo sẵn các cột chủ đề CR, thẻ mẫu (BNPL-945) & tài liệu FRD kỳ Sprint 34"
                     />
                   )}
                 />
@@ -751,7 +772,7 @@ function Boards() {
                     variant="contained"
                     color="primary"
                   >
-                    Tạo Bảng
+                    {t('createBoard')}
                   </Button>
                 </Box>
               </Box>
@@ -760,7 +781,7 @@ function Boards() {
         </Box>
       </Modal>
 
-      {/* Full-Resolution Character Artwork Lightbox Modal */}
+      {/* Full-Resolution Artwork Lightbox Modal */}
       <Modal open={Boolean(previewArt)} onClose={() => setPreviewArt(null)}>
         <Box
           onClick={() => setPreviewArt(null)}

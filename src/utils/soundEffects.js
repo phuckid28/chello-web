@@ -1,4 +1,5 @@
-// Multi-Character Anime OST Audio Streamer (Sora / Furina / Nahida) + Web Audio Music Box Synthesizer & UI Micro-Chimes
+// Multi-Theme Ambient & OST Audio Streamer (Cosmos • Wind Chime • Sora • Furina • Nahida)
+// Includes real audio streaming + Web Audio API Cosmic Pad, Glass Furin Wind Chime & Music Box Synthesizers
 
 let audioCtx = null
 let musicBoxInterval = null
@@ -10,6 +11,22 @@ let customLocalTrackName = null
 let noteIndex = 0
 
 export const OST_TRACK_CATALOG = [
+  {
+    id: 'cosmos-astral-harmony',
+    character: 'cosmos',
+    title: 'Astral Zodiac & Milky Way (星々の調べ)',
+    subtitle: 'Cosmic Ambient • Gentle Nebula & Starlight Harmonics',
+    synthMode: 'cosmos',
+    url: 'https://archive.org/download/ambient-space-music/Ambient%20Space%20Music.mp3'
+  },
+  {
+    id: 'wind-breeze-furin',
+    character: 'wind-chime',
+    title: 'Summer Breeze & Glass Furin (青空と風鈴)',
+    subtitle: 'Natural Breeze & Swaying Japanese Wind Chimes',
+    synthMode: 'wind-chime',
+    url: 'https://archive.org/download/japanese-wind-chimes-furin/furin.mp3'
+  },
   {
     id: 'sora-toui-sora-e',
     character: 'sora',
@@ -42,57 +59,67 @@ export const OST_TRACK_CATALOG = [
     id: 'furina-sinners-finale',
     character: 'furina',
     title: 'Sinner’s Finale (The Last Rose of the Sinner)',
-    subtitle: 'Genshin Impact • Fontaine OST (HOYO-MiX)',
+    subtitle: 'Fontaine OST • HOYO-MiX',
     url: 'https://archive.org/download/1-11-narcissus-without-water/1-25%20The%20Last%20Rose%20of%20the%20Sinner.mp3'
   },
   {
     id: 'furina-fontaine-lobby',
     character: 'furina',
     title: 'Fontaine Main Theme (Fountain of Belleau)',
-    subtitle: 'Genshin Impact • Fontaine Symphony (HOYO-MiX)',
+    subtitle: 'Fontaine Symphony • HOYO-MiX',
     url: 'https://archive.org/download/1-01-fontaine/1-01%20Fontaine.mp3'
   },
   {
     id: 'nahida-sumeru-main',
     character: 'nahida',
     title: 'Sumeru Main Theme (Forest of Jnana & Vidya)',
-    subtitle: 'Genshin Impact • Sumeru OST (HOYO-MiX)',
+    subtitle: 'Sumeru OST • HOYO-MiX',
     url: 'https://archive.org/download/1-01-sumeru/1-01%20Sumeru.mp3'
   },
   {
     id: 'nahida-whirling-leaves',
     character: 'nahida',
     title: 'Whirling of Leaves and Petals',
-    subtitle: 'Genshin Impact • Sanctuary of Surasthana (HOYO-MiX)',
+    subtitle: 'Sanctuary of Surasthana • HOYO-MiX',
     url: 'https://archive.org/download/1-01-sumeru/1-02%20Whirling%20of%20Leaves%20and%20Petals.mp3'
   },
   {
     id: 'synth-music-box',
     character: 'synth',
-    title: 'Music Box Synthesizer (Offline Celesta)',
+    title: 'Celesta Music Box (Offline Synthesizer)',
     subtitle: 'Built-in Web Audio API • Zero-latency Melody',
+    synthMode: 'celesta',
     url: null
   }
 ]
 
-// Gentle A-minor / C-major nostalgic music box melody for offline fallback
 const MUSIC_BOX_MELODY = [
-  { freq: 659.25, dur: 0.9 }, // E5
-  { freq: 783.99, dur: 0.9 }, // G5
-  { freq: 880.00, dur: 1.2 }, // A5
-  { freq: 783.99, dur: 0.9 }, // G5
-  { freq: 659.25, dur: 0.9 }, // E5
-  { freq: 587.33, dur: 1.1 }, // D5
-  { freq: 523.25, dur: 1.2 }, // C5
-  { freq: 587.33, dur: 0.9 }, // D5
-  { freq: 659.25, dur: 1.4 }, // E5
-  { freq: 440.00, dur: 1.4 }, // A4
-  { freq: 523.25, dur: 0.9 }, // C5
-  { freq: 587.33, dur: 0.9 }, // D5
-  { freq: 659.25, dur: 1.2 }, // E5
-  { freq: 587.33, dur: 0.9 }, // D5
-  { freq: 523.25, dur: 0.9 }, // C5
-  { freq: 493.88, dur: 1.4 } // B4
+  { freq: 659.25, dur: 0.9 },
+  { freq: 783.99, dur: 0.9 },
+  { freq: 880.00, dur: 1.2 },
+  { freq: 783.99, dur: 0.9 },
+  { freq: 659.25, dur: 0.9 },
+  { freq: 587.33, dur: 1.1 },
+  { freq: 523.25, dur: 1.2 },
+  { freq: 587.33, dur: 0.9 },
+  { freq: 659.25, dur: 1.4 },
+  { freq: 440.00, dur: 1.4 },
+  { freq: 523.25, dur: 0.9 },
+  { freq: 587.33, dur: 0.9 },
+  { freq: 659.25, dur: 1.2 },
+  { freq: 587.33, dur: 0.9 },
+  { freq: 523.25, dur: 0.9 },
+  { freq: 493.88, dur: 1.4 }
+]
+
+// Mysterious cosmic Lydian/pentatonic frequencies
+const COSMOS_CHORD_NOTES = [
+  220.00, 277.18, 329.63, 415.30, 493.88, 554.37, 659.25, 830.61
+]
+
+// High, crystalline Japanese Furin (風鈴) glass wind-chime frequencies
+const FURIN_CHIME_NOTES = [
+  1174.66, 1318.51, 1567.98, 1760.00, 1975.53, 2349.32, 2637.02
 ]
 
 const getAudioContext = () => {
@@ -144,6 +171,84 @@ const triggerCelestaNote = (ctx, freq, duration = 0.8, volume = 0.06, delaySec =
   }
 }
 
+// Mysterious deep space pad + starlight shimmer
+const triggerCosmicPadChord = (ctx, baseFreq) => {
+  try {
+    const now = ctx.currentTime
+    const padOsc1 = ctx.createOscillator()
+    const padOsc2 = ctx.createOscillator()
+    const padGain = ctx.createGain()
+
+    padOsc1.type = 'sine'
+    padOsc2.type = 'triangle'
+    padOsc1.frequency.setValueAtTime(baseFreq, now)
+    padOsc2.frequency.setValueAtTime(baseFreq * 1.498, now) // Fifth interval
+
+    padGain.gain.setValueAtTime(0.0001, now)
+    padGain.gain.linearRampToValueAtTime(0.032, now + 1.2)
+    padGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.6)
+
+    padOsc1.connect(padGain)
+    padOsc2.connect(padGain)
+    padGain.connect(ctx.destination)
+
+    padOsc1.start(now)
+    padOsc2.start(now)
+    padOsc1.stop(now + 3.7)
+    padOsc2.stop(now + 3.7)
+
+    // Add a delicate starlight twinkle harmonic
+    triggerCelestaNote(ctx, baseFreq * 2, 1.8, 0.024, 0.4)
+  } catch (e) {
+    // Ignore
+  }
+}
+
+// Soft summer breeze + delicate Japanese glass Furin wind chime
+const triggerFurinBreezeStep = (ctx) => {
+  try {
+    const now = ctx.currentTime
+    // 1. Soft filtered breeze swell using white noise buffer
+    const bufferSize = ctx.sampleRate * 2.2
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const output = noiseBuffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1
+    }
+    const whiteNoise = ctx.createBufferSource()
+    whiteNoise.buffer = noiseBuffer
+
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(420, now)
+    filter.frequency.linearRampToValueAtTime(640, now + 1.1)
+    filter.frequency.linearRampToValueAtTime(380, now + 2.2)
+    filter.Q.setValueAtTime(2.5, now)
+
+    const breezeGain = ctx.createGain()
+    breezeGain.gain.setValueAtTime(0.0001, now)
+    breezeGain.gain.linearRampToValueAtTime(0.012, now + 0.9)
+    breezeGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.15)
+
+    whiteNoise.connect(filter)
+    filter.connect(breezeGain)
+    breezeGain.connect(ctx.destination)
+    whiteNoise.start(now)
+    whiteNoise.stop(now + 2.2)
+
+    // 2. Glass Furin wind chime ring (1 to 3 delicate strikes)
+    const strikeCount = 1 + Math.floor(Math.random() * 2)
+    for (let s = 0; s < strikeCount; s++) {
+      const f = FURIN_CHIME_NOTES[Math.floor(Math.random() * FURIN_CHIME_NOTES.length)]
+      const delay = s * (0.18 + Math.random() * 0.25)
+      triggerCelestaNote(ctx, f, 1.65, 0.036, delay)
+      triggerCelestaNote(ctx, f * 2.756, 0.75, 0.012, delay) // Glass bell inharmonic overtone
+    }
+  } catch (e) {
+    // Ignore
+  }
+}
+
 export const playUiChime = (type = 'sparkle') => {
   const ctx = getAudioContext()
   if (!ctx) return
@@ -166,6 +271,8 @@ export const playUiChime = (type = 'sparkle') => {
 }
 
 export const getDefaultTrackForTheme = (themeKey) => {
+  if (themeKey === 'cosmos') return 'cosmos-astral-harmony'
+  if (themeKey === 'wind-chime') return 'wind-breeze-furin'
   if (themeKey === 'furina') return 'furina-sinners-finale'
   if (themeKey === 'nahida') return 'nahida-sumeru-main'
   if (themeKey === 'sora-twilight') return 'sora-inori'
@@ -199,7 +306,7 @@ const emitAudioState = () => {
   }
 }
 
-const startSynthFallback = () => {
+const startSynthFallback = (mode = 'celesta') => {
   if (musicBoxInterval) {
     clearInterval(musicBoxInterval)
     musicBoxInterval = null
@@ -208,6 +315,29 @@ const startSynthFallback = () => {
   if (!ctx) return
 
   noteIndex = 0
+  if (mode === 'cosmos') {
+    const playCosmicStep = () => {
+      if (!isPlayingMusicBox) return
+      const freq = COSMOS_CHORD_NOTES[noteIndex % COSMOS_CHORD_NOTES.length]
+      triggerCosmicPadChord(ctx, freq)
+      noteIndex++
+    }
+    playCosmicStep()
+    musicBoxInterval = setInterval(playCosmicStep, 2600)
+    return
+  }
+
+  if (mode === 'wind-chime') {
+    const playWindStep = () => {
+      if (!isPlayingMusicBox) return
+      triggerFurinBreezeStep(ctx)
+      noteIndex++
+    }
+    playWindStep()
+    musicBoxInterval = setInterval(playWindStep, 2200)
+    return
+  }
+
   const playNextStep = () => {
     if (!isPlayingMusicBox) return
     const step = MUSIC_BOX_MELODY[noteIndex % MUSIC_BOX_MELODY.length]
@@ -258,8 +388,22 @@ export const playOstTrack = (trackId) => {
 
   isPlayingMusicBox = true
 
-  if (!track.url || track.id === 'synth-music-box') {
-    startSynthFallback()
+  // For Cosmos & Wind Chime or Synth Music Box, layer or use the rich ambient synthesizer immediately
+  if (!track.url || track.id === 'synth-music-box' || track.synthMode === 'cosmos' || track.synthMode === 'wind-chime') {
+    startSynthFallback(track.synthMode || 'celesta')
+    if (track.url) {
+      try {
+        if (!htmlAudioElement) {
+          htmlAudioElement = new Audio()
+          htmlAudioElement.loop = true
+          htmlAudioElement.volume = 0.32
+        }
+        htmlAudioElement.src = track.url
+        htmlAudioElement.play().catch(() => {})
+      } catch (e) {
+        // Synth is already playing seamlessly
+      }
+    }
     emitAudioState()
     return true
   }
@@ -274,14 +418,13 @@ export const playOstTrack = (trackId) => {
     const playPromise = htmlAudioElement.play()
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // If remote stream is blocked or offline, seamlessly fall back to celesta synthesizer
         if (isPlayingMusicBox) {
-          startSynthFallback()
+          startSynthFallback(track.synthMode || 'celesta')
         }
       })
     }
   } catch (err) {
-    startSynthFallback()
+    startSynthFallback(track.synthMode || 'celesta')
   }
 
   emitAudioState()
@@ -298,13 +441,13 @@ export const playCustomAudioFile = (file) => {
   return playOstTrack('custom-local')
 }
 
-export const toggleSoraMusicBox = (preferredThemeKey) => {
+export const toggleSoraMusicBox = (themeKey = 'sora-sky') => {
   if (isPlayingMusicBox) {
     stopSoraMusicBox()
     return false
   }
-  if (preferredThemeKey && currentTrackId === 'sora-toui-sora-e') {
-    currentTrackId = getDefaultTrackForTheme(preferredThemeKey)
+  if (!currentTrackId) {
+    currentTrackId = getDefaultTrackForTheme(themeKey)
   }
   return playOstTrack(currentTrackId)
 }

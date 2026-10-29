@@ -9,12 +9,12 @@ import Starred from './Menus/Starred'
 import Templates from './Menus/Templates'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
-import Avatar from '@mui/material/Avatar'
 import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
 import Popover from '@mui/material/Popover'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
+import Switch from '@mui/material/Switch'
 import Profiles from './Menus/Profiles'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import MusicNoteRoundedIcon from '@mui/icons-material/MusicNoteRounded'
@@ -22,18 +22,21 @@ import MusicOffRoundedIcon from '@mui/icons-material/MusicOffRounded'
 import QueueMusicRoundedIcon from '@mui/icons-material/QueueMusicRounded'
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
 import TerminalRoundedIcon from '@mui/icons-material/TerminalRounded'
+import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
 import { Link } from 'react-router-dom'
 import Notifications from './Notifications/Notifications'
 import AutoCompleteSearchBoard from './SearchBoards/AutoCompleteSearchBoard'
 import CommandPalette from '~/components/CommandPalette/CommandPalette'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
-import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
+import { useTranslation } from '~/customHooks/useTranslation'
+import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
 import {
   OST_TRACK_CATALOG,
   getCurrentTrackInfo,
   isMusicBoxActive,
   playCustomAudioFile,
   playOstTrack,
+  playUiChime,
   stopSoraMusicBox,
   toggleSoraMusicBox
 } from '~/utils/soundEffects'
@@ -41,9 +44,21 @@ import { toast } from 'react-toastify'
 
 function AppBar({ boardTheme }) {
   const { personaKey, themeConfig } = usePersonaTheme(boardTheme)
+  const {
+    lang,
+    secondaryLang,
+    bilingual,
+    tPrimary,
+    changeLanguage,
+    changeSecondaryLanguage,
+    toggleBilingual,
+    languages
+  } = useTranslation()
+
   const [musicOn, setMusicOn] = useState(isMusicBoxActive)
   const [activeTrack, setActiveTrack] = useState(getCurrentTrackInfo)
   const [ostAnchor, setOstAnchor] = useState(null)
+  const [langAnchor, setLangAnchor] = useState(null)
 
   useEffect(() => {
     const handleMusicChange = (e) => {
@@ -64,27 +79,29 @@ function AppBar({ boardTheme }) {
     const info = getCurrentTrackInfo()
     setMusicOn(next)
     setActiveTrack(info)
-    toast.info(next ? `🎵 Đang phát: ${info.title}` : '🔇 Đã tạm dừng nhạc nền')
+    toast.info(next ? `🎵 ${info.title}` : '🔇 Audio Paused')
   }
 
   const handleSelectOstTrack = (track) => {
     playOstTrack(track.id)
     setMusicOn(true)
     setActiveTrack(track)
-    toast.info(`🎵 Đang phát: ${track.title}`)
+    toast.info(`🎵 ${track.title}`)
   }
 
   const handleUploadCustomMusic = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     playCustomAudioFile(file)
-    toast.success(`🎵 Đang phát file nhạc cá nhân: ${file.name}`)
+    toast.success(`🎵 ${file.name}`)
     e.target.value = ''
   }
 
   const handleOpenCommandPalette = () => {
     window.dispatchEvent(new CustomEvent('chello-open-command-palette'))
   }
+
+  const currentLangObj = languages.find(l => l.code === lang) || languages[0]
 
   return (
     <Box sx={{
@@ -93,9 +110,10 @@ function AppBar({ boardTheme }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: 2,
+      gap: 1.5,
       paddingX: 2,
       overflowX: 'auto',
+      overflowY: 'hidden',
       background: (theme) => (
         theme.palette.mode === 'dark' ? themeConfig.appBarBgDark : themeConfig.appBarBgLight
       ),
@@ -105,37 +123,40 @@ function AppBar({ boardTheme }) {
     }}>
       <CommandPalette />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Link to='/boards'>
-          <Tooltip title="Danh sách Bảng (All Boards)">
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexShrink: 0 }}>
+        <Link to='/boards' style={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title={tPrimary('allBoards')}>
             <AppsIcon sx={{ color: 'white', verticalAlign: 'middle' }} />
           </Tooltip>
         </Link>
-        <Link to='/' style={{ textDecoration: 'none' }}>
+        <Link to='/' style={{ textDecoration: 'none', flexShrink: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SoraBunnyIcon sx={{ fontSize: 28, filter: 'drop-shadow(0 2px 6px rgba(244, 114, 182, 0.45))' }} />
-            <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-              <Typography variant='span' sx={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', letterSpacing: 0.5 }}>
-                Chello • BA & Anime
+            <SoraBunnyIcon sx={{ fontSize: 27, flexShrink: 0, filter: 'drop-shadow(0 2px 6px rgba(125, 211, 252, 0.45))' }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
+              <Typography variant='span' sx={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
+                Chella
               </Typography>
-              <Typography variant='span' sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.82)', fontWeight: 600 }}>
-                {themeConfig.element} • {themeConfig.name.split('•')[0].trim()}
+              <Typography variant='span' sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                &quot;C&quot;onfluence - tr&quot;ELL&quot;o - jir&quot;A&quot;
               </Typography>
             </Box>
           </Box>
         </Link>
 
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.5, alignItems: 'center' }}>
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.25, alignItems: 'center', flexShrink: 0 }}>
           <Workspaces />
           <Recent />
           <Starred />
           <Templates />
         </Box>
 
-        <Link to='/boards' style={{ textDecoration: 'none' }}>
+        <Link to='/boards' style={{ textDecoration: 'none', flexShrink: 0 }}>
           <Button
             sx={{
               color: 'white',
+              whiteSpace: 'nowrap',
+              textTransform: 'none',
+              fontWeight: 700,
               bgcolor: 'rgba(255, 255, 255, 0.12)',
               border: `1px solid ${themeConfig.columnBorder}`,
               backdropFilter: 'blur(6px)',
@@ -148,21 +169,22 @@ function AppBar({ boardTheme }) {
             size='small'
             startIcon={<LibraryAddIcon />}
           >
-            Boards
+            {tPrimary('boardsBtn')}
           </Button>
         </Link>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-        <Tooltip title="Mở Trung tâm Điều khiển & Tìm kiếm nhanh (Ctrl + K)">
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+        <Tooltip title="Command Palette & Quick Search (Ctrl + K)">
           <Chip
             icon={<TerminalRoundedIcon fontSize="small" sx={{ color: `${themeConfig.accentColor} !important` }} />}
-            label="⌘K Command"
+            label={tPrimary('commandBtn')}
             size="small"
             onClick={handleOpenCommandPalette}
             clickable
             sx={{
-              display: { xs: 'none', md: 'inline-flex' },
+              display: { xs: 'none', lg: 'inline-flex' },
+              flexShrink: 0,
               color: 'white',
               fontWeight: 700,
               fontSize: '0.72rem',
@@ -176,9 +198,28 @@ function AppBar({ boardTheme }) {
           />
         </Tooltip>
 
-        {/* Quick Play/Pause + OST Playlist Selector */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Tooltip title={musicOn ? `Đang phát: ${activeTrack?.title} (Nhấn để dừng)` : 'Phát nhạc nền OST nhân vật'}>
+        {/* Language & Bilingual Switcher (VI / EN / JA / KO + Song ngữ) */}
+        <Tooltip title="Language & Bilingual Switcher (VI • EN • JA • KO)">
+          <Chip
+            icon={<TranslateRoundedIcon fontSize="small" sx={{ color: 'white !important' }} />}
+            label={bilingual ? `${currentLangObj.flag} ${currentLangObj.short}+${secondaryLang.toUpperCase()}` : `${currentLangObj.flag} ${currentLangObj.short}`}
+            size="small"
+            onClick={(e) => setLangAnchor(e.currentTarget)}
+            clickable
+            sx={{
+              flexShrink: 0,
+              color: 'white',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              bgcolor: bilingual ? 'rgba(52, 211, 153, 0.28)' : 'rgba(255, 255, 255, 0.14)',
+              border: `1px solid ${bilingual ? '#34d399' : 'rgba(255, 255, 255, 0.28)'}`
+            }}
+          />
+        </Tooltip>
+
+        {/* Quick Play/Pause + Ambient / OST Playlist Selector */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+          <Tooltip title={musicOn ? `${activeTrack?.title}` : tPrimary('ostPlaylist')}>
             <IconButton
               size="small"
               onClick={handleToggleMusicQuick}
@@ -194,15 +235,16 @@ function AppBar({ boardTheme }) {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Danh sách Nhạc nền OST (Sora: Toui Sora e, Inori, Tomadoi no Naka • Furina: Sinner's Finale • Nahida: Sumeru OST)">
+          <Tooltip title={tPrimary('ostPopoverTitle')}>
             <Chip
               icon={<QueueMusicRoundedIcon fontSize="small" sx={{ color: 'white !important' }} />}
-              label={musicOn ? activeTrack?.title?.split('(')[0]?.trim() : 'OST Playlist'}
+              label={musicOn ? activeTrack?.title?.split('(')[0]?.trim() : tPrimary('ostPlaylist')}
               size="small"
               onClick={(e) => setOstAnchor(e.currentTarget)}
               clickable
               sx={{
-                maxWidth: 165,
+                maxWidth: 145,
+                flexShrink: 0,
                 color: 'white',
                 fontWeight: 700,
                 fontSize: '0.7rem',
@@ -213,21 +255,6 @@ function AppBar({ boardTheme }) {
           </Tooltip>
         </Box>
 
-        <Chip
-          avatar={<Avatar src={themeConfig.mascotImage} alt={themeConfig.name} />}
-          icon={<SoraRibbonIcon fontSize="small" />}
-          label={themeConfig.name}
-          size="small"
-          sx={{
-            display: { xs: 'none', xl: 'inline-flex' },
-            color: 'white',
-            fontWeight: 700,
-            fontSize: '0.72rem',
-            bgcolor: 'rgba(255, 255, 255, 0.14)',
-            border: `1px solid ${themeConfig.accentColor}`
-          }}
-        />
-
         <AutoCompleteSearchBoard />
 
         <ModeSelect />
@@ -237,26 +264,112 @@ function AppBar({ boardTheme }) {
         <Profiles />
       </Box>
 
-      {/* Multi-Character OST Playlist Popover */}
+      {/* Multi-Language & Bilingual Popover */}
+      <Popover
+        open={Boolean(langAnchor)}
+        anchorEl={langAnchor}
+        onClose={() => setLangAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Box sx={{ p: 2, width: 320 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
+            🌐 {tPrimary('languageLabel')} (VI • EN • JA • KO)
+          </Typography>
+          <Stack spacing={0.75} sx={{ mb: 1.5 }}>
+            {languages.map((item) => {
+              const active = lang === item.code
+              return (
+                <Box
+                  key={item.code}
+                  onClick={() => {
+                    playUiChime('sparkle')
+                    changeLanguage(item.code)
+                  }}
+                  sx={{
+                    p: 1,
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    border: active ? `1.5px solid ${themeConfig.accentColor}` : '1px solid rgba(148, 163, 184, 0.22)',
+                    bgcolor: active ? 'action.selected' : 'transparent',
+                    '&:hover': { bgcolor: 'action.hover' }
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {item.flag} {item.nativeName} ({item.short})
+                  </Typography>
+                  {active && <Chip label="Primary" size="small" color="info" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800 }} />}
+                </Box>
+              )
+            })}
+          </Stack>
+
+          <Divider sx={{ my: 1 }} />
+
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                {tPrimary('bilingualToggle')} (Bilingual Mode)
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {bilingual ? tPrimary('bilingualOn') : tPrimary('bilingualOff')}
+              </Typography>
+            </Box>
+            <Switch
+              size="small"
+              checked={bilingual}
+              onChange={() => {
+                playUiChime('sparkle')
+                toggleBilingual()
+              }}
+            />
+          </Box>
+
+          {bilingual && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
+                Ngôn ngữ phụ (Secondary):
+              </Typography>
+              <Stack direction="row" spacing={0.75}>
+                {languages.filter(l => l.code !== lang).map(l => (
+                  <Chip
+                    key={l.code}
+                    label={`${l.flag} ${l.short}`}
+                    size="small"
+                    color={secondaryLang === l.code ? 'secondary' : 'default'}
+                    onClick={() => changeSecondaryLanguage(l.code)}
+                    clickable
+                    sx={{ fontWeight: 700 }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+        </Box>
+      </Popover>
+
+      {/* Soundscape & OST Playlist Popover */}
       <Popover
         open={Boolean(ostAnchor)}
         anchorEl={ostAnchor}
         onClose={() => setOstAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Box sx={{ p: 2.25, width: 390, maxHeight: 480, overflowY: 'auto' }}>
+        <Box sx={{ p: 2.25, width: 390, maxWidth: '94vw', maxHeight: 480, overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              🎼 Anime OST Soundtracks (Sora • Furina • Nahida)
+              {tPrimary('ostPopoverTitle')}
             </Typography>
             {musicOn && (
               <Button size="small" color="error" onClick={() => stopSoraMusicBox()} sx={{ textTransform: 'none', fontWeight: 700 }}>
-                Tắt nhạc
+                {tPrimary('stopMusic')}
               </Button>
             )}
           </Box>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-            Phát trực tiếp bản nhạc OST gốc hoặc chọn file nhạc từ máy tính của bạn:
+            {tPrimary('ostPopoverSub')}
           </Typography>
 
           <Stack spacing={0.85}>
@@ -275,17 +388,17 @@ function AppBar({ boardTheme }) {
                     '&:hover': { bgcolor: 'action.hover' }
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {isSelected ? '🔊 ' : '🎵 '}{track.title}
                     </Typography>
                     <Chip
                       label={track.character.toUpperCase()}
                       size="small"
-                      sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800 }}
+                      sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, flexShrink: 0 }}
                     />
                   </Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} noWrap>
                     {track.subtitle}
                   </Typography>
                 </Box>
@@ -303,7 +416,7 @@ function AppBar({ boardTheme }) {
             startIcon={<UploadFileRoundedIcon />}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
           >
-            Chọn file nhạc (.MP3 / .WAV / .OGG) từ máy tính
+            {tPrimary('uploadAudioBtn')}
             <input type="file" hidden accept="audio/*" onChange={handleUploadCustomMusic} />
           </Button>
         </Box>

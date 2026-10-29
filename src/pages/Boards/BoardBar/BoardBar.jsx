@@ -8,6 +8,7 @@ import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import StarBorderRoundedIcon from '@mui/icons-material/StarBorderRounded'
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded'
+import HubRoundedIcon from '@mui/icons-material/HubRounded'
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded'
@@ -20,6 +21,7 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import Stack from '@mui/material/Stack'
+import Divider from '@mui/material/Divider'
 import { Tooltip } from '@mui/material'
 import { capitalizeFirstLetter } from '~/utils/formatters'
 import BoardUserGroup from './BoardUserGroup'
@@ -31,12 +33,17 @@ import { useDispatch } from 'react-redux'
 import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { useTranslation } from '~/customHooks/useTranslation'
 import { ELEMENTAL_LABELS, PRIMARY_THEMES_LIST } from '~/utils/animeTheme'
 import {
   DEFAULT_SPRINT_CONFIG,
   collectBoardCardsWithColumn,
+  exportSprintCrsToCsv,
   exportSprintCrsToExcel,
-  getDeadlineStatus
+  formatDateVN,
+  getDeadlineStatus,
+  getSavedTeamRoster,
+  saveTeamRosterLocal
 } from '~/utils/excelExporter'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import {
@@ -48,6 +55,8 @@ import {
 import { toast } from 'react-toastify'
 
 const MENU_STYLES = {
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
   color: 'white',
   bgcolor: 'rgba(255, 255, 255, 0.1)',
   border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -74,6 +83,7 @@ function BoardBar({
 }) {
   const dispatch = useDispatch()
   const { personaKey, themeConfig, changePersona } = usePersonaTheme(board?.theme)
+  const { tPrimary } = useTranslation()
 
   // Pomodoro Focus Timer state (25 mins default)
   const [timerAnchor, setTimerAnchor] = useState(null)
@@ -88,18 +98,26 @@ function BoardBar({
   const [openImportMdModal, setOpenImportMdModal] = useState(false)
 
   const currentSprint = board?.sprintConfig || DEFAULT_SPRINT_CONFIG
-  const [sprintName, setSprintName] = useState(currentSprint.name)
-  const [sprintStart, setSprintStart] = useState(currentSprint.startDate)
-  const [sprintEnd, setSprintEnd] = useState(currentSprint.endDate)
+  const [sprintNumber, setSprintNumber] = useState(currentSprint.sprintNumber || '34')
+  const [sprintStart, setSprintStart] = useState(currentSprint.startDate || '22/10/2026')
+  const [sprintEnd, setSprintEnd] = useState(currentSprint.endDate || '05/11/2026')
+  const [updateTill, setUpdateTill] = useState(currentSprint.updateTill || formatDateVN(new Date()))
+  const [updatedBy, setUpdatedBy] = useState(currentSprint.updatedBy || 'Dao Thanh Phuc')
   const [sprintGoal, setSprintGoal] = useState(currentSprint.goal || '')
+  const [teamRoster, setTeamRoster] = useState(() => getSavedTeamRoster(board))
+  const [newMemberName, setNewMemberName] = useState('')
 
   useEffect(() => {
     const cfg = board?.sprintConfig || DEFAULT_SPRINT_CONFIG
-    setSprintName(cfg.name || 'Sprint 34')
+    const num = cfg.sprintNumber || String(cfg.name || '34').replace(/[^0-9]/g, '') || '34'
+    setSprintNumber(num)
     setSprintStart(cfg.startDate || '22/10/2026')
     setSprintEnd(cfg.endDate || '05/11/2026')
+    setUpdateTill(cfg.updateTill || formatDateVN(new Date()))
+    setUpdatedBy(cfg.updatedBy || 'Dao Thanh Phuc')
     setSprintGoal(cfg.goal || '')
-  }, [board?.sprintConfig])
+    setTeamRoster(getSavedTeamRoster(board))
+  }, [board])
 
   // Calculate live board telemetry & deadline warnings
   const boardTelemetry = useMemo(() => {
@@ -143,14 +161,14 @@ function BoardBar({
         if (prev <= 1) {
           setIsRunning(false)
           playUiChime('complete')
-          toast.success(`${themeConfig.characterName}: Đã hoàn thành phiên tập trung! Hãy nghỉ ngơi đôi chút nhé!`)
+          toast.success('Pomodoro Focus Session Completed!')
           return 25 * 60
         }
         return prev - 1
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [isRunning, themeConfig.characterName])
+  }, [isRunning])
 
   const formatTimer = (totalSec) => {
     const m = String(Math.floor(totalSec / 60)).padStart(2, '0')
@@ -164,17 +182,49 @@ function BoardBar({
     })
   }
 
+  const handleAddMemberToRoster = () => {
+    const clean = newMemberName.trim()
+    if (!clean) return
+    if (!teamRoster.includes(clean)) {
+      const next = [...teamRoster, clean]
+      setTeamRoster(next)
+      saveTeamRosterLocal(next)
+    }
+    setNewMemberName('')
+  }
+
+  const handleRemoveMemberFromRoster = (nameToRemove) => {
+    const next = teamRoster.filter(n => n !== nameToRemove)
+    setTeamRoster(next)
+    saveTeamRosterLocal(next)
+  }
+
   const handleSaveSprintConfig = () => {
+    const num = sprintNumber.trim() || '34'
+    const nextName = num.toLowerCase().startsWith('sprint') ? num : `Sprint ${num}`
+    saveTeamRosterLocal(teamRoster)
+
     const nextConfig = {
-      name: sprintName.trim() || 'Sprint 34',
+      name: nextName,
+      sprintNumber: num.replace(/[^0-9]/g, '') || '34',
       startDate: sprintStart.trim() || '22/10/2026',
       endDate: sprintEnd.trim() || '05/11/2026',
-      goal: sprintGoal.trim()
+      updateTill: updateTill.trim() || formatDateVN(new Date()),
+      updatedBy: updatedBy.trim() || 'Dao Thanh Phuc',
+      goal: sprintGoal.trim(),
+      teamRoster
     }
     dispatch(updateCurrentActiveBoard({ ...board, sprintConfig: nextConfig }))
-    updateBoardDetailsAPI(board._id, { sprintConfig: nextConfig }).then(() => {
+    updateBoardDetailsAPI(board._id, {
+      sprintConfig: {
+        name: nextConfig.name,
+        startDate: nextConfig.startDate,
+        endDate: nextConfig.endDate,
+        goal: nextConfig.goal
+      }
+    }).then(() => {
       playUiChime('complete')
-      toast.success(`Đã cập nhật kỳ ${nextConfig.name} (${nextConfig.startDate} - ${nextConfig.endDate})!`)
+      toast.success(`Saved ${nextConfig.name} (${nextConfig.startDate} - ${nextConfig.endDate})!`)
       setSprintAnchor(null)
     })
   }
@@ -190,7 +240,7 @@ function BoardBar({
     const nextType = board?.type === 'public' ? 'private' : 'public'
     dispatch(updateCurrentActiveBoard({ ...board, type: nextType }))
     updateBoardDetailsAPI(board._id, { type: nextType }).then(() => {
-      toast.info(`Đã chuyển chế độ bảng sang ${capitalizeFirstLetter(nextType)}`)
+      toast.info(`Board visibility: ${capitalizeFirstLetter(nextType)}`)
     })
   }
 
@@ -205,16 +255,16 @@ function BoardBar({
     setThemeAnchor(null)
   }
 
-  const handleToggleViewMode = () => {
-    if (!setBoardViewMode) return
-    playUiChime('sparkle')
-    setBoardViewMode(boardViewMode === 'kanban' ? 'overview' : 'kanban')
-  }
-
   const handleExportExcel = () => {
     playUiChime('complete')
     exportSprintCrsToExcel(board)
-    toast.success(`Đã xuất báo cáo Excel CR cho ${currentSprint.name} (${currentSprint.startDate} - ${currentSprint.endDate})!`)
+    toast.success(`Exported Excel for ${currentSprint.name}!`)
+  }
+
+  const handleExportCsv = () => {
+    playUiChime('complete')
+    exportSprintCrsToCsv(board)
+    toast.success(`Exported CSV Template for ${currentSprint.name}!`)
   }
 
   return (
@@ -227,6 +277,7 @@ function BoardBar({
       gap: 1.5,
       paddingX: 2,
       overflowX: 'auto',
+      overflowY: 'hidden',
       background: (theme) => (
         theme.palette.mode === 'dark' ? themeConfig.boardBarBgDark : themeConfig.boardBarBgLight
       ),
@@ -240,13 +291,13 @@ function BoardBar({
         accentColor={themeConfig.accentColor}
       />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Tooltip title={board?.description || 'Nhấn để đổi tên bảng'}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pl: 0.5 }}>
-            <SoraRibbonIcon sx={{ fontSize: '22px' }} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.85, flexShrink: 0 }}>
+        <Tooltip title={board?.description || 'Sprint Board Title'}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pl: 0.5, flexShrink: 0 }}>
+            <SoraRibbonIcon sx={{ fontSize: '20px', flexShrink: 0 }} />
             <Box sx={{
-              minWidth: '120px',
-              maxWidth: '220px',
+              width: '175px',
+              flexShrink: 0,
               '& input': { color: 'white !important' },
               '& .MuiOutlinedInput-root.Mui-focused': {
                 backgroundColor: 'rgba(255, 255, 255, 0.15)'
@@ -260,11 +311,12 @@ function BoardBar({
           </Box>
         </Tooltip>
 
-        <Tooltip title={board?.isStarred ? 'Bỏ đánh dấu sao' : 'Đánh dấu sao bảng này'}>
+        <Tooltip title={board?.isStarred ? 'Unstar Sprint Board' : 'Star Sprint Board'}>
           <IconButton
             size="small"
             onClick={handleToggleStarBoard}
             sx={{
+              flexShrink: 0,
               color: board?.isStarred ? '#fbbf24' : 'rgba(255,255,255,0.8)',
               bgcolor: 'rgba(255,255,255,0.1)',
               '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' }
@@ -275,23 +327,85 @@ function BoardBar({
         </Tooltip>
 
         {/* Active Sprint Badge (Default: Sprint 34 • 22/10 - 05/11) */}
-        <Tooltip title="Chu kỳ Sprint hiện tại (Nhấn để cấu hình kỳ Sprint & thời gian 2 tuần)">
+        <Tooltip title={tPrimary('configureSprint')}>
           <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               bgcolor: 'rgba(56, 189, 248, 0.24)',
               borderColor: themeConfig.accentColor
             }}
-            icon={<CalendarMonthRoundedIcon />}
-            label={`${currentSprint.name}: ${currentSprint.startDate.slice(0, 5)} - ${currentSprint.endDate.slice(0, 5)}`}
+            icon={<CalendarMonthRoundedIcon fontSize="small" />}
+            label={`${currentSprint.name || 'Sprint 34'}: ${(currentSprint.startDate || '22/10').slice(0, 5)}–${(currentSprint.endDate || '05/11').slice(0, 5)}`}
             onClick={(e) => setSprintAnchor(e.currentTarget)}
             clickable
           />
         </Tooltip>
 
-        {/* Deadline Alert Badge */}
-        <Tooltip title="Trung tâm cảnh báo hạn hoàn thành CR (Overdue / Sắp đến hạn ≤ 2 ngày)">
+        {/* View Switcher: Kanban | Sprint Matrix | Obsidian Graph */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.4,
+            p: 0.35,
+            borderRadius: '10px',
+            bgcolor: 'rgba(15, 23, 42, 0.55)',
+            border: '1px solid rgba(255,255,255,0.22)',
+            flexShrink: 0
+          }}
+        >
           <Chip
+            size="small"
+            icon={<ViewKanbanOutlinedIcon fontSize="small" />}
+            label={tPrimary('viewKanban')}
+            onClick={() => { playUiChime('sparkle'); setBoardViewMode('kanban') }}
+            clickable
+            sx={{
+              height: 24,
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'white',
+              bgcolor: boardViewMode === 'kanban' ? themeConfig.accentColor : 'transparent',
+              '.MuiSvgIcon-root': { color: 'white !important' }
+            }}
+          />
+          <Chip
+            size="small"
+            icon={<InsightsRoundedIcon fontSize="small" />}
+            label={tPrimary('viewMatrix')}
+            onClick={() => { playUiChime('sparkle'); setBoardViewMode('overview') }}
+            clickable
+            sx={{
+              height: 24,
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'white',
+              bgcolor: boardViewMode === 'overview' ? '#f472b6' : 'transparent',
+              '.MuiSvgIcon-root': { color: 'white !important' }
+            }}
+          />
+          <Chip
+            size="small"
+            icon={<HubRoundedIcon fontSize="small" />}
+            label={tPrimary('viewGraph')}
+            onClick={() => { playUiChime('sparkle'); setBoardViewMode('graph') }}
+            clickable
+            sx={{
+              height: 24,
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'white',
+              bgcolor: boardViewMode === 'graph' ? '#a78bfa' : 'transparent',
+              '.MuiSvgIcon-root': { color: 'white !important' }
+            }}
+          />
+        </Box>
+
+        {/* Deadline Alert Badge */}
+        <Tooltip title={tPrimary('deadlineCenterTitle')}>
+          <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               bgcolor: boardTelemetry.overdueCards.length > 0
@@ -306,27 +420,28 @@ function BoardBar({
                   : '#34d399',
               animation: boardTelemetry.overdueCards.length > 0 ? 'chelloPulseHalo 2.2s infinite' : 'none'
             }}
-            icon={boardTelemetry.alertCount > 0 ? <WarningAmberRoundedIcon /> : <CheckCircleOutlineRoundedIcon />}
+            icon={boardTelemetry.alertCount > 0 ? <WarningAmberRoundedIcon fontSize="small" /> : <CheckCircleOutlineRoundedIcon fontSize="small" />}
             label={
               boardTelemetry.alertCount > 0
-                ? `${boardTelemetry.alertCount} Cảnh báo hạn`
-                : 'Đúng tiến độ'
+                ? `${boardTelemetry.alertCount} ${tPrimary('deadlineAlerts')}`
+                : tPrimary('onTrack')
             }
             onClick={(e) => setDeadlineAnchor(e.currentTarget)}
             clickable
           />
         </Tooltip>
 
-        {/* Import Markdown to CR Ticket */}
-        <Tooltip title="Import file Markdown (.md) hoặc đặc tả Antigravity thành CR Ticket kèm FRD">
+        {/* Import Markdown / CSV Template to CR Ticket */}
+        <Tooltip title="Import Markdown (.md) or Sprint CSV (.csv) into CR Tickets">
           <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               bgcolor: 'rgba(167, 139, 250, 0.26)',
               borderColor: '#a78bfa'
             }}
-            icon={<UploadFileRoundedIcon />}
-            label="Import MD → CR"
+            icon={<UploadFileRoundedIcon fontSize="small" />}
+            label={tPrimary('importMdCsvBtn')}
             onClick={() => {
               playUiChime('sparkle')
               setOpenImportMdModal(true)
@@ -336,79 +451,70 @@ function BoardBar({
         </Tooltip>
 
         {/* Export Sprint CRs to Excel */}
-        <Tooltip title="Xuất báo cáo Excel (.xls) các CR trong kỳ Sprint (Kỳ Sprint, Bắt đầu, Kết thúc, Ngày cập nhật, Mã CR, Tên CR, PIC, Status, Deadline, Note)">
+        <Tooltip title="Export Sprint Report (.XLS) matching the exact Sprint 34 Template">
           <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               bgcolor: 'rgba(16, 185, 129, 0.28)',
               borderColor: '#34d399'
             }}
-            icon={<TableViewRoundedIcon />}
-            label="Xuất Excel Sprint"
+            icon={<TableViewRoundedIcon fontSize="small" />}
+            label={tPrimary('exportExcelBtn')}
             onClick={handleExportExcel}
             clickable
           />
         </Tooltip>
 
-        <Tooltip title="Chuyển đổi giữa Bảng Kanban và Tổng quan BA Matrix & Analytics">
+        <Tooltip title={tPrimary('selectThemeTitle')}>
           <Chip
-            sx={{
-              ...MENU_STYLES,
-              bgcolor: boardViewMode === 'overview' ? 'rgba(244, 114, 182, 0.32)' : MENU_STYLES.bgcolor,
-              borderColor: boardViewMode === 'overview' ? '#f472b6' : 'rgba(255,255,255,0.24)'
-            }}
-            icon={boardViewMode === 'overview' ? <ViewKanbanOutlinedIcon /> : <InsightsRoundedIcon />}
-            label={boardViewMode === 'overview' ? 'Kanban' : 'BA Matrix & Overview'}
-            onClick={handleToggleViewMode}
-            clickable
-          />
-        </Tooltip>
-
-        <Tooltip title="Chọn chủ đề Nhân vật (Sora Kasugano / Furina / Nahida)">
-          <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               borderColor: themeConfig.accentColor
             }}
-            icon={<PaletteOutlinedIcon />}
+            icon={<PaletteOutlinedIcon fontSize="small" />}
             label={themeConfig.name.split('•')[0].trim()}
             onClick={(e) => setThemeAnchor(e.currentTarget)}
             clickable
           />
         </Tooltip>
 
-        <Tooltip title="Bộ lọc nhanh theo Mã CR (VD: BNPL-1), Tên CR hoặc Nhãn">
+        <Tooltip title={tPrimary('filterPopoverTitle')}>
           <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               bgcolor: cardFilterText ? 'rgba(125, 211, 252, 0.35)' : MENU_STYLES.bgcolor
             }}
-            icon={<FilterAltIcon />}
-            label={cardFilterText ? `Lọc: ${cardFilterText}` : 'Lọc CR'}
+            icon={<FilterAltIcon fontSize="small" />}
+            label={cardFilterText ? `${cardFilterText}` : tPrimary('filterCrBtn')}
             onClick={(e) => setFilterAnchor(e.currentTarget)}
             onDelete={cardFilterText ? () => setCardFilterText('') : undefined}
             clickable
           />
         </Tooltip>
 
-        <Tooltip title="Đồng hồ tập trung Pomodoro">
+        <Tooltip title="Pomodoro Timer">
           <Chip
+            size="small"
             sx={{
               ...MENU_STYLES,
               display: { xs: 'none', xl: 'inline-flex' },
               bgcolor: isRunning ? 'rgba(244, 114, 182, 0.35)' : MENU_STYLES.bgcolor
             }}
-            icon={<SoraBunnyIcon />}
+            icon={<SoraBunnyIcon fontSize="small" />}
             label={isRunning ? formatTimer(secondsLeft) : 'Pomodoro'}
             onClick={(e) => setTimerAnchor(e.currentTarget)}
             clickable
           />
         </Tooltip>
 
-        <Tooltip title="Chuyển đổi Public / Private">
+        <Tooltip title="Public / Private">
           <Chip
+            size="small"
             sx={{ ...MENU_STYLES, display: { xs: 'none', xl: 'inline-flex' } }}
-            icon={<VpnLockIcon />}
+            icon={<VpnLockIcon fontSize="small" />}
             label={capitalizeFirstLetter(board?.type)}
             onClick={handleToggleBoardType}
             clickable
@@ -416,31 +522,43 @@ function BoardBar({
         </Tooltip>
       </Box>
 
-      {/* Sprint Configuration Popover */}
+      {/* Sprint Configuration & Team Roster Popover */}
       <Popover
         open={Boolean(sprintAnchor)}
         anchorEl={sprintAnchor}
         onClose={() => setSprintAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2.5, width: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ p: 2.5, width: 420, maxWidth: '94vw', maxHeight: 540, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            🗓️ Cấu hình Chu kỳ Sprint (2 Tuần)
+            {tPrimary('configureSprint')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Thông tin này sẽ hiển thị trên Board và tự động điền vào báo cáo Xuất Excel CR.
+            {tPrimary('sprintConfigSub')}
           </Typography>
-          <TextField
-            label="Tên kỳ Sprint"
-            size="small"
-            fullWidth
-            value={sprintName}
-            onChange={(e) => setSprintName(e.target.value)}
-            placeholder="Sprint 34"
-          />
+
           <Stack direction="row" spacing={1.5}>
             <TextField
-              label="Ngày bắt đầu"
+              label={tPrimary('sprintNumberLabel')}
+              size="small"
+              fullWidth
+              value={sprintNumber}
+              onChange={(e) => setSprintNumber(e.target.value)}
+              placeholder="34"
+            />
+            <TextField
+              label={tPrimary('updatedByLabel')}
+              size="small"
+              fullWidth
+              value={updatedBy}
+              onChange={(e) => setUpdatedBy(e.target.value)}
+              placeholder="Dao Thanh Phuc"
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={1.5}>
+            <TextField
+              label={tPrimary('startDateLabel')}
               size="small"
               fullWidth
               value={sprintStart}
@@ -448,7 +566,7 @@ function BoardBar({
               placeholder="22/10/2026"
             />
             <TextField
-              label="Ngày kết thúc"
+              label={tPrimary('endDateLabel')}
               size="small"
               fullWidth
               value={sprintEnd}
@@ -456,8 +574,18 @@ function BoardBar({
               placeholder="05/11/2026"
             />
           </Stack>
+
           <TextField
-            label="Mục tiêu Sprint (Sprint Goal)"
+            label={tPrimary('updateTillLabel')}
+            size="small"
+            fullWidth
+            value={updateTill}
+            onChange={(e) => setUpdateTill(e.target.value)}
+            placeholder="26/10/2026"
+          />
+
+          <TextField
+            label={tPrimary('sprintNoteLabel')}
             size="small"
             fullWidth
             multiline
@@ -465,11 +593,52 @@ function BoardBar({
             value={sprintGoal}
             onChange={(e) => setSprintGoal(e.target.value)}
           />
-          <Stack direction="row" spacing={1} justifyContent="flex-end">
-            <Button size="small" onClick={() => setSprintAnchor(null)}>Hủy</Button>
-            <Button size="small" variant="contained" onClick={handleSaveSprintConfig}>
-              Lưu kỳ Sprint
+
+          <Divider />
+
+          <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            {tPrimary('teamRosterLabel')} ({teamRoster.length})
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
+            {teamRoster.map(member => (
+              <Chip
+                key={member}
+                label={member}
+                size="small"
+                onDelete={() => handleRemoveMemberFromRoster(member)}
+                sx={{ fontWeight: 700, fontSize: '0.72rem' }}
+              />
+            ))}
+          </Box>
+          <Stack direction="row" spacing={1}>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder={tPrimary('addMemberPlaceholder')}
+              value={newMemberName}
+              onChange={(e) => setNewMemberName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddMemberToRoster()
+                }
+              }}
+            />
+            <Button size="small" variant="outlined" onClick={handleAddMemberToRoster} sx={{ textTransform: 'none', fontWeight: 700 }}>
+              {tPrimary('addBtn')}
             </Button>
+          </Stack>
+
+          <Stack direction="row" spacing={1} justifyContent="space-between" sx={{ pt: 1 }}>
+            <Button size="small" variant="outlined" color="success" onClick={handleExportCsv} sx={{ textTransform: 'none', fontWeight: 700 }}>
+              {tPrimary('exportCsvBtn')}
+            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button size="small" onClick={() => setSprintAnchor(null)}>{tPrimary('cancelBtn')}</Button>
+              <Button size="small" variant="contained" onClick={handleSaveSprintConfig} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                {tPrimary('saveSprintBtn')}
+              </Button>
+            </Stack>
           </Stack>
         </Box>
       </Popover>
@@ -481,18 +650,18 @@ function BoardBar({
         onClose={() => setDeadlineAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2.5, width: 390, maxHeight: 440, overflowY: 'auto' }}>
+        <Box sx={{ p: 2.5, width: 390, maxWidth: '94vw', maxHeight: 440, overflowY: 'auto' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
-            ⏰ Theo dõi Tiến độ & Cảnh báo Deadline ({currentSprint.name})
+            {tPrimary('deadlineCenterTitle')}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-            Nhấn vào bất kỳ CR nào bên dưới để mở chi tiết và cập nhật tiến độ:
+            {tPrimary('deadlineCenterSub')}
           </Typography>
 
           {boardTelemetry.alertCount === 0 ? (
             <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(16, 185, 129, 0.12)', textAlign: 'center' }}>
               <Typography variant="body2" sx={{ fontWeight: 700, color: '#10b981' }}>
-                ✅ Tất cả các CR trong {currentSprint.name} đều đang đúng tiến độ!
+                {tPrimary('allOnTrackMsg')}
               </Typography>
             </Box>
           ) : (
@@ -527,8 +696,8 @@ function BoardBar({
                   <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                     {card.title}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    PIC: {card.assignee || 'Chưa phân công'} • Cột: {columnTitle}
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                    Handle by: {card.assignee || 'Unassigned'} • Topic: {columnTitle}
                   </Typography>
                 </Box>
               ))}
@@ -537,16 +706,16 @@ function BoardBar({
         </Box>
       </Popover>
 
-      {/* Character Theme Selector Popover (Sora / Furina / Nahida) */}
+      {/* Theme Selector Popover */}
       <Popover
         open={Boolean(themeAnchor)}
         anchorEl={themeAnchor}
         onClose={() => setThemeAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2, width: 350 }}>
+        <Box sx={{ p: 2, width: 350, maxWidth: '94vw' }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.25 }}>
-            🎨 Chọn Chủ đề Nhân vật (Sora • Furina • Nahida)
+            🎨 {tPrimary('selectThemeTitle')}
           </Typography>
           <Stack spacing={1}>
             {PRIMARY_THEMES_LIST.map((t) => {
@@ -593,12 +762,12 @@ function BoardBar({
         <Box sx={{ p: 2.5, width: 325, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar src={themeConfig.mascotImage} alt={themeConfig.name} sx={{ width: 46, height: 46, border: `2px solid ${themeConfig.accentColor}` }} />
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }} noWrap>
                 {themeConfig.name}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Đồng hồ tập trung phân tích BA & FRD
+                Pomodoro Focus Session
               </Typography>
             </Box>
           </Box>
@@ -618,7 +787,7 @@ function BoardBar({
                 setIsRunning(!isRunning)
               }}
             >
-              {isRunning ? 'Tạm dừng' : 'Bắt đầu'}
+              {isRunning ? 'Pause' : 'Start'}
             </Button>
             <Button
               variant="outlined"
@@ -638,7 +807,7 @@ function BoardBar({
                 setSecondsLeft(5 * 60)
               }}
             >
-              5m Nghỉ
+              5m Break
             </Button>
           </Box>
         </Box>
@@ -651,14 +820,14 @@ function BoardBar({
         onClose={() => setFilterAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2, width: 320, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ p: 2, width: 330, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-            🔍 Tìm kiếm & Lọc CR / Nhãn
+            {tPrimary('filterPopoverTitle')}
           </Typography>
           <TextField
             size="small"
             fullWidth
-            placeholder="Nhập Mã CR (VD: BNPL-1), tên CR hoặc PIC..."
+            placeholder={tPrimary('filterPlaceholder')}
             value={cardFilterText}
             onChange={(e) => setCardFilterText(e.target.value)}
             autoFocus
@@ -682,13 +851,13 @@ function BoardBar({
           </Box>
           {cardFilterText && (
             <Button size="small" onClick={() => setCardFilterText('')}>
-              Xóa bộ lọc
+              {tPrimary('clearFilter')}
             </Button>
           )}
         </Box>
       </Popover>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
         <InviteBoardUser boardId={board._id} />
         <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>

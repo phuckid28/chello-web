@@ -15,10 +15,12 @@ import {
 } from '~/redux/activeBoard/activeBoardSlice'
 import { cloneDeep } from 'lodash'
 import { useDispatch, useSelector } from 'react-redux'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function ListColumns({ columns }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const { tPrimary } = useTranslation()
 
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
   const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
@@ -26,20 +28,18 @@ function ListColumns({ columns }) {
   const [newColumnTitle, setNewColumnTitle] = useState('')
   const addNewColumn = async () => {
     if (!newColumnTitle) {
-      toast.error('Please enter title')
+      toast.error('Please enter CR Topic title')
       return
     }
     const newColumnData = {
       title: newColumnTitle
     }
 
-    // Gọi API tạo mới column và làm lại dữ liệu state
     const createdColumn = await createNewColumnAPI({
       ...newColumnData,
       boardId: board._id
     })
 
-    // Tạo card rỗng khi tạo column
     const placeholderCard = generatePlaceholderCard(createdColumn)
     createdColumn.cards = [placeholderCard]
     createdColumn.cardOrderIds = [placeholderCard._id]
@@ -68,15 +68,17 @@ function ListColumns({ columns }) {
         {columns?.map(column =>
           <Columns key={column._id} column={column} />)}
 
-        {/* Box add new column */}
+        {/* Box add new CR Topic column */}
         {!openNewColumnForm
           ? <Box onClick={toggleOpenNewColumnForm} sx={{
-            minWidth: '250px',
-            maxWidth: '250px',
+            minWidth: '260px',
+            maxWidth: '260px',
             mx: 2,
-            borderRadius: '6px',
+            borderRadius: '10px',
             height: 'fit-content',
-            bgcolor: '#ffffff3d'
+            bgcolor: 'rgba(15, 23, 42, 0.55)',
+            border: '1px dashed rgba(255, 255, 255, 0.35)',
+            backdropFilter: 'blur(10px)'
           }}>
             <Button
               startIcon={<NoteAddIcon />}
@@ -84,34 +86,47 @@ function ListColumns({ columns }) {
                 color: 'white',
                 width: '100%',
                 justifyContent: 'flex-start',
-                pl: 2.5,
-                py: 1
+                textTransform: 'none',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                pl: 2,
+                py: 1.1
               }}
             >
-              Add new column
+              {tPrimary('addTopicColumn')}
             </Button>
           </Box>
           : <Box sx={{
-            minWidth: '250px',
-            maxWidth: '250px',
+            minWidth: '260px',
+            maxWidth: '260px',
             mx: 2,
-            p: 1,
-            borderRadius: '6px',
+            p: 1.25,
+            borderRadius: '10px',
             height: 'fit-content',
-            bgcolor: '#ffffff3d',
+            bgcolor: 'rgba(15, 23, 42, 0.82)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.3)',
             display: 'flex',
             flexDirection: 'column',
             gap: 1
           }}
           >
             <TextField
-              label="Enter column title..."
+              label={tPrimary('enterColumnTitle')}
               type="text"
               size='small'
               variant='outlined'
               autoFocus
               value={newColumnTitle}
               onChange={(e) => setNewColumnTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addNewColumn()
+                }
+              }}
               sx={{
                 '& label': { color: 'white' },
                 '& input': { color: 'white' },
@@ -133,12 +148,13 @@ function ListColumns({ columns }) {
                 onClick={addNewColumn}
                 variant='contained' color='success' size='small'
                 sx={{
-                  boxShadow: 'none',
-                  border: '0.5px solid',
-                  borderColor: (theme) => theme.palette.success.main,
-                  '&:hover': { bgcolor: (theme) => theme.palette.success.main }
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  boxShadow: 'none'
                 }}
-              >Add Column</Button>
+              >
+                {tPrimary('addBtn')}
+              </Button>
               <CloseIcon
                 fontSize='small'
                 sx={{

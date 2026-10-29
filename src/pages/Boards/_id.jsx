@@ -80,7 +80,7 @@ function Board() {
   }
 
   if (!board) {
-    return <PageLoadingSpinner caption="Connecting to Okukozome Board..." />
+    return <PageLoadingSpinner caption='Đang kết nối Chella — A clone of "C"onfluence - tr"ELL"o - jir"A"...' />
   }
   return (
     <Container disableGutters maxWidth={false} sx={{ height: '100vh' }}>

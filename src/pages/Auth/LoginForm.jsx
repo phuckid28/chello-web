@@ -55,8 +55,13 @@ function LoginForm() {
             <Avatar sx={{ bgcolor: 'primary.main' }}><LockIcon /></Avatar>
             <Avatar sx={{ bgcolor: 'primary.main' }}><TrelloIcon /></Avatar>
           </Box>
-          <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', color: theme => theme.palette.grey[500] }}>
-            Author: phuckid28
+          <Box sx={{ marginTop: '0.5em', px: 2, textAlign: 'center', color: theme => theme.palette.grey[500] }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+              Chella
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
+              A clone of &quot;C&quot;onfluence - tr&quot;ELL&quot;o - jir&quot;A&quot;
+            </Typography>
           </Box>
           <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
             {verifiedEmail &&
@@ -125,7 +130,7 @@ function LoginForm() {
             </Button>
           </CardActions>
           <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
-            <Typography>New to Chello?</Typography>
+            <Typography>New to Chella?</Typography>
             <Link to="/register" style={{ textDecoration: 'none' }}>
               <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>Create account!</Typography>
             </Link>

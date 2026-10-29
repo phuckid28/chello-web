@@ -34,10 +34,12 @@ import { cloneDeep } from 'lodash'
 import { useDispatch, useSelector } from 'react-redux'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
 import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function Columns({ column }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const { tPrimary } = useTranslation()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
     data: { ...column }
@@ -58,7 +60,6 @@ function Columns({ column }) {
     setAnchorEl(null)
   }
 
-  // Cards đã được sắp xếp ở component cha cao nhất (boards/_id.jsx)
   const orderedCards = column.cards
   const realCardCount = (orderedCards || []).filter(c => !c.FE_PlaceholderCard).length
 
@@ -68,12 +69,16 @@ function Columns({ column }) {
   const [newCardTitle, setNewCardTitle] = useState('')
   const addNewCard = async () => {
     if (!newCardTitle) {
-      toast.error('Please enter title', { position: 'bottom-right' })
+      toast.error('Please enter CR title', { position: 'bottom-right' })
       return
     }
+    const nextIndex = realCardCount + 1
+    const prefix = (column?.title || 'CR').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4) || 'CR'
     const newCardData = {
       title: newCardTitle,
-      columnId: column._id
+      columnId: column._id,
+      crCode: `${prefix}-${nextIndex}`,
+      baStatus: 'Processing'
     }
 
     const createdCard = await createNewCardAPI({
@@ -98,12 +103,11 @@ function Columns({ column }) {
     setNewCardTitle('')
   }
 
-  // Xử lý xoá 1 column và cards bên trong nó
   const confirmDeleteColumn = useConfirm()
   const handleDeleteColumn = () => {
     confirmDeleteColumn({
-      title: 'Delete Column?',
-      description: 'This action will permanently delete this Column and its cards. Are you sure?',
+      title: 'Delete CR Topic Column?',
+      description: 'This action will permanently delete this Topic Column and its CR cards. Are you sure?',
       confirmationText: 'Confirm',
       cancellationText: 'Cancel'
     }).then(() => {
@@ -134,8 +138,8 @@ function Columns({ column }) {
       <Box
         {...listeners}
         sx={{
-          minWidth: '304px',
-          maxWidth: '304px',
+          minWidth: '308px',
+          maxWidth: '308px',
           overflow: 'hidden',
           bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.86)' : 'rgba(248, 250, 252, 0.92)'),
           backdropFilter: 'blur(18px) saturate(160%)',
@@ -153,42 +157,45 @@ function Columns({ column }) {
           }
         }}
       >
-        {/* Top Chromatic Sora Accent Bar */}
         <Box sx={{
           height: '3px',
           width: '100%',
           background: 'linear-gradient(90deg, #7dd3fc 0%, #f472b6 50%, #a78bfa 100%)'
         }} />
 
-        {/* Box column header */}
+        {/* Column Header (Each Column = 1 CR Topic) */}
         <Box sx={{
           height: (theme) => theme.trello.columnHeaderHeight,
-          px: 2,
-          py: 1.5,
+          px: 1.75,
+          py: 1.25,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 0.75
+          gap: 0.75,
+          overflow: 'hidden'
         }}>
           <SoraBunnyIcon sx={{ fontSize: 18, flexShrink: 0 }} />
-          <ToggleFocusInput
-            value={column?.title}
-            onChangedValue={onUpdateColumnTitle}
-            data-no-dnd="true"
-          />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <ToggleFocusInput
+              value={column?.title}
+              onChangedValue={onUpdateColumnTitle}
+              data-no-dnd="true"
+            />
+          </Box>
           <Chip
             label={realCardCount}
             size="small"
             sx={{
               height: 20,
               minWidth: 24,
+              flexShrink: 0,
               fontSize: '0.7rem',
               fontWeight: 800,
               bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(125, 211, 252, 0.16)' : 'rgba(2, 132, 199, 0.12)'),
               color: 'primary.main'
             }}
           />
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Tooltip title='More options'>
               <ExpandMoreIcon
                 sx={{ color: 'text.primary', cursor: 'pointer' }}
@@ -219,7 +226,7 @@ function Columns({ column }) {
                 }}
               >
                 <ListItemIcon><AddCardIcon className='add-card-icon' fontSize="small" /></ListItemIcon>
-                <ListItemText>Add new card</ListItemText>
+                <ListItemText>{tPrimary('addNewCrCard')}</ListItemText>
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><ContentCut fontSize="small" /></ListItemIcon>
@@ -244,11 +251,11 @@ function Columns({ column }) {
                 }}
               >
                 <ListItemIcon><DeleteForeverIcon className='delete-forever-icon' fontSize="small" /></ListItemIcon>
-                <ListItemText>Delete this column</ListItemText>
+                <ListItemText>Delete Topic Column</ListItemText>
               </MenuItem>
               <MenuItem>
                 <ListItemIcon><Cloud fontSize="small" /></ListItemIcon>
-                <ListItemText>Archive this column</ListItemText>
+                <ListItemText>Archive Topic Column</ListItemText>
               </MenuItem>
             </Menu>
           </Box>
@@ -260,29 +267,38 @@ function Columns({ column }) {
         {/* Box column footer */}
         <Box sx={{
           height: (theme) => theme.trello.columnFooterHeight,
-          p: 2,
-          overflow: 'unset'
+          px: 1.75,
+          py: 1.25,
+          overflow: 'hidden'
         }}>
           {!openNewCardForm
             ? <Box sx={{
               height: '100%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              gap: 1
             }}>
-              <Button startIcon={<AddCardIcon />} onClick={toggleOpenNewCardForm}>Add new card</Button>
-              <Tooltip title='Drag to move'>
-                <DragHandleIcon sx={{ cursor: 'pointer' }} />
+              <Button
+                size="small"
+                startIcon={<AddCardIcon />}
+                onClick={toggleOpenNewCardForm}
+                sx={{ textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              >
+                {tPrimary('addNewCrCard')}
+              </Button>
+              <Tooltip title='Drag to move topic'>
+                <DragHandleIcon sx={{ cursor: 'pointer', flexShrink: 0 }} />
               </Tooltip>
             </Box>
             : <Box sx={{
               height: '100%',
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 0.75
             }}>
               <TextField
-                label="Enter card title..."
+                label={tPrimary('enterCrTitle')}
                 type="text"
                 size='small'
                 variant='outlined'
@@ -290,7 +306,15 @@ function Columns({ column }) {
                 data-no-dnd="true"
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addNewCard()
+                  }
+                }}
                 sx={{
+                  flex: 1,
+                  minWidth: 0,
                   '& label': { color: 'text.primary' },
                   '& input': {
                     color: (theme) => theme.palette.primary.main,
@@ -307,28 +331,26 @@ function Columns({ column }) {
                   }
                 }}
               />
-              <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
                 <Button
                   className='interceptor-loading'
                   onClick={addNewCard}
-                  data-no-dnd="true"
                   variant='contained' color='success' size='small'
+                  data-no-dnd="true"
                   sx={{
-                    boxShadow: 'none',
-                    border: '0.5px solid',
-                    borderColor: (theme) => theme.palette.success.main,
-                    '&:hover': { bgcolor: (theme) => theme.palette.success.main }
+                    minWidth: 'unset',
+                    px: 1.25,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    boxShadow: 'none'
                   }}
-                >Add</Button>
+                >
+                  {tPrimary('addBtn')}
+                </Button>
                 <CloseIcon
                   fontSize='small'
-                  data-no-dnd="true"
                   sx={{
-                    color: (theme) => theme.palette.warning.main,
+                    color: (theme) => theme.palette.warning.light,
                     cursor: 'pointer'
                   }}
                   onClick={toggleOpenNewCardForm}

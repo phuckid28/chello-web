@@ -11,12 +11,14 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import { fetchBoardsAPI } from '~/apis'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 function Starred() {
   const [anchorEl, setAnchorEl] = useState(null)
   const [starredBoards, setStarredBoards] = useState([])
   const open = Boolean(anchorEl)
   const navigate = useNavigate()
+  const { tPrimary } = useTranslation()
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -31,9 +33,15 @@ function Starred() {
   }
 
   return (
-    <Box>
+    <Box sx={{ flexShrink: 0 }}>
       <Button
-        sx={{ color: 'white', fontWeight: 600 }}
+        sx={{
+          color: 'white',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          textTransform: 'none',
+          px: 1.2
+        }}
         id="basic-button-starred"
         aria-controls={open ? 'basic-menu-starred' : undefined}
         aria-haspopup="true"
@@ -41,7 +49,7 @@ function Starred() {
         onClick={handleClick}
         endIcon={<ExpandMoreIcon />}
       >
-        Starred
+        {tPrimary('starredMenu')}
       </Button>
       <Menu
         id="basic-menu-starred"
@@ -52,19 +60,19 @@ function Starred() {
           'aria-labelledby': 'basic-button-starred'
         }}
         PaperProps={{
-          sx: { width: 280, borderRadius: 2, p: 0.5 }
+          sx: { width: 310, maxWidth: '92vw', borderRadius: 2.5, p: 0.5, overflow: 'hidden' }
         }}
       >
         <Box sx={{ px: 2, py: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-            STARRED BOARDS • お気に入り
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }} noWrap>
+            {tPrimary('starredBoardsTitle')}
           </Typography>
         </Box>
         <Divider sx={{ mb: 0.5 }} />
         {starredBoards.length === 0 && (
           <MenuItem disabled sx={{ whiteSpace: 'normal' }}>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              No starred boards yet. Click the ★ Star button inside any board to pin it here!
+              {tPrimary('noStarredBoards')}
             </Typography>
           </MenuItem>
         )}
@@ -75,14 +83,29 @@ function Starred() {
               handleClose()
               navigate(`/boards/${board._id}`)
             }}
-            sx={{ borderRadius: 1.5 }}
+            sx={{ borderRadius: 1.5, overflow: 'hidden', gap: 1 }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 'unset !important', flexShrink: 0 }}>
               <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />
             </ListItemIcon>
             <ListItemText
-              primary={<Typography variant="body2" sx={{ fontWeight: 700 }}>{board.title}</Typography>}
-              secondary={<Typography variant="caption" noWrap>{board.description}</Typography>}
+              sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}
+              primary={
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {board.title}
+                </Typography>
+              }
+              secondary={
+                <Typography
+                  variant="caption"
+                  sx={{ display: 'block', color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {board.description}
+                </Typography>
+              }
             />
           </MenuItem>
         ))}

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import Board from '~/pages/Boards/_id'
 import Boards from '~/pages/Boards'
+import CrStudio from '~/pages/CrStudio/CrStudio'
 import NotFound from './pages/404/NotFound'
 import Auth from './pages/Auth/Auth'
 import AccountVerification from './pages/Auth/AccountVerification'
@@ -27,6 +28,7 @@ function App() {
       <Route element={<ProtectedRoute user={currentUser} />}>
         <Route path='/boards' element={<Boards />} />
         <Route path='/boards/:boardId' element={<Board />} />
+        <Route path='/boards/:boardId/cr/:cardId' element={<CrStudio />} />
         <Route path='/settings/account' element={<Settings />} />
         <Route path='/settings/security' element={<Settings />} />
       </Route>

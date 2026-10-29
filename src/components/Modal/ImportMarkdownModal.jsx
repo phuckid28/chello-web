@@ -14,6 +14,7 @@ import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded'
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded'
 import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded'
+import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
 import { toast } from 'react-toastify'
@@ -22,22 +23,40 @@ import {
   selectCurrentActiveBoard,
   updateCurrentActiveBoard
 } from '~/redux/activeBoard/activeBoardSlice'
-import { selectCurrentUser } from '~/redux/user/userSlice'
 import {
   BA_STATUS_OPTIONS,
   DEFAULT_SPRINT_CONFIG,
-  GENERATE_BA_FRD_TEMPLATE
+  GENERATE_BA_FRD_TEMPLATE,
+  getSavedTeamRoster,
+  parseSprintCsvTemplate,
+  saveTeamRoster
 } from '~/utils/excelExporter'
 import { playUiChime } from '~/utils/soundEffects'
 
-const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssignee = '') => {
+const SAMPLE_SPRINT_34_CSV = [
+  'Sprint,34,,,Status,,Handle by,Resource point,',
+  'Start date,10/22/2026,,,Processing,,Lam Chi Kien,1,',
+  'End date,11/5/2026,,,In testing,,Phan Nguyen Song Toan,1,',
+  'Update till,10/26/2026,,,Blocking,,Ho Thao Dieu,0.5,',
+  'By,Dao Thanh Phuc,,,Ready for deploy,,Nguyen Phuoc Long,1,',
+  'Note,,,,Deployed,,Nguyen Khanh Duy,1,',
+  ',,,,Done testing,,Hoang Vinh Son ,0.5,',
+  ',,,,,,Bui Hoang Gia Phuc,1,',
+  ',,,,,,Vo Viet Binh,1,',
+  'Ticket ID,CR Description,Status,Handle by,Due date for dev,Dev Progress,Resource used,Note,',
+  'BNPL-945,Usage Limit - Monthly 1 time synchronized update for user,Ready for deploy,"Ho Thao Dieu, Hoang Vinh Son ",5/11,1,1,Đồng bộ hạn mức 1 lần/tháng cho user,'
+].join('\n')
+
+const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssignee = 'Ho Thao Dieu, Hoang Vinh Son') => {
   const lines = String(mdText || '').split(/\r?\n/)
   let parsedTitle = ''
   let parsedCrCode = ''
   let parsedSprint = defaultSprint
   let parsedAssignee = defaultAssignee
-  let parsedStatus = 'In Analysis'
+  let parsedStatus = 'Ready for deploy'
   let parsedDeadline = '2026-11-05'
+  let parsedDevProgress = 1
+  let parsedResourceUsed = 1
   let parsedNote = ''
   const checklist = []
 
@@ -45,7 +64,6 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
     const line = rawLine.trim()
     if (!parsedTitle && /^#\s+/.test(line)) {
       const heading = line.replace(/^#\s+/, '').trim()
-      // Match patterns like "[BNPL-1] Title" or "FRD [BNPL-1]: Title" or "BNPL-1: Title"
       const bracketMatch = heading.match(/\[([A-Za-z0-9_-]+)\]\s*:?\s*(.+)/)
       const prefixMatch = heading.match(/^([A-Z]{2,10}-\d+)\s*[:-]\s*(.+)/)
       if (bracketMatch) {
@@ -60,7 +78,7 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
       continue
     }
 
-    const crMatch = line.match(/^(?:-\s*)?\*?\*?(?:Mã CR|CR Code|CR ID)\*?\*?\s*:\s*(.+)$/i)
+    const crMatch = line.match(/^(?:-\s*)?\*?\*?(?:Mã CR|Ticket ID|CR Code|CR ID)\*?\*?\s*:\s*(.+)$/i)
     if (crMatch) {
       parsedCrCode = crMatch[1].replace(/[*`]/g, '').trim()
       continue
@@ -72,7 +90,7 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
       continue
     }
 
-    const picMatch = line.match(/^(?:-\s*)?\*?\*?(?:Người phụ trách|PIC|Assignee)\*?\*?\s*:\s*(.+)$/i)
+    const picMatch = line.match(/^(?:-\s*)?\*?\*?(?:Người phụ trách|Handle by|PIC|Assignee)\*?\*?\s*:\s*(.+)$/i)
     if (picMatch) {
       parsedAssignee = picMatch[1].replace(/[*`]/g, '').trim()
       continue
@@ -84,19 +102,22 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
       continue
     }
 
-    const deadlineMatch = line.match(/^(?:-\s*)?\*?\*?(?:Deadline|Hạn hoàn thành|Due Date)\*?\*?\s*:\s*([0-9/-]+)/i)
+    const deadlineMatch = line.match(/^(?:-\s*)?\*?\*?(?:Deadline|Due date for dev|Hạn hoàn thành|Due Date)\*?\*?\s*:\s*([0-9/-]+)/i)
     if (deadlineMatch) {
       const rawDate = deadlineMatch[1].trim()
       const dmy = rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+      const shortDm = rawDate.match(/^(\d{1,2})\/(\d{1,2})$/)
       if (dmy) {
         parsedDeadline = `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`
+      } else if (shortDm) {
+        parsedDeadline = `2026-${shortDm[2].padStart(2, '0')}-${shortDm[1].padStart(2, '0')}`
       } else {
         parsedDeadline = rawDate
       }
       continue
     }
 
-    const noteMatch = line.match(/^(?:-\s*)?\*?\*?(?:Ghi chú|Note|BA Note)\*?\*?\s*:\s*(.+)$/i)
+    const noteMatch = line.match(/^(?:-\s*)?\*?\*?(?:Ghi chú|Note)\*?\*?\s*:\s*(.+)$/i)
     if (noteMatch) {
       parsedNote = noteMatch[1].replace(/[*`]/g, '').trim()
       continue
@@ -113,12 +134,14 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
   }
 
   return {
-    title: (parsedTitle || 'Change Request mới từ tài liệu Markdown').slice(0, 140),
-    crCode: parsedCrCode || 'BNPL-3',
+    title: (parsedTitle || 'Usage Limit - Monthly 1 time synchronized update for user').slice(0, 140),
+    crCode: parsedCrCode || 'BNPL-945',
     sprint: parsedSprint || defaultSprint,
     assignee: parsedAssignee || defaultAssignee,
     baStatus: parsedStatus,
     deadline: parsedDeadline,
+    devProgress: parsedDevProgress,
+    resourceUsed: parsedResourceUsed,
     note: parsedNote,
     checklist
   }
@@ -127,33 +150,57 @@ const parseMarkdownToCrSpec = (mdText, defaultSprint = 'Sprint 34', defaultAssig
 function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
-  const currentUser = useSelector(selectCurrentUser)
 
   const defaultSprint = board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name
-  const defaultAssignee = currentUser?.displayName || 'Thanh Phuc (BA)'
+  const defaultAssignee = 'Ho Thao Dieu, Hoang Vinh Son'
 
   const [selectedColumnId, setSelectedColumnId] = useState('')
   const [markdownContent, setMarkdownContent] = useState('')
-  const [uploadedFileName, setUploadedFileName] = useState('FRD_BNPL-3_Specification.md')
-  const [crCode, setCrCode] = useState('BNPL-3')
-  const [title, setTitle] = useState('')
+  const [uploadedFileName, setUploadedFileName] = useState('FRD_BNPL-945_Usage_Limit.md')
+  const [crCode, setCrCode] = useState('BNPL-945')
+  const [title, setTitle] = useState('Usage Limit - Monthly 1 time synchronized update for user')
   const [sprint, setSprint] = useState(defaultSprint)
   const [assignee, setAssignee] = useState(defaultAssignee)
-  const [baStatus, setBaStatus] = useState('In Analysis')
+  const [baStatus, setBaStatus] = useState('Ready for deploy')
   const [deadline, setDeadline] = useState('2026-11-05')
+  const [devProgress, setDevProgress] = useState(1)
+  const [resourceUsed, setResourceUsed] = useState(1)
   const [note, setNote] = useState('')
   const [parsedChecklist, setParsedChecklist] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [teamRoster, setTeamRoster] = useState(() => getSavedTeamRoster(board))
 
   useEffect(() => {
     if (open && board?.columns?.length > 0 && !selectedColumnId) {
       setSelectedColumnId(board.columns[0]._id)
     }
+    setTeamRoster(getSavedTeamRoster(board))
   }, [open, board, selectedColumnId])
 
   const applyParsedMarkdown = (text, fileName = 'FRD_Specification.md') => {
     setMarkdownContent(text)
     setUploadedFileName(fileName)
+
+    if (/Ticket ID\s*,\s*CR Description/i.test(text)) {
+      const csvParsed = parseSprintCsvTemplate(text)
+      if (csvParsed.teamRoster?.length > 0) {
+        setTeamRoster(csvParsed.teamRoster)
+        saveTeamRoster(csvParsed.teamRoster)
+      }
+      if (csvParsed.cards?.length > 0) {
+        const firstCr = csvParsed.cards[0]
+        setCrCode(firstCr.crCode || 'BNPL-945')
+        setTitle(firstCr.title || '')
+        setBaStatus(firstCr.baStatus || 'Ready for deploy')
+        setAssignee(firstCr.assignee || defaultAssignee)
+        setDeadline(firstCr.deadline || '2026-11-05')
+        setDevProgress(firstCr.devProgress ?? 1)
+        setResourceUsed(firstCr.resourceUsed ?? 1)
+        setNote(firstCr.note || '')
+      }
+      return
+    }
+
     const parsed = parseMarkdownToCrSpec(text, defaultSprint, defaultAssignee)
     setTitle(parsed.title)
     setCrCode(parsed.crCode)
@@ -161,11 +208,13 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
     setAssignee(parsed.assignee)
     setBaStatus(parsed.baStatus)
     setDeadline(parsed.deadline)
+    setDevProgress(parsed.devProgress)
+    setResourceUsed(parsed.resourceUsed)
     if (parsed.note) setNote(parsed.note)
     setParsedChecklist(parsed.checklist)
   }
 
-  const handleUploadMdFile = (event) => {
+  const handleUploadMdOrCsvFile = (event) => {
     const file = event.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
@@ -178,26 +227,47 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
     event.target.value = ''
   }
 
+  const handleLoadSprint34CsvSample = () => {
+    applyParsedMarkdown(SAMPLE_SPRINT_34_CSV, 'Sprint_34_Template_BNPL-945.csv')
+    playUiChime('sparkle')
+    toast.success('Đã nạp mẫu CSV Sprint 34 (BNPL-945 & Danh sách Handle by)!')
+  }
+
   const handleLoadSampleFrd = () => {
     const sample = [
-      GENERATE_BA_FRD_TEMPLATE('BNPL-3', 'Tích hợp thông báo nhắc nợ đa kênh (Push / ZNS / SMS) trước kỳ sao kê'),
+      GENERATE_BA_FRD_TEMPLATE('BNPL-945', 'Usage Limit - Monthly 1 time synchronized update for user'),
       '',
-      '## 7. Checklist Triển khai BA & UAT',
-      '- [x] Thống nhất mẫu template ZNS với bộ phận Vận hành & Pháp chế',
-      '- [ ] Đặc tả API truyền biến động số dư kỳ sao kê sang Notification Service',
-      '- [ ] Nghiệm thu UAT các kịch bản fallback từ ZNS sang SMS'
+      '## 7. Checklist Triển khai & Nghiệm thu UAT',
+      '- [x] Kiểm tra cơ chế Idempotency-Key chống ghi đè hạn mức trong cùng tháng',
+      '- [x] Xác nhận cảnh báo 409 Conflict khi user đã đồng bộ trong tháng hiện tại',
+      '- [ ] Nghiệm thu UAT luồng đồng bộ hạn mức với đội Core Payment'
     ].join('\n')
-    applyParsedMarkdown(sample, 'FRD_BNPL-3_MultiChannel_Reminder.md')
-    setNote('CR thuộc kỳ Sprint 34 (22/10 - 05/11), ưu tiên hoàn tất UAT trước ngày 04/11.')
+    applyParsedMarkdown(sample, 'FRD_BNPL-945_Usage_Limit.md')
+    setNote('Đồng bộ hạn mức 1 lần/tháng cho user (Sprint 34: 22/10 - 05/11).')
+  }
+
+  const selectedAssigneesList = String(assignee || '')
+    .split(',')
+    .map(n => n.trim())
+    .filter(Boolean)
+
+  const handleToggleAssigneeChip = (memberName) => {
+    const exists = selectedAssigneesList.some(
+      n => n.toLowerCase() === memberName.toLowerCase()
+    )
+    const next = exists
+      ? selectedAssigneesList.filter(n => n.toLowerCase() !== memberName.toLowerCase())
+      : [...selectedAssigneesList, memberName]
+    setAssignee(next.join(', '))
   }
 
   const handleCreateTicketFromMarkdown = async () => {
     if (!selectedColumnId) {
-      toast.warning('Vui lòng chọn cột (Column) để tạo CR Ticket!')
+      toast.warning('Vui lòng chọn cột chủ đề CR (Column) để tạo Ticket!')
       return
     }
     if (!title || title.trim().length < 3) {
-      toast.warning('Tên CR cần tối thiểu 3 ký tự!')
+      toast.warning('CR Description cần tối thiểu 3 ký tự!')
       return
     }
 
@@ -230,6 +300,8 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         baStatus,
         deadline: deadline || null,
         dueDate: !Number.isNaN(dueDateTimestamp) ? dueDateTimestamp : null,
+        devProgress: Number(devProgress) || 0,
+        resourceUsed: Number(resourceUsed) || 0,
         note: note.trim(),
         labels: [
           { id: 'cr-import', title: `📋 ${crCode.trim() || 'CR'} • FRD`, color: '#0284c7' }
@@ -252,7 +324,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
       }
 
       playUiChime('complete')
-      toast.success(`Đã khởi tạo CR Ticket [${crCode}] kèm tài liệu FRD thành công!`)
+      toast.success(`Đã khởi tạo CR Ticket [${crCode}] thành công!`)
       onClose()
     } catch (error) {
       // Error handled by axios interceptor
@@ -273,27 +345,36 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
           border: `1px solid ${accentColor}55`
         }
       }}>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1, flexWrap: 'wrap', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <DescriptionRoundedIcon sx={{ color: accentColor }} />
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-              Import Markdown / Antigravity Spec thành CR Ticket
+              Import Markdown / CSV Template Sprint thành CR Ticket
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Tự động bóc tách Mã CR, Tên CR, Checklist nghiệm thu và đính kèm file FRD vào thẻ
+              Hỗ trợ cả file .MD (FRD) và file .CSV mẫu Sprint 34 (Ticket ID, CR Description, Status, Handle by, Due date, Dev Progress)
             </Typography>
           </Box>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
           <Button
             component="label"
             size="small"
             variant="contained"
             startIcon={<UploadFileRoundedIcon />}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
-            Tải file .MD / .TXT
-            <input type="file" hidden accept=".md,.markdown,.txt" onChange={handleUploadMdFile} />
+            Tải file .MD / .CSV / .TXT
+            <input type="file" hidden accept=".md,.markdown,.csv,.txt" onChange={handleUploadMdOrCsvFile} />
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="success"
+            startIcon={<TableChartRoundedIcon />}
+            onClick={handleLoadSprint34CsvSample}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
+            Mẫu CSV Sprint 34 (BNPL-945)
           </Button>
           <Button
             size="small"
@@ -301,7 +382,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             startIcon={<AutoFixHighRoundedIcon />}
             onClick={handleLoadSampleFrd}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '10px' }}>
-            Nạp mẫu FRD chuẩn BA
+            Mẫu FRD Markdown
           </Button>
         </Stack>
       </DialogTitle>
@@ -310,26 +391,26 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
-              label="Mã CR (VD: BNPL-1)"
+              label="Ticket ID (VD: BNPL-945)"
               size="small"
               value={crCode}
               onChange={(e) => setCrCode(e.target.value)}
               sx={{ width: { xs: '100%', sm: '180px' } }}
             />
             <TextField
-              label="Tên Change Request (CR Title)"
+              label="CR Description (Tên CR)"
               size="small"
               fullWidth
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Xây dựng luồng xét duyệt hạn mức BNPL..."
+              placeholder="VD: Usage Limit - Monthly 1 time synchronized update for user"
             />
           </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               select
-              label="Cột đích trên Board"
+              label="Column (Chủ đề CR)"
               size="small"
               fullWidth
               value={selectedColumnId}
@@ -340,7 +421,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
             </TextField>
 
             <TextField
-              label="Kỳ Sprint"
+              label="Sprint"
               size="small"
               fullWidth
               value={sprint}
@@ -350,7 +431,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
 
             <TextField
               select
-              label="Trạng thái BA (Status)"
+              label="Status"
               size="small"
               fullWidth
               value={baStatus}
@@ -363,14 +444,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
-              label="Người phụ trách (PIC)"
-              size="small"
-              fullWidth
-              value={assignee}
-              onChange={(e) => setAssignee(e.target.value)}
-            />
-            <TextField
-              label="Deadline (Hạn hoàn thành)"
+              label="Due date for dev"
               type="date"
               size="small"
               fullWidth
@@ -379,32 +453,83 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
               onChange={(e) => setDeadline(e.target.value)}
             />
             <TextField
-              label="Tên file FRD đính kèm"
+              label="Dev Progress (0 → 1)"
+              type="number"
               size="small"
               fullWidth
-              value={uploadedFileName}
-              onChange={(e) => setUploadedFileName(e.target.value)}
+              inputProps={{ step: '0.1', min: 0, max: 100 }}
+              value={devProgress}
+              onChange={(e) => setDevProgress(e.target.value)}
+            />
+            <TextField
+              label="Resource used (Point)"
+              type="number"
+              size="small"
+              fullWidth
+              inputProps={{ step: '0.25', min: 0, max: 100 }}
+              value={resourceUsed}
+              onChange={(e) => setResourceUsed(e.target.value)}
             />
           </Stack>
 
+          <Box sx={{ p: 1.25, borderRadius: '10px', border: '1px dashed rgba(56, 189, 248, 0.35)' }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.75 }}>
+              👤 Handle by (Chọn nhanh thành viên chưa cần tài khoản):
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mb: 1 }}>
+              {teamRoster.map(m => {
+                const isSelected = selectedAssigneesList.some(
+                  n => n.toLowerCase() === m.name.toLowerCase()
+                )
+                return (
+                  <Chip
+                    key={m.name}
+                    label={isSelected ? `✓ ${m.name}` : m.name}
+                    size="small"
+                    color={isSelected ? 'primary' : 'default'}
+                    variant={isSelected ? 'filled' : 'outlined'}
+                    onClick={() => handleToggleAssigneeChip(m.name)}
+                    sx={{ fontWeight: 700, cursor: 'pointer' }}
+                  />
+                )
+              })}
+            </Box>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <TextField
+                label="Handle by"
+                size="small"
+                fullWidth
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value)}
+              />
+              <TextField
+                label="Tên file đính kèm"
+                size="small"
+                fullWidth
+                value={uploadedFileName}
+                onChange={(e) => setUploadedFileName(e.target.value)}
+              />
+            </Stack>
+          </Box>
+
           <TextField
-            label="Note cần thiết (Ghi chú xuất ra báo cáo Excel Sprint)"
+            label="Note (Ghi chú xuất ra báo cáo Excel Sprint)"
             size="small"
             fullWidth
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="VD: Chờ đội Core Banking xác nhận mã lỗi timeout trước ngày 02/11..."
+            placeholder="VD: Đồng bộ hạn mức 1 lần/tháng cho user..."
           />
 
           <TextField
-            label="Nội dung tài liệu Markdown / FRD (Dán trực tiếp hoặc tải từ file .md)"
+            label="Nội dung tài liệu Markdown (.MD) hoặc CSV Template (.CSV)"
             multiline
-            minRows={8}
-            maxRows={14}
+            minRows={7}
+            maxRows={12}
             fullWidth
             value={markdownContent}
             onChange={(e) => applyParsedMarkdown(e.target.value, uploadedFileName)}
-            placeholder="# [BNPL-3] Tiêu đề CR&#10;- Mã CR: BNPL-3&#10;- Kỳ Sprint: Sprint 34&#10;- Deadline: 05/11/2026&#10;&#10;## Quy tắc nghiệp vụ&#10;- [ ] Subtask 1&#10;- [ ] Subtask 2"
+            placeholder="# [BNPL-945] Usage Limit - Monthly 1 time synchronized update for user&#10;- Ticket ID: BNPL-945&#10;- Sprint: Sprint 34&#10;- Handle by: Ho Thao Dieu, Hoang Vinh Son&#10;- Due date for dev: 05/11/2026"
             sx={{
               '& textarea': {
                 fontFamily: 'monospace',
@@ -416,7 +541,7 @@ function ImportMarkdownModal({ open, onClose, accentColor = '#38bdf8' }) {
           {parsedChecklist.length > 0 && (
             <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'action.hover' }}>
               <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.75 }}>
-                Đã phát hiện {parsedChecklist.length} hạng mục Subtask / UAT Checklist từ file Markdown:
+                Đã phát hiện {parsedChecklist.length} hạng mục Subtask / UAT Checklist:
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                 {parsedChecklist.map(item => (

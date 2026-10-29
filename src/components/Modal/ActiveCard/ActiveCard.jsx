@@ -20,6 +20,8 @@ import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded'
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded'
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded'
+import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded'
+import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
@@ -34,6 +36,7 @@ import CardUserGroup from './CardUserGroup'
 import CardDescriptionMdEditor from './CardDescriptionMdEditor'
 import CardActivitySection from './CardActivitySection'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import {
   clearAndHideCurrentActiveCard,
   selectCurrentActiveCard,
@@ -56,7 +59,9 @@ import {
   collectBoardCardsWithColumn,
   downloadAttachedFrdFile,
   exportCardAsFrdMarkdown,
-  getDeadlineStatus
+  getDeadlineStatus,
+  getSavedTeamRoster,
+  saveTeamRoster
 } from '~/utils/excelExporter'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import { playUiChime } from '~/utils/soundEffects'
@@ -64,6 +69,7 @@ import { useConfirm } from 'material-ui-confirm'
 import { cloneDeep } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { toast } from 'react-toastify'
+import { useTranslation } from '~/customHooks/useTranslation'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -87,33 +93,53 @@ const SidebarItem = styled(Box)(({ theme }) => ({
 
 function ActiveCard() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const activeCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentUser = useSelector(selectCurrentUser)
   const board = useSelector(selectCurrentActiveBoard)
   const confirmDeleteCard = useConfirm()
+  const { t } = useTranslation()
 
   const defaultSprint = board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name
 
   const [showCoverInput, setShowCoverInput] = useState(false)
   const [coverUrlInput, setCoverUrlInput] = useState('')
   const [newQuestTitle, setNewQuestTitle] = useState('')
+  const [newRosterMemberName, setNewRosterMemberName] = useState('')
+  const [teamRoster, setTeamRoster] = useState(() => getSavedTeamRoster(board))
 
-  // BA CR Metadata local form states
+  // CR Metadata local form states matching Sprint 34 Excel Template
   const [crCode, setCrCode] = useState('')
   const [sprint, setSprint] = useState(defaultSprint)
   const [assignee, setAssignee] = useState('')
-  const [baStatus, setBaStatus] = useState('In Analysis')
+  const [baStatus, setBaStatus] = useState('Processing')
   const [deadline, setDeadline] = useState('')
+  const [devProgress, setDevProgress] = useState(0)
+  const [resourceUsed, setResourceUsed] = useState(1)
   const [note, setNote] = useState('')
   const [selectedLinkCardId, setSelectedLinkCardId] = useState('')
+
+  useEffect(() => {
+    setTeamRoster(getSavedTeamRoster(board))
+  }, [board])
 
   useEffect(() => {
     if (activeCard) {
       setCrCode(activeCard.crCode || '')
       setSprint(activeCard.sprint || defaultSprint)
-      setAssignee(activeCard.assignee || currentUser?.displayName || '')
-      setBaStatus(activeCard.baStatus || 'In Analysis')
+      setAssignee(activeCard.assignee || '')
+      setBaStatus(activeCard.baStatus || 'Processing')
+      setDevProgress(
+        activeCard.devProgress !== undefined && activeCard.devProgress !== null
+          ? activeCard.devProgress
+          : (['Ready for deploy', 'Deployed', 'Done testing', 'Done'].includes(activeCard.baStatus) ? 1 : 0)
+      )
+      setResourceUsed(
+        activeCard.resourceUsed !== undefined && activeCard.resourceUsed !== null
+          ? activeCard.resourceUsed
+          : 1
+      )
       if (activeCard.deadline) {
         setDeadline(activeCard.deadline)
       } else if (activeCard.dueDate) {
@@ -128,11 +154,19 @@ function ActiveCard() {
       }
       setNote(activeCard.note || '')
     }
-  }, [activeCard, defaultSprint, currentUser])
+  }, [activeCard, defaultSprint])
 
   const handleCloseModal = () => {
     setShowCoverInput(false)
     dispatch(clearAndHideCurrentActiveCard())
+  }
+
+  const handleOpenCrStudio = () => {
+    if (!board?._id || !activeCard?._id) return
+    const targetUrl = `/boards/${board._id}/cr/${activeCard._id}`
+    handleCloseModal()
+    playUiChime('sparkle')
+    navigate(targetUrl)
   }
 
   const callApiUpdateCard = async (updateData) => {
@@ -150,8 +184,45 @@ function ActiveCard() {
     callApiUpdateCard({ description: newDescription })
   }
 
+  const selectedAssigneesList = String(assignee || '')
+    .split(',')
+    .map(n => n.trim())
+    .filter(Boolean)
+
+  const handleToggleRosterAssignee = (memberName) => {
+    playUiChime('sparkle')
+    const exists = selectedAssigneesList.some(
+      n => n.toLowerCase() === memberName.toLowerCase()
+    )
+    const nextList = exists
+      ? selectedAssigneesList.filter(n => n.toLowerCase() !== memberName.toLowerCase())
+      : [...selectedAssigneesList, memberName]
+    setAssignee(nextList.join(', '))
+  }
+
+  const handleAddUnregisteredMemberToRoster = () => {
+    const trimmed = newRosterMemberName.trim()
+    if (!trimmed) return
+    const existsInRoster = teamRoster.some(
+      m => m.name.toLowerCase() === trimmed.toLowerCase()
+    )
+    if (!existsInRoster) {
+      const nextRoster = [...teamRoster, { name: trimmed, resourcePoint: 1 }]
+      setTeamRoster(nextRoster)
+      saveTeamRoster(nextRoster)
+    }
+    if (!selectedAssigneesList.some(n => n.toLowerCase() === trimmed.toLowerCase())) {
+      setAssignee([...selectedAssigneesList, trimmed].join(', '))
+    }
+    setNewRosterMemberName('')
+    playUiChime('complete')
+    toast.success(`Đã gắn người phụ trách "${trimmed}" vào CR!`)
+  }
+
   const onSaveBaCrMetadata = async () => {
     const dueDateTs = deadline ? new Date(`${deadline}T17:00:00`).getTime() : null
+    const parsedDevProgress = Number(devProgress)
+    const parsedResourceUsed = Number(resourceUsed)
     await callApiUpdateCard({
       crCode: crCode.trim(),
       sprint: sprint.trim() || defaultSprint,
@@ -159,7 +230,9 @@ function ActiveCard() {
       baStatus,
       deadline: deadline || null,
       dueDate: !Number.isNaN(dueDateTs) ? dueDateTs : null,
-      isCompleted: baStatus === 'Done',
+      devProgress: !Number.isNaN(parsedDevProgress) ? parsedDevProgress : 0,
+      resourceUsed: !Number.isNaN(parsedResourceUsed) ? parsedResourceUsed : 0,
+      isCompleted: ['Deployed', 'Done testing', 'Done'].includes(baStatus),
       note: note.trim()
     })
     playUiChime('complete')
@@ -223,7 +296,7 @@ function ActiveCard() {
 
   const onInsertBaFrdTemplate = async () => {
     const templateMd = GENERATE_BA_FRD_TEMPLATE(
-      crCode || 'BNPL-1',
+      crCode || 'BNPL-945',
       activeCard?.title || 'Đặc tả Change Request'
     )
     const nextDesc = activeCard?.description
@@ -231,7 +304,7 @@ function ActiveCard() {
       : templateMd
     await callApiUpdateCard({ description: nextDesc })
     playUiChime('sparkle')
-    toast.success('Đã chèn khung đặc tả FRD & Sơ đồ Sequence chuẩn BA!')
+    toast.success('Đã chèn khung đặc tả FRD & Sơ đồ Sequence!')
   }
 
   const onAddLinkedCard = async () => {
@@ -367,7 +440,7 @@ function ActiveCard() {
       sx={{ overflowY: 'auto' }}>
       <Box sx={{
         position: 'relative',
-        width: 980,
+        width: 1020,
         maxWidth: '96vw',
         bgcolor: 'white',
         boxShadow: 24,
@@ -413,6 +486,16 @@ function ActiveCard() {
               value={activeCard?.title || ''}
               onChangedValue={onUpdateCardTitle} />
           </Box>
+          <Button
+            size="small"
+            variant="contained"
+            color="secondary"
+            startIcon={<AccountTreeRoundedIcon />}
+            onClick={handleOpenCrStudio}
+            sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '10px', flexShrink: 0 }}
+          >
+            {t('openCrStudio')}
+          </Button>
           <Chip
             label={deadlineInfo.label}
             size="small"
@@ -427,7 +510,7 @@ function ActiveCard() {
 
         <Grid container spacing={2.5} sx={{ mb: 2 }}>
           <Grid xs={12} sm={8.5}>
-            {/* Business Analyst (BA) Change Request (CR) Metadata Hub */}
+            {/* Change Request (CR) Metadata Hub aligned with Sprint 34 Template */}
             <Box
               sx={{
                 mb: 3,
@@ -441,7 +524,7 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AssignmentOutlinedIcon color="primary" />
                   <Typography sx={{ fontWeight: 800, fontSize: '16px', color: 'primary.main' }}>
-                    Thông tin Change Request (CR) & Theo dõi Tiến độ BA
+                    Thông tin Change Request (CR) • Sprint 34 Template
                   </Typography>
                 </Box>
                 <Button
@@ -458,34 +541,23 @@ function ActiveCard() {
               <Stack spacing={1.5}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
-                    label="Mã CR (VD: BNPL-1)"
+                    label="Ticket ID (VD: BNPL-945)"
                     size="small"
                     value={crCode}
                     onChange={(e) => setCrCode(e.target.value)}
-                    sx={{ width: { xs: '100%', sm: '170px' } }}
+                    sx={{ width: { xs: '100%', sm: '180px' } }}
                   />
                   <TextField
-                    label="Kỳ Sprint (2 tuần)"
+                    label="Sprint (2 tuần)"
                     size="small"
                     value={sprint}
                     onChange={(e) => setSprint(e.target.value)}
                     placeholder="Sprint 34"
-                    sx={{ width: { xs: '100%', sm: '170px' } }}
+                    sx={{ width: { xs: '100%', sm: '160px' } }}
                   />
-                  <TextField
-                    label="Người phụ trách (PIC)"
-                    size="small"
-                    fullWidth
-                    value={assignee}
-                    onChange={(e) => setAssignee(e.target.value)}
-                    placeholder="VD: Thanh Phuc (BA)"
-                  />
-                </Stack>
-
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
                     select
-                    label="Trạng thái BA (Status)"
+                    label="Status"
                     size="small"
                     fullWidth
                     value={baStatus}
@@ -495,9 +567,11 @@ function ActiveCard() {
                       <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                     ))}
                   </TextField>
+                </Stack>
 
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <TextField
-                    label="Deadline hoàn thành"
+                    label="Due date for dev"
                     type="date"
                     size="small"
                     fullWidth
@@ -505,10 +579,92 @@ function ActiveCard() {
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
                   />
+                  <TextField
+                    label="Dev Progress (0 → 1)"
+                    type="number"
+                    size="small"
+                    fullWidth
+                    inputProps={{ step: '0.1', min: 0, max: 100 }}
+                    value={devProgress}
+                    onChange={(e) => setDevProgress(e.target.value)}
+                  />
+                  <TextField
+                    label="Resource used (Point)"
+                    type="number"
+                    size="small"
+                    fullWidth
+                    inputProps={{ step: '0.25', min: 0, max: 100 }}
+                    value={resourceUsed}
+                    onChange={(e) => setResourceUsed(e.target.value)}
+                  />
                 </Stack>
 
+                {/* Handle by (Unregistered Team Roster Multi-Select + Custom Input) */}
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '10px',
+                    border: '1px dashed rgba(56, 189, 248, 0.35)',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.85)'
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 0.75, color: 'primary.main' }}>
+                    👤 Handle by — Chọn nhanh nhân sự phụ trách (Hỗ trợ gắn task trực tiếp chưa cần tài khoản):
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mb: 1.25 }}>
+                    {teamRoster.map((member) => {
+                      const isAssigned = selectedAssigneesList.some(
+                        n => n.toLowerCase() === member.name.toLowerCase()
+                      )
+                      return (
+                        <Chip
+                          key={member.name}
+                          label={isAssigned ? `✓ ${member.name}` : member.name}
+                          size="small"
+                          color={isAssigned ? 'primary' : 'default'}
+                          variant={isAssigned ? 'filled' : 'outlined'}
+                          onClick={() => handleToggleRosterAssignee(member.name)}
+                          sx={{ fontWeight: 700, cursor: 'pointer' }}
+                        />
+                      )
+                    })}
+                  </Box>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <TextField
+                      label="Handle by (Chuỗi xuất ra cột Handle by trên Excel)"
+                      size="small"
+                      fullWidth
+                      value={assignee}
+                      onChange={(e) => setAssignee(e.target.value)}
+                      placeholder="VD: Ho Thao Dieu, Hoang Vinh Son"
+                    />
+                    <TextField
+                      label="Thêm tên nhân sự mới..."
+                      size="small"
+                      value={newRosterMemberName}
+                      onChange={(e) => setNewRosterMemberName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddUnregisteredMemberToRoster()
+                        }
+                      }}
+                      sx={{ minWidth: { xs: '100%', sm: '210px' } }}
+                    />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<PersonAddAlt1RoundedIcon />}
+                      onClick={handleAddUnregisteredMemberToRoster}
+                      sx={{ textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}
+                    >
+                      Gắn thêm
+                    </Button>
+                  </Stack>
+                </Box>
+
                 <TextField
-                  label="Note cần thiết (Ghi chú xuất ra báo cáo Excel Sprint)"
+                  label="Note (Ghi chú xuất ra báo cáo Excel Sprint)"
                   size="small"
                   fullWidth
                   multiline
@@ -534,10 +690,10 @@ function ActiveCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DescriptionOutlinedIcon color="secondary" />
                   <Typography sx={{ fontWeight: 800, fontSize: '16px' }}>
-                    Tài liệu FRD Đính kèm & Liên kết Kiến thức Hệ thống
+                    Tài liệu FRD Đính kèm & Liên kết Kiến thức Hệ thống (Obsidian WikiLinks)
                   </Typography>
                 </Box>
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                   <Button
                     component="label"
                     size="small"
@@ -588,7 +744,7 @@ function ActiveCard() {
                           </Typography>
                         </Box>
                       </Box>
-                      <Stack direction="row" spacing={0.5}>
+                      <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
                         {!String(doc.content || '').startsWith('data:') && (
                           <Button
                             size="small"
@@ -653,7 +809,7 @@ function ActiveCard() {
                     </MenuItem>
                   ))}
                 </TextField>
-                <Button variant="outlined" size="small" onClick={onAddLinkedCard} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                <Button variant="outlined" size="small" onClick={onAddLinkedCard} sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}>
                   Liên kết
                 </Button>
               </Stack>
@@ -693,7 +849,7 @@ function ActiveCard() {
 
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 1, fontSize: '15px' }}>
-                Thành viên tham gia • Members
+                Tài khoản đã đăng ký tham gia thẻ • Registered Members
               </Typography>
               <CardUserGroup
                 cardMemberIds={activeCard?.memberIds}
@@ -762,7 +918,7 @@ function ActiveCard() {
                 <TextField
                   size="small"
                   fullWidth
-                  placeholder="Thêm hạng mục công việc BA hoặc kịch bản nghiệm thu UAT..."
+                  placeholder="Thêm hạng mục công việc hoặc kịch bản nghiệm thu UAT..."
                   value={newQuestTitle}
                   onChange={(e) => setNewQuestTitle(e.target.value)}
                   onKeyDown={(e) => {
@@ -793,7 +949,7 @@ function ActiveCard() {
                   onClick={onInsertBaFrdTemplate}
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
                 >
-                  Chèn khung FRD chuẩn BA
+                  Chèn khung FRD & Sequence
                 </Button>
               </Box>
               <CardDescriptionMdEditor
@@ -821,6 +977,17 @@ function ActiveCard() {
               Thao tác Nhanh • Actions
             </Typography>
             <Stack direction="column" spacing={1}>
+              <SidebarItem
+                className="active"
+                onClick={handleOpenCrStudio}
+                sx={{
+                  bgcolor: 'rgba(56, 189, 248, 0.16)',
+                  border: '1px solid rgba(56, 189, 248, 0.45)'
+                }}
+              >
+                <AccountTreeRoundedIcon fontSize="small" color="primary" />
+                <span>{t('openCrStudio')}</span>
+              </SidebarItem>
               {currentUser?._id && !activeCard?.memberIds?.includes(currentUser._id) &&
                 <SidebarItem
                   className="active"
@@ -855,7 +1022,7 @@ function ActiveCard() {
                 }}
               >
                 <ImageOutlinedIcon fontSize="small" />
-                <span>Ảnh bìa Nhân vật (Cover)</span>
+                <span>Ảnh bìa Thẻ (Cover)</span>
               </SidebarItem>
 
               {showCoverInput &&
@@ -863,7 +1030,7 @@ function ActiveCard() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <SoraBunnyIcon sx={{ fontSize: 16 }} />
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                      Ảnh bìa Sora • Furina • Nahida:
+                      Chọn Ảnh bìa Thẻ CR:
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>

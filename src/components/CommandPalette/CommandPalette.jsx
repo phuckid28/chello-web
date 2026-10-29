@@ -9,6 +9,8 @@ import SearchIcon from '@mui/icons-material/Search'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import MusicNoteRoundedIcon from '@mui/icons-material/MusicNoteRounded'
 import TableViewRoundedIcon from '@mui/icons-material/TableViewRounded'
+import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded'
+import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
@@ -18,8 +20,9 @@ import { useColorScheme } from '@mui/material/styles'
 import { selectCurrentActiveBoard, updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { useTranslation } from '~/customHooks/useTranslation'
 import { PRIMARY_THEMES_LIST } from '~/utils/animeTheme'
-import { exportSprintCrsToExcel } from '~/utils/excelExporter'
+import { exportSprintCrsToExcel, exportSprintCrsToCsv } from '~/utils/excelExporter'
 import { SoraBunnyIcon, SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 import {
   OST_TRACK_CATALOG,
@@ -41,6 +44,7 @@ function CommandPalette() {
   const board = useSelector(selectCurrentActiveBoard)
   const { mode, setMode } = useColorScheme()
   const { themeConfig, changePersona } = usePersonaTheme(board?.theme)
+  const { lang, bilingual, languages, changeLanguage, toggleBilingual } = useTranslation()
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -76,19 +80,33 @@ function CommandPalette() {
   const commands = useMemo(() => {
     const list = []
 
-    // 1. BA Actions & Cards in current active board
+    // 1. Sprint Tools & CR Cards in current active board
     if (board?._id) {
       list.push({
-        id: 'ba-export-excel',
-        category: 'Business Analyst (BA) & Sprint Tools',
+        id: 'sprint-export-excel',
+        category: 'Sprint & Change Request (CR) Tools',
         title: `Xuất File Excel Báo cáo CR (${board?.sprintConfig?.name || 'Sprint 34'})`,
-        subtitle: 'Bao gồm Kỳ Sprint, Bắt đầu/Kết thúc, Ngày cập nhật, Mã CR, Tên CR, PIC, Status, Deadline, Note',
+        subtitle: 'Sprint 34 Template: Start/End date, Update till, Handle by, Resource point, Ticket ID, Status, Dev Progress',
         badge: 'Excel .XLS',
         icon: <TableViewRoundedIcon fontSize="small" color="success" />,
         action: () => {
           exportSprintCrsToExcel(board)
           playUiChime('complete')
           toast.success('Đã xuất file Excel báo cáo CR thành công!')
+        }
+      })
+
+      list.push({
+        id: 'sprint-export-csv',
+        category: 'Sprint & Change Request (CR) Tools',
+        title: `Xuất File CSV Template (${board?.sprintConfig?.name || 'Sprint 34'})`,
+        subtitle: 'Xuất chuẩn định dạng CSV mẫu Sprint 34',
+        badge: 'CSV',
+        icon: <TableViewRoundedIcon fontSize="small" color="info" />,
+        action: () => {
+          exportSprintCrsToCsv(board)
+          playUiChime('complete')
+          toast.success('Đã xuất file CSV báo cáo CR thành công!')
         }
       })
     }
@@ -101,7 +119,7 @@ function CommandPalette() {
               id: `card-${card._id}`,
               category: 'Change Requests (CR) & Cards trên Bảng',
               title: `${card.crCode ? `[${card.crCode}] ` : ''}${card.title}`,
-              subtitle: `Cột: ${col.title} • PIC: ${card.assignee || 'Chưa phân công'}`,
+              subtitle: `Chủ đề: ${col.title} • Handle by: ${card.assignee || 'Chưa phân công'}`,
               badge: card.crCode || 'Mở CR',
               icon: <SoraRibbonIcon fontSize="small" />,
               action: () => {
@@ -110,16 +128,59 @@ function CommandPalette() {
                 playUiChime('sparkle')
               }
             })
+
+            list.push({
+              id: `studio-${card._id}`,
+              category: 'CR Studio & Interactive Flow Simulator',
+              title: `🚀 Mô phỏng CR Studio: ${card.crCode ? `[${card.crCode}] ` : ''}${card.title}`,
+              subtitle: 'Mở trang riêng mô phỏng luồng kỹ thuật, kiểm thử kịch bản & đồ thị Obsidian',
+              badge: 'CR Studio',
+              icon: <AccountTreeRoundedIcon fontSize="small" color="secondary" />,
+              action: () => {
+                playUiChime('sparkle')
+                navigate(`/boards/${board._id}/cr/${card._id}`)
+              }
+            })
           }
         })
       })
     }
 
-    // 2. Character Themes (Sora / Furina / Nahida)
+    // 2. Multilingual & Bilingual Switcher (VI / EN / JA / KO)
+    languages.forEach((l) => {
+      list.push({
+        id: `lang-${l.code}`,
+        category: 'Ngôn ngữ & Chế độ Song ngữ (VI • EN • JA • KO)',
+        title: `${l.flag} Chuyển ngôn ngữ sang: ${l.name}`,
+        subtitle: lang === l.code ? 'Đang sử dụng' : `Switch UI language to ${l.name}`,
+        badge: l.short,
+        icon: <TranslateRoundedIcon fontSize="small" color="primary" />,
+        action: () => {
+          changeLanguage(l.code)
+          playUiChime('sparkle')
+          toast.info(`${l.flag} Language: ${l.name}`)
+        }
+      })
+    })
+
+    list.push({
+      id: 'lang-bilingual-toggle',
+      category: 'Ngôn ngữ & Chế độ Song ngữ (VI • EN • JA • KO)',
+      title: `Chế độ Song ngữ (Bilingual Mode): ${bilingual ? 'Đang BẬT' : 'Đang TẮT'}`,
+      subtitle: 'Hiển thị song song ngôn ngữ đang chọn cùng thuật ngữ gốc',
+      badge: bilingual ? 'ON' : 'OFF',
+      icon: <TranslateRoundedIcon fontSize="small" color="secondary" />,
+      action: () => {
+        toggleBilingual()
+        playUiChime('sparkle')
+      }
+    })
+
+    // 3. Themes (Cosmos / Wind Chime / Sora / Furina / Nahida)
     PRIMARY_THEMES_LIST.forEach((t) => {
       list.push({
         id: `theme-${t.id}`,
-        category: 'Chủ đề Nhân vật (Sora • Furina • Nahida)',
+        category: 'Chủ đề Không gian (Cosmos • Wind Chime • Sora • Furina • Nahida)',
         title: `Chuyển sang chủ đề: ${t.name}`,
         subtitle: t.jpTitle,
         badge: t.element,
@@ -136,12 +197,12 @@ function CommandPalette() {
       })
     })
 
-    // 3. OST Tracks (Toui Sora e, Inori, Tomadoi no Naka, Sinner's Finale, Sumeru)
+    // 4. OST & Ambient Sound Tracks
     OST_TRACK_CATALOG.forEach((track) => {
       list.push({
         id: `ost-${track.id}`,
-        category: 'Nhạc nền OST (Yosuga no Sora • Fontaine • Sumeru)',
-        title: `Phát nhạc: ${track.title}`,
+        category: 'Âm thanh & Nhạc nền (Cosmos • Chuông Gió • OST)',
+        title: `Phát âm thanh: ${track.title}`,
         subtitle: track.subtitle,
         badge: track.character.toUpperCase(),
         icon: <MusicNoteRoundedIcon fontSize="small" sx={{ color: '#f472b6' }} />,
@@ -155,19 +216,19 @@ function CommandPalette() {
     if (isMusicBoxActive()) {
       list.push({
         id: 'ost-stop',
-        category: 'Nhạc nền OST (Yosuga no Sora • Fontaine • Sumeru)',
-        title: 'Tạm dừng nhạc nền OST',
+        category: 'Âm thanh & Nhạc nền (Cosmos • Chuông Gió • OST)',
+        title: 'Tạm dừng phát âm thanh nền',
         subtitle: 'Tắt phát nhạc hiện tại',
         badge: 'Stop',
         icon: <MusicNoteRoundedIcon fontSize="small" color="error" />,
         action: () => {
           stopSoraMusicBox()
-          toast.info('🔇 Đã tạm dừng nhạc nền')
+          toast.info('🔇 Đã tạm dừng âm thanh nền')
         }
       })
     }
 
-    // 4. Color Mode & Navigation
+    // 5. Color Mode & Navigation
     list.push(
       {
         id: 'toggle-color-mode',
@@ -185,7 +246,7 @@ function CommandPalette() {
         id: 'nav-boards',
         category: 'Giao diện & Điều hướng',
         title: 'Về trang Danh sách Bảng (All Boards)',
-        subtitle: 'Quản lý toàn bộ các bảng & mẫu CR kỳ Sprint',
+        subtitle: 'Quản lý toàn bộ các bảng Sprint & CR',
         badge: '/boards',
         icon: <SpaceDashboardIcon fontSize="small" color="primary" />,
         action: () => navigate('/boards')
@@ -219,7 +280,7 @@ function CommandPalette() {
         item.category.toLowerCase().includes(q) ||
         item.badge.toLowerCase().includes(q)
     )
-  }, [board, search, mode, setMode, changePersona, dispatch, navigate])
+  }, [board, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual])
 
   const handleClose = () => setOpen(false)
 
@@ -246,7 +307,7 @@ function CommandPalette() {
           top: '14%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 660,
+          width: 680,
           maxWidth: '94vw',
           maxHeight: '74vh',
           display: 'flex',
@@ -265,7 +326,7 @@ function CommandPalette() {
           <TextField
             fullWidth
             autoFocus
-            placeholder="Tìm Mã CR (VD: BNPL-1), xuất Excel Sprint, đổi theme Sora/Furina/Nahida, phát OST... (↑↓ Enter)"
+            placeholder="Tìm Ticket ID (VD: BNPL-945), mở CR Studio, xuất Excel Sprint, đổi ngôn ngữ VI/EN/JA/KO... (↑↓ Enter)"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -300,7 +361,7 @@ function CommandPalette() {
             <Box sx={{ py: 4, textAlign: 'center' }}>
               <SoraBunnyIcon sx={{ fontSize: 38, mb: 1, opacity: 0.7 }} />
               <Typography variant="body2" color="text.secondary">
-                Không tìm thấy lệnh hoặc mã CR phù hợp.
+                Không tìm thấy lệnh hoặc Ticket ID phù hợp.
               </Typography>
             </Box>
           )}
@@ -350,9 +411,9 @@ function CommandPalette() {
                     borderLeft: isSelected ? `3px solid ${themeConfig.accentColor}` : '3px solid transparent'
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: 1 }}>
                     {cmd.icon}
-                    <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                         {cmd.title}
                       </Typography>
@@ -368,6 +429,7 @@ function CommandPalette() {
                       height: 20,
                       fontSize: '0.68rem',
                       fontWeight: 700,
+                      flexShrink: 0,
                       bgcolor: isSelected ? themeConfig.accentColor : 'rgba(148, 163, 184, 0.18)',
                       color: isSelected ? '#0f172a' : 'text.secondary'
                     }}
@@ -392,7 +454,7 @@ function CommandPalette() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <SoraBunnyIcon sx={{ fontSize: 16 }} />
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              Chello Command Center • BA & Anime Workspace
+              Chella — A clone of &quot;C&quot;onfluence - tr&quot;ELL&quot;o - jir&quot;A&quot;
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
