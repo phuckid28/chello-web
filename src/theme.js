@@ -1,10 +1,11 @@
 import { experimental_extendTheme as extendTheme } from '@mui/material/styles'
 
-const APP_BAR_HEIGHT = '62px'
-const BOARD_BAR_HEIGHT = '62px'
+// Clean-Slate V2 Spatial Architecture: 48px Command Rail + 48px Studio Ribbon = 96px total header
+const APP_BAR_HEIGHT = '50px'
+const BOARD_BAR_HEIGHT = '48px'
 const BOARD_CONTENT_HEIGHT = `calc(100vh - ${APP_BAR_HEIGHT} - ${BOARD_BAR_HEIGHT})`
-const COLUMN_HEADER_HEIGHT = '52px'
-const COLUMN_FOOTER_HEIGHT = '56px'
+const COLUMN_HEADER_HEIGHT = '46px'
+const COLUMN_FOOTER_HEIGHT = '48px'
 
 // Exponential ease-out (impeccable craft-floor: smooth deceleration, never elastic/bounce)
 export const CHELLA_EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)'
@@ -18,11 +19,11 @@ const theme = extendTheme({
     columnFooterHeight: COLUMN_FOOTER_HEIGHT
   },
   typography: {
-    fontFamily: '"Plus Jakarta Sans", "Quicksand", "Noto Sans JP", sans-serif',
-    h1: { letterSpacing: '-0.025em', fontWeight: 800, textWrap: 'balance' },
-    h2: { letterSpacing: '-0.022em', fontWeight: 800, textWrap: 'balance' },
-    h3: { letterSpacing: '-0.018em', fontWeight: 800, textWrap: 'balance' },
-    h4: { letterSpacing: '-0.016em', fontWeight: 800, textWrap: 'balance' },
+    fontFamily: '"Plus Jakarta Sans", "Noto Sans JP", sans-serif',
+    h1: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.025em', fontWeight: 800, textWrap: 'balance' },
+    h2: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.022em', fontWeight: 800, textWrap: 'balance' },
+    h3: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.018em', fontWeight: 800, textWrap: 'balance' },
+    h4: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.016em', fontWeight: 800, textWrap: 'balance' },
     h5: { letterSpacing: '-0.014em', fontWeight: 800, textWrap: 'balance' },
     h6: { letterSpacing: '-0.012em', fontWeight: 800, textWrap: 'balance' }
   },
@@ -36,7 +37,7 @@ const theme = extendTheme({
           main: '#db2777'
         },
         background: {
-          default: '#f8fafc',
+          default: '#f4f6f9',
           paper: '#ffffff'
         }
       }
@@ -50,8 +51,8 @@ const theme = extendTheme({
           main: '#f472b6'
         },
         background: {
-          default: '#0b1120',
-          paper: '#111827'
+          default: '#090c14',
+          paper: '#111623'
         }
       }
     }
@@ -63,7 +64,7 @@ const theme = extendTheme({
           textTransform: 'none',
           fontWeight: 600,
           letterSpacing: '-0.005em',
-          borderRadius: 'var(--chella-radius-control, 9px)',
+          borderRadius: 'var(--chella-radius-control, 8px)',
           borderWidth: '1px',
           transition: `transform 0.18s ${CHELLA_EASE_OUT}, background-color 0.18s ${CHELLA_EASE_OUT}, border-color 0.18s ${CHELLA_EASE_OUT}, box-shadow 0.18s ${CHELLA_EASE_OUT}`,
           '&:hover': {
@@ -109,7 +110,7 @@ const theme = extendTheme({
       styleOverrides: {
         root: {
           fontSize: '0.875rem',
-          borderRadius: 'var(--chella-radius-control, 9px)',
+          borderRadius: 'var(--chella-radius-control, 8px)',
           transition: `border-color 0.18s ${CHELLA_EASE_OUT}, box-shadow 0.18s ${CHELLA_EASE_OUT}`,
           '& fieldset': {
             borderWidth: '1px !important'
@@ -168,7 +169,7 @@ const theme = extendTheme({
         '@keyframes chelloFadeSlideUp': {
           '0%': {
             opacity: 0,
-            transform: 'translateY(10px) scale(0.99)'
+            transform: 'translateY(8px) scale(0.992)'
           },
           '100%': {
             opacity: 1,
@@ -191,7 +192,6 @@ const theme = extendTheme({
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' }
         },
-        // Respect OS-level "reduce motion" preference for every decorative animation
         '@media (prefers-reduced-motion: reduce)': {
           '*, *::before, *::after': {
             animationDuration: '0.01ms !important',
@@ -204,12 +204,12 @@ const theme = extendTheme({
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
           '*::-webkit-scrollbar': {
-            width: '7px',
-            height: '7px'
+            width: '6px',
+            height: '6px'
           },
           '*::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(148, 163, 184, 0.42)',
-            borderRadius: '8px'
+            backgroundColor: 'rgba(148, 163, 184, 0.36)',
+            borderRadius: '6px'
           },
           '*::-webkit-scrollbar-thumb:hover': {
             backgroundColor: 'var(--fx-accent, rgba(56, 189, 248, 0.78))'

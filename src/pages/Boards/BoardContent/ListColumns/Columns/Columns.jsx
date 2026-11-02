@@ -33,7 +33,6 @@ import {
 import { cloneDeep } from 'lodash'
 import { useDispatch, useSelector } from 'react-redux'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
-import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
 import { useTranslation } from '~/customHooks/useTranslation'
 
 function Columns({ column }) {
@@ -145,46 +144,52 @@ function Columns({ column }) {
         className="chella-kanban-column"
         {...listeners}
         sx={{
-          minWidth: '308px',
-          maxWidth: '308px',
+          minWidth: '304px',
+          maxWidth: '304px',
           overflow: 'hidden',
           bgcolor: (theme) => (theme.palette.mode === 'dark'
-            ? 'var(--chella-surface-dark, rgba(15, 23, 42, 0.90))'
-            : 'var(--chella-surface-light, rgba(248, 250, 252, 0.95))'),
-          backdropFilter: 'blur(16px) saturate(150%)',
-          border: '1px solid var(--chella-border, rgba(148, 163, 184, 0.28))',
-          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.20)',
-          ml: 2,
-          borderRadius: '14px',
+            ? '#121826'
+            : '#f1f5f9'),
+          border: (theme) => (theme.palette.mode === 'dark'
+            ? '1px solid rgba(148, 163, 184, 0.16)'
+            : '1px solid rgba(15, 23, 42, 0.09)'),
+          boxShadow: (theme) => (theme.palette.mode === 'dark'
+            ? '0 4px 16px rgba(0, 0, 0, 0.28)'
+            : '0 1px 4px rgba(15, 23, 42, 0.04)'),
+          ml: 1.75,
+          borderRadius: 'var(--chella-radius-card, 12px)',
           height: 'fit-content',
-          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
-          animation: 'chelloFadeSlideUp 0.26s cubic-bezier(0.22, 1, 0.36, 1)',
-          transition: 'border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - 66px)`,
+          animation: 'chelloFadeSlideUp 0.24s cubic-bezier(0.22, 1, 0.36, 1)',
+          transition: 'border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1)',
           '&:hover': {
-            borderColor: 'var(--fx-accent, rgba(56, 189, 248, 0.55))',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.26)'
+            borderColor: 'var(--fx-accent, #38bdf8)'
           }
         }}
       >
-        <Box sx={{
-          height: '2px',
-          width: '100%',
-          background: 'linear-gradient(90deg, var(--fx-accent, #38bdf8) 0%, var(--fx-secondary, #818cf8) 100%)',
-          opacity: 0.85
-        }} />
-
         {/* Column Header (Each Column = 1 CR Topic) */}
         <Box sx={{
           height: (theme) => theme.trello.columnHeaderHeight,
-          px: 1.75,
-          py: 1.25,
+          px: 1.5,
+          py: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 0.75,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          borderBottom: (theme) => (theme.palette.mode === 'dark'
+            ? '1px solid rgba(148, 163, 184, 0.12)'
+            : '1px solid rgba(15, 23, 42, 0.07)')
         }}>
-          <SoraBunnyIcon sx={{ fontSize: 18, flexShrink: 0 }} />
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              bgcolor: 'var(--fx-accent, #38bdf8)',
+              flexShrink: 0
+            }}
+          />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <ToggleFocusInput
               value={column?.title}
@@ -193,17 +198,18 @@ function Columns({ column }) {
             />
           </Box>
           <Chip
-            label={realCardCount}
+            label={String(realCardCount).padStart(2, '0')}
             size="small"
             sx={{
               height: 20,
-              minWidth: 24,
+              minWidth: 26,
               flexShrink: 0,
-              fontSize: '0.7rem',
+              fontFamily: '"JetBrains Mono", Consolas, monospace',
+              fontSize: '0.68rem',
               fontWeight: 800,
               fontVariantNumeric: 'tabular-nums',
-              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(2, 132, 199, 0.12)'),
-              color: 'primary.main'
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.14)' : 'rgba(15, 23, 42, 0.07)'),
+              color: 'text.primary'
             }}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>

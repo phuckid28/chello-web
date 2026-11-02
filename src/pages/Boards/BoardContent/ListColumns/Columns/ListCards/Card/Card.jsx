@@ -13,7 +13,7 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded'
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded'
-import PlayCircleFilledWhiteRoundedIcon from '@mui/icons-material/PlayCircleFilledWhiteRounded'
+import NorthEastRoundedIcon from '@mui/icons-material/NorthEastRounded'
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -47,7 +47,7 @@ function Card({ card }) {
     transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.55 : undefined,
-    border: isDragging ? '1px solid #7dd3fc' : undefined
+    border: isDragging ? '1px solid #38bdf8' : undefined
   }
 
   const checklistTotal = card?.checklist?.length || 0
@@ -84,8 +84,13 @@ function Card({ card }) {
       ref={setNodeRef} style={dndKitCardStyle} {...attributes} {...listeners}
       sx={{
         cursor: 'pointer',
-        borderRadius: 'var(--chella-radius-card, 11px)',
-        boxShadow: card?.FE_PlaceholderCard ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.12)',
+        borderRadius: 'var(--chella-radius-card, 10px)',
+        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#171f30' : '#ffffff'),
+        boxShadow: card?.FE_PlaceholderCard
+          ? 'none'
+          : (theme) => (theme.palette.mode === 'dark'
+            ? '0 1px 3px rgba(0, 0, 0, 0.35)'
+            : '0 1px 2px rgba(15, 23, 42, 0.06)'),
         overflow: 'hidden',
         height: card?.FE_PlaceholderCard ? '0px' : 'unset',
         pointerEvents: card?.FE_PlaceholderCard ? 'none' : 'unset',
@@ -93,92 +98,113 @@ function Card({ card }) {
           ? '0px solid transparent'
           : deadlineInfo.code === 'overdue'
             ? '1.5px solid rgba(239, 68, 68, 0.65)'
-            : '1px solid rgba(148, 163, 184, 0.22)',
-        transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease',
+            : (theme) => (theme.palette.mode === 'dark'
+              ? '1px solid rgba(148, 163, 184, 0.16)'
+              : '1px solid rgba(15, 23, 42, 0.09)'),
+        transition: 'transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s ease',
         '& .card-cover-img': {
-          transition: 'transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)'
+          transition: 'transform 0.36s cubic-bezier(0.22, 1, 0.36, 1)'
         },
         '&:hover': {
-          transform: 'translateY(-2px)',
+          transform: 'translateY(-1.5px)',
           borderColor: 'var(--fx-accent, #38bdf8)',
-          boxShadow: '0 8px 20px -4px rgba(15, 23, 42, 0.24)',
+          boxShadow: '0 6px 16px -4px rgba(15, 23, 42, 0.18)',
           '& .card-cover-img': {
-            transform: 'scale(1.04)'
+            transform: 'scale(1.03)'
           }
         }
       }}
     >
       {coverUrl && (
-        <Box sx={{ overflow: 'hidden', height: 136 }}>
+        <Box sx={{ overflow: 'hidden', height: 112 }}>
           <CardMedia
             className='card-cover-img'
             component='img'
-            sx={{ height: 136, width: '100%', objectFit: 'cover' }}
+            sx={{ height: 112, width: '100%', objectFit: 'cover' }}
             image={coverUrl}
           />
         </Box>
       )}
-      <CardContent sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5, mb: 0.75 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+      <CardContent sx={{ p: 1.35, '&:last-child': { p: 1.35 } }}>
+        {/* Precision Ledger Header: Ticket ID + Status Dot + Studio Link */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5, mb: 0.75 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
+            {card?.crCode && (
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: '"JetBrains Mono", Consolas, monospace',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  color: 'text.secondary',
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                {card.crCode}
+              </Typography>
+            )}
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.45,
+                px: 0.7,
+                py: 0.15,
+                borderRadius: '5px',
+                bgcolor: `${statusOpt.color}18`
+              }}
+            >
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: statusOpt.color }} />
+              <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: statusOpt.color, lineHeight: 1.2 }}>
+                {statusOpt.value}
+              </Typography>
+            </Box>
             {card?.priority && card.priority !== DEFAULT_PRIORITY && (
               <Tooltip title={`Priority: ${priorityOpt.label}`}>
-                <Box component="span" sx={{ fontSize: '0.8rem', lineHeight: 1, cursor: 'default' }}>{priorityOpt.icon}</Box>
+                <Box component="span" sx={{ fontSize: '0.74rem', lineHeight: 1 }}>{priorityOpt.icon}</Box>
               </Tooltip>
             )}
-            {card?.crCode && (
-              <Chip
-                label={card.crCode}
-                size="small"
-                sx={{
-                  height: '20px',
-                  fontFamily: 'monospace',
-                  fontSize: '0.7rem',
-                  fontWeight: 800,
-                  color: '#38bdf8',
-                  bgcolor: 'rgba(56, 189, 248, 0.16)',
-                  border: '1px solid rgba(56, 189, 248, 0.45)'
-                }}
-              />
-            )}
-            <Chip
-              label={statusOpt.value}
-              size="small"
-              sx={{
-                height: '20px',
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                color: statusOpt.color,
-                bgcolor: `${statusOpt.color}1f`
-              }}
-            />
           </Box>
 
           <Tooltip title={tPrimary('openCrStudioTooltip')}>
-            <Chip
-              icon={<PlayCircleFilledWhiteRoundedIcon sx={{ fontSize: '13px !important' }} />}
-              label="Studio"
-              size="small"
-              color="info"
-              variant="outlined"
+            <Box
+              component="span"
               onClick={handleOpenCrStudio}
-              clickable
-              sx={{ height: '20px', fontSize: '0.64rem', fontWeight: 800 }}
-            />
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.2,
+                px: 0.65,
+                py: 0.15,
+                borderRadius: '5px',
+                fontFamily: '"JetBrains Mono", Consolas, monospace',
+                fontSize: '0.62rem',
+                fontWeight: 800,
+                color: 'primary.main',
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover'
+                }
+              }}
+            >
+              Studio <NorthEastRoundedIcon sx={{ fontSize: 11 }} />
+            </Box>
           </Tooltip>
         </Box>
 
         {!!card?.labels?.length && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.85 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.4, mb: 0.75 }}>
             {card.labels.map((lbl) => (
               <Chip
                 key={lbl.id}
                 label={lbl.title}
                 size="small"
                 sx={{
-                  height: '19px',
+                  height: '18px',
                   maxWidth: '100%',
-                  fontSize: '0.65rem',
+                  fontSize: '0.62rem',
                   fontWeight: 700,
                   color: 'white',
                   bgcolor: lbl.color || '#0284c7'
@@ -188,43 +214,60 @@ function Card({ card }) {
           </Box>
         )}
 
-        <Typography sx={{ fontWeight: 600, lineHeight: 1.38, wordBreak: 'break-word' }}>
+        <Typography sx={{ fontWeight: 600, fontSize: '0.84rem', lineHeight: 1.4, wordBreak: 'break-word' }}>
           {card?.title}
         </Typography>
 
-        {card?.assignee && (
-          <Typography
-            variant="caption"
-            sx={{
-              display: 'block',
-              mt: 0.6,
-              color: 'text.secondary',
-              fontWeight: 700,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            👤 {card.assignee}
-          </Typography>
-        )}
-
-        <Box sx={{ mt: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-              Dev Progress: {devPercent}%
+        <Box sx={{ mt: 1.1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.35 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.66rem',
+                color: 'text.secondary',
+                fontWeight: 600,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '58%'
+              }}
+            >
+              {card?.assignee || 'Unassigned'}
             </Typography>
-            {resourceUsed > 0 && (
-              <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-                Res: {resourceUsed}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              {resourceUsed > 0 && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", Consolas, monospace',
+                    fontSize: '0.64rem',
+                    color: '#10b981',
+                    fontWeight: 800,
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
+                >
+                  {resourceUsed}pt
+                </Typography>
+              )}
+              <Typography
+                variant="caption"
+                sx={{
+                  fontFamily: '"JetBrains Mono", Consolas, monospace',
+                  fontSize: '0.65rem',
+                  color: 'text.primary',
+                  fontWeight: 800,
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                {devPercent}%
               </Typography>
-            )}
+            </Box>
           </Box>
           <LinearProgress
             variant="determinate"
             value={devPercent}
             sx={{
-              height: 4,
+              height: 3,
               borderRadius: 2,
               bgcolor: 'action.hover',
               '& .MuiLinearProgress-bar': {
@@ -237,57 +280,69 @@ function Card({ card }) {
         </Box>
       </CardContent>
 
-      <CardActions sx={{ p: '0 10px 10px 10px', flexWrap: 'wrap', gap: 0.5 }}>
-        {deadlineInfo.code !== 'none' && (
-          <Chip
-            icon={<AccessTimeRoundedIcon sx={{ fontSize: '13px !important', color: `${deadlineInfo.color} !important` }} />}
-            label={deadlineInfo.shortLabel}
-            size="small"
-            sx={{
-              height: '21px',
-              fontSize: '0.66rem',
-              fontWeight: 700,
-              color: deadlineInfo.color,
-              bgcolor: deadlineInfo.bgColor,
-              border: `1px solid ${deadlineInfo.color}55`
-            }}
-          />
-        )}
-        {frdCount > 0 && (
-          <Chip
-            icon={<DescriptionOutlinedIcon sx={{ fontSize: '13px !important' }} />}
-            label={`${frdCount} FRD`}
-            size="small"
-            color="info"
-            variant="outlined"
-            sx={{ height: '21px', fontSize: '0.66rem', fontWeight: 700 }}
-          />
-        )}
-        {linkedCount > 0 && (
-          <Chip
-            icon={<LinkRoundedIcon sx={{ fontSize: '13px !important' }} />}
-            label={linkedCount}
-            size="small"
-            variant="outlined"
-            sx={{ height: '21px', fontSize: '0.66rem', fontWeight: 700 }}
-          />
-        )}
-        {checklistTotal > 0 && (
-          <Button
-            size="small"
-            color={checklistDone === checklistTotal ? 'success' : 'primary'}
-            startIcon={<FactCheckOutlinedIcon />}
-            sx={{ minWidth: 'unset', px: 0.6, py: 0.2, fontSize: '0.7rem' }}
-          >
-            {checklistDone}/{checklistTotal}
-          </Button>
-        )}
-        {!!card?.comments?.length && (
-          <Button size="small" startIcon={<CommentIcon />} sx={{ minWidth: 'unset', px: 0.6, py: 0.2, fontSize: '0.7rem' }}>
-            {card?.comments?.length}
-          </Button>
-        )}
-      </CardActions>
+      {(deadlineInfo.code !== 'none' || frdCount > 0 || linkedCount > 0 || checklistTotal > 0 || !!card?.comments?.length) && (
+        <CardActions
+          sx={{
+            px: 1.35,
+            py: 0.75,
+            flexWrap: 'wrap',
+            gap: 0.5,
+            borderTop: (theme) => (theme.palette.mode === 'dark'
+              ? '1px solid rgba(148, 163, 184, 0.10)'
+              : '1px solid rgba(15, 23, 42, 0.06)')
+          }}
+        >
+          {deadlineInfo.code !== 'none' && (
+            <Chip
+              icon={<AccessTimeRoundedIcon sx={{ fontSize: '12px !important', color: `${deadlineInfo.color} !important` }} />}
+              label={deadlineInfo.shortLabel}
+              size="small"
+              sx={{
+                height: '19px',
+                fontSize: '0.64rem',
+                fontWeight: 700,
+                color: deadlineInfo.color,
+                bgcolor: deadlineInfo.bgColor,
+                border: `1px solid ${deadlineInfo.color}44`
+              }}
+            />
+          )}
+          {frdCount > 0 && (
+            <Chip
+              icon={<DescriptionOutlinedIcon sx={{ fontSize: '12px !important' }} />}
+              label={`${frdCount} FRD`}
+              size="small"
+              color="info"
+              variant="outlined"
+              sx={{ height: '19px', fontSize: '0.64rem', fontWeight: 700 }}
+            />
+          )}
+          {linkedCount > 0 && (
+            <Chip
+              icon={<LinkRoundedIcon sx={{ fontSize: '12px !important' }} />}
+              label={linkedCount}
+              size="small"
+              variant="outlined"
+              sx={{ height: '19px', fontSize: '0.64rem', fontWeight: 700 }}
+            />
+          )}
+          {checklistTotal > 0 && (
+            <Button
+              size="small"
+              color={checklistDone === checklistTotal ? 'success' : 'primary'}
+              startIcon={<FactCheckOutlinedIcon />}
+              sx={{ minWidth: 'unset', px: 0.5, py: 0.1, fontSize: '0.68rem', fontVariantNumeric: 'tabular-nums' }}
+            >
+              {checklistDone}/{checklistTotal}
+            </Button>
+          )}
+          {!!card?.comments?.length && (
+            <Button size="small" startIcon={<CommentIcon />} sx={{ minWidth: 'unset', px: 0.5, py: 0.1, fontSize: '0.68rem', fontVariantNumeric: 'tabular-nums' }}>
+              {card?.comments?.length}
+            </Button>
+          )}
+        </CardActions>
+      )}
     </MuiCard>
   )
 }

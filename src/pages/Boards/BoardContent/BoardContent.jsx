@@ -1,4 +1,6 @@
 import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Chip from '@mui/material/Chip'
 import ListColumns from './ListColumns/ListColumns'
 import {
   DndContext,
@@ -24,7 +26,6 @@ import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { applyFiltersToColumns } from '~/utils/crFilters'
 import ThemedLoader from '~/components/Loading/ThemedLoader'
 
-// Secondary views are code-split so the Kanban board loads faster
 const BoardAnalyticsView = lazy(() => import('./BoardAnalyticsView'))
 const ObsidianGraphView = lazy(() => import('./ObsidianGraphView'))
 const TimelineView = lazy(() => import('./TimelineView'))
@@ -40,16 +41,6 @@ const ACTIVE_DRAG_ITEM_TYPE = {
   CARD: 'ACTIVE_DRAG_ITEM_TYPE_CARD'
 }
 
-const FLOATING_PARTICLES = [
-  { left: '6%', top: '18%', delay: '0s', duration: '6.2s' },
-  { left: '19%', top: '76%', delay: '1.2s', duration: '7.5s' },
-  { left: '35%', top: '24%', delay: '2.1s', duration: '6.9s' },
-  { left: '52%', top: '14%', delay: '0.6s', duration: '7.8s' },
-  { left: '68%', top: '70%', delay: '1.6s', duration: '8.2s' },
-  { left: '83%', top: '22%', delay: '2.8s', duration: '6.6s' },
-  { left: '93%', top: '58%', delay: '1.1s', duration: '7.2s' }
-]
-
 function BoardContent({
   board,
   filters,
@@ -64,6 +55,7 @@ function BoardContent({
   const sensors = useSensors(mouseSensor, touchSensor)
 
   const [orderedColumns, setOrderedColumns] = useState([])
+  const [canvasMode, setCanvasMode] = useState('sheet') // 'sheet' (Framed Sheet V2) | 'art' (Full Art Canvas)
 
   const [activeDragItemId, setActiveDragItemId] = useState(null)
   const [activeDragItemType, setActiveDragItemType] = useState(null)
@@ -326,7 +318,6 @@ function BoardContent({
     return lastOverId.current ? [{ id: lastOverId.current }] : []
   }, [activeDragItemType, orderedColumns])
 
-  // Filters run on the live DnD state so drag & drop stays consistent while a filter is active
   const displayedColumns = useMemo(
     () => applyFiltersToColumns(orderedColumns, filters),
     [orderedColumns, filters]
@@ -339,6 +330,8 @@ function BoardContent({
     return <ListColumns columns={displayedColumns} />
   }
 
+  const isSheetMode = canvasMode === 'sheet'
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -348,45 +341,164 @@ function BoardContent({
       sensors={sensors}
       collisionDetection={collisionDetectionStrategy}
     >
-      <Box sx={{
-        position: 'relative',
-        overflow: 'hidden',
-        backgroundImage: (theme) => `${
-          theme.palette.mode === 'dark' ? themeConfig.boardOverlayDark : themeConfig.boardOverlayLight
-        }, url(${themeConfig.heroImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        width: '100%',
-        height: (theme) => theme.trello.boardContentHeight,
-        display: 'flex',
-        p: '12px 0'
-      }}>
-        {/* Ambient Anime Floating Particles */}
-        {FLOATING_PARTICLES.map((p, idx) => (
+      {/* Clean-Slate V2 Outer Architectural Frame */}
+      <Box
+        sx={{
+          width: '100%',
+          height: (theme) => theme.trello.boardContentHeight,
+          bgcolor: (theme) => (theme.palette.mode === 'dark'
+            ? 'var(--chella-ground-dark, #090c14)'
+            : 'var(--chella-ground-light, #eef2f6)'),
+          p: { xs: '6px', md: '10px 14px 12px 14px' },
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Inset Framed Sheet Canvas (taste-skill Framed Sheet + Achromatic Ledger Architecture) */}
+        <Box
+          sx={{
+            position: 'relative',
+            flex: 1,
+            width: '100%',
+            height: '100%',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            border: (theme) => (theme.palette.mode === 'dark'
+              ? '1px solid rgba(148, 163, 184, 0.16)'
+              : '1px solid rgba(15, 23, 42, 0.10)'),
+            boxShadow: (theme) => (theme.palette.mode === 'dark'
+              ? '0 12px 36px rgba(0, 0, 0, 0.45)'
+              : '0 4px 20px rgba(15, 23, 42, 0.05)'),
+            bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#0c101b' : '#f8fafc'),
+            backgroundImage: (theme) => {
+              if (!isSheetMode) {
+                return `${theme.palette.mode === 'dark' ? themeConfig.boardOverlayDark : themeConfig.boardOverlayLight}, url(${themeConfig.heroImage})`
+              }
+              return theme.palette.mode === 'dark'
+                ? 'radial-gradient(rgba(148, 163, 184, 0.10) 1px, transparent 1px)'
+                : 'radial-gradient(rgba(15, 23, 42, 0.07) 1px, transparent 1px)'
+            },
+            backgroundSize: isSheetMode ? '20px 20px' : 'cover',
+            backgroundPosition: 'center'
+          }}
+        >
+          {/* Curated Art-Direction Gallery Strip (Separates Artwork from Working Text!) */}
           <Box
-            key={idx}
             sx={{
-              position: 'absolute',
-              left: p.left,
-              top: p.top,
-              fontSize: '1.25rem',
-              pointerEvents: 'none',
-              userSelect: 'none',
-              zIndex: 0,
-              animation: `chelloFloat ${p.duration} ease-in-out ${p.delay} infinite`
+              height: '46px',
+              flexShrink: 0,
+              px: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              borderBottom: (theme) => (theme.palette.mode === 'dark'
+                ? '1px solid rgba(148, 163, 184, 0.14)'
+                : '1px solid rgba(15, 23, 42, 0.08)'),
+              background: (theme) => (theme.palette.mode === 'dark'
+                ? `linear-gradient(90deg, #0d121f 0%, #111827 58%, rgba(17, 24, 39, 0.35) 100%), url(${themeConfig.heroImage})`
+                : `linear-gradient(90deg, #ffffff 0%, #f8fafc 58%, rgba(248, 250, 252, 0.35) 100%), url(${themeConfig.heroImage})`),
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 32%'
             }}
           >
-            {themeConfig.particleSymbols[idx % themeConfig.particleSymbols.length]}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, overflow: 'hidden' }}>
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: '"JetBrains Mono", Consolas, monospace',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.12em',
+                  px: 0.85,
+                  py: 0.25,
+                  borderRadius: '5px',
+                  color: themeConfig.accentColor,
+                  bgcolor: 'rgba(15, 23, 42, 0.82)',
+                  flexShrink: 0,
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                {themeConfig.chapterIndex || '03'} / {(themeConfig.styleArchetype || 'ledger').toUpperCase()}
+              </Typography>
+
+              <Typography
+                component="span"
+                sx={{
+                  display: { xs: 'none', md: 'inline' },
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  flexShrink: 0
+                }}
+              >
+                {themeConfig.jpTitle}
+              </Typography>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: { xs: 'none', lg: 'inline' },
+                  fontStyle: 'italic',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {themeConfig.quote}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
+              <Chip
+                size="small"
+                label={isSheetMode ? 'Canvas: Clean Sheet' : 'Canvas: Full Art'}
+                onClick={() => setCanvasMode(isSheetMode ? 'art' : 'sheet')}
+                clickable
+                sx={{
+                  height: 22,
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  fontFamily: '"JetBrains Mono", Consolas, monospace',
+                  color: '#f8fafc',
+                  bgcolor: 'rgba(15, 23, 42, 0.78)',
+                  border: `1px solid ${themeConfig.accentColor}`,
+                  '&:hover': {
+                    bgcolor: 'rgba(15, 23, 42, 0.92)'
+                  }
+                }}
+              />
+            </Box>
           </Box>
-        ))}
 
-        <Box key={boardViewMode} sx={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%', height: '100%', animation: 'fxViewSwap 0.36s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-          <Suspense fallback={<ViewFallback />}>
-            {renderActiveView()}
-          </Suspense>
+          {/* Main Isolated Workspace Viewport */}
+          <Box
+            key={boardViewMode}
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              flex: 1,
+              width: '100%',
+              minHeight: 0,
+              pt: '10px',
+              pb: '6px',
+              animation: 'fxViewSwap 0.28s cubic-bezier(0.22, 1, 0.36, 1)'
+            }}
+          >
+            <Suspense fallback={<ViewFallback />}>
+              {renderActiveView()}
+            </Suspense>
+          </Box>
+
+          <CompanionHud personaKey={personaKey} themeConfig={themeConfig} sprintName={board?.sprintConfig?.name || 'Sprint'} />
         </Box>
-
-        <CompanionHud personaKey={personaKey} themeConfig={themeConfig} sprintName={board?.sprintConfig?.name || 'Sprint'} />
 
         <DragOverlay dropAnimation={CustomDropAnimation}>
           {(!activeDragItemType) && null}

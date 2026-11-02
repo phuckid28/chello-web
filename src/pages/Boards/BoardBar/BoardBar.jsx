@@ -158,9 +158,8 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
       paddingX: 2,
       overflowX: 'auto',
       overflowY: 'hidden',
-      background: (theme) => (theme.palette.mode === 'dark' ? themeConfig.boardBarBgDark : themeConfig.boardBarBgLight),
-      backdropFilter: 'blur(14px)',
-      borderBottom: `1px solid ${themeConfig.columnBorder}`,
+      background: (theme) => (theme.palette.mode === 'dark' ? '#0d121f' : '#131c2e'),
+      borderBottom: '1px solid rgba(148, 163, 184, 0.16)',
       '&::-webkit-scrollbar-track': { m: 2 }
     }}>
       <ImportMarkdownModal open={openImportMdModal} onClose={() => setOpenImportMdModal(false)} accentColor={themeConfig.accentColor} />

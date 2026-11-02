@@ -115,10 +115,10 @@ function AppBar({ boardTheme }) {
       overflowX: 'auto',
       overflowY: 'hidden',
       background: (theme) => (
-        theme.palette.mode === 'dark' ? themeConfig.appBarBgDark : themeConfig.appBarBgLight
+        theme.palette.mode === 'dark' ? '#090c14' : '#0f172a'
       ),
-      borderBottom: `1px solid ${themeConfig.columnBorder}`,
-      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.28)',
+      borderBottom: '1px solid rgba(148, 163, 184, 0.18)',
+      boxShadow: 'none',
       '&::-webkit-scrollbar-track': { m: 2 }
     }}>
       <CommandPalette />

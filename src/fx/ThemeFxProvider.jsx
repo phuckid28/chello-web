@@ -33,6 +33,10 @@ function ThemeFxProvider() {
   useEffect(() => {
     const root = document.documentElement
     const tokens = theme.surfaceTokens || {}
+    const editorialArchetypes = ['framed-sheet', 'editorial-greeting', 'accent-ladder']
+    const displayFont = editorialArchetypes.includes(theme.styleArchetype)
+      ? '"Instrument Serif", "Noto Serif JP", "Plus Jakarta Sans", serif'
+      : '"Plus Jakarta Sans", "Noto Sans JP", sans-serif'
     root.dataset.fxTheme = key
     root.dataset.chellaArchetype = theme.styleArchetype || 'achromatic-ledger'
     root.dataset.fxCursor = cursorOn ? 'on' : 'off'
@@ -40,15 +44,16 @@ function ThemeFxProvider() {
     root.style.setProperty('--fx-cursor-pointer', cursorValues.pointerCursor)
     root.style.setProperty('--fx-accent', theme.accentColor)
     root.style.setProperty('--fx-secondary', theme.secondaryAccent)
+    root.style.setProperty('--chella-font-display', displayFont)
     root.style.setProperty('--chella-surface-light', theme.columnBgLight)
     root.style.setProperty('--chella-surface-dark', theme.columnBgDark)
     root.style.setProperty('--chella-border', theme.columnBorder)
-    root.style.setProperty('--chella-ground-light', tokens.groundLight || '#f8fafc')
-    root.style.setProperty('--chella-ground-dark', tokens.groundDark || '#0b1120')
+    root.style.setProperty('--chella-ground-light', tokens.groundLight || '#f4f6f9')
+    root.style.setProperty('--chella-ground-dark', tokens.groundDark || '#090c14')
     root.style.setProperty('--chella-raised-light', tokens.raisedLight || '#ffffff')
-    root.style.setProperty('--chella-raised-dark', tokens.raisedDark || '#131c31')
-    root.style.setProperty('--chella-radius-card', tokens.cardRadius || '12px')
-    root.style.setProperty('--chella-radius-control', tokens.controlRadius || '9px')
+    root.style.setProperty('--chella-raised-dark', tokens.raisedDark || '#111623')
+    root.style.setProperty('--chella-radius-card', tokens.cardRadius || '10px')
+    root.style.setProperty('--chella-radius-control', tokens.controlRadius || '8px')
     return () => { root.dataset.fxCursor = 'off' }
   }, [key, cursorOn, cursorValues, theme])
 
