@@ -50,7 +50,7 @@ function TreeNode({ node, depth, selectedId, onSelect, onAddChild, addChildLabel
         </IconButton>
         <Box component="span" sx={{ fontSize: 15, flexShrink: 0 }}>{page.icon || '📄'}</Box>
         <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontWeight: 'inherit' }}>{page.title}</Typography>
-        <Tooltip title={addChildLabel}>
+        {onAddChild && <Tooltip title={addChildLabel}>
           <IconButton
             className="tree-add"
             size="small"
@@ -62,7 +62,7 @@ function TreeNode({ node, depth, selectedId, onSelect, onAddChild, addChildLabel
           >
             <AddRoundedIcon sx={{ fontSize: 16 }} />
           </IconButton>
-        </Tooltip>
+        </Tooltip>}
       </Box>
       {isOpen && children.map(child => (
         <TreeNode
@@ -82,6 +82,7 @@ function TreeNode({ node, depth, selectedId, onSelect, onAddChild, addChildLabel
 }
 
 // Confluence-like page tree with instant search across titles, tags and content
+// `onCreate` is omitted for read-only roles (commenter / viewer) → creation controls are hidden
 function PageTree({ pages, selectedId, onSelect, onCreate, labels }) {
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState({})
@@ -96,9 +97,11 @@ function PageTree({ pages, selectedId, onSelect, onCreate, labels }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', minHeight: 0 }}>
-      <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => onCreate(null)} sx={{ fontWeight: 800 }}>
-        {labels.newPage}
-      </Button>
+      {onCreate && (
+        <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => onCreate(null)} sx={{ fontWeight: 800 }}>
+          {labels.newPage}
+        </Button>
+      )}
       <TextField
         size="small"
         placeholder={labels.searchPages}

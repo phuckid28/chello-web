@@ -34,14 +34,18 @@ import { cloneDeep } from 'lodash'
 import { useDispatch, useSelector } from 'react-redux'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { useCan } from '~/customHooks/useCan'
 
 function Columns({ column }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
   const { tPrimary } = useTranslation()
+  // v7 roles: commenter / viewer can read the board but not reorder, rename or add/delete
+  const canEdit = useCan('board:edit')
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
-    data: { ...column }
+    data: { ...column },
+    disabled: !canEdit
   })
 
   const dndKitColumnStyle = {
@@ -195,6 +199,7 @@ function Columns({ column }) {
               value={column?.title}
               onChangedValue={onUpdateColumnTitle}
               data-no-dnd="true"
+              InputProps={{ readOnly: !canEdit }}
             />
           </Box>
           <Chip
@@ -213,7 +218,7 @@ function Columns({ column }) {
             }}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <Tooltip title={tPrimary('moreOptionsTooltip')}>
+            {canEdit && <Tooltip title={tPrimary('moreOptionsTooltip')}>
               <ExpandMoreIcon
                 sx={{ color: 'text.primary', cursor: 'pointer' }}
                 id="basic-column-dropdown"
@@ -222,7 +227,7 @@ function Columns({ column }) {
                 aria-expanded={open ? 'true' : undefined}
                 onClick={handleClick}
               />
-            </Tooltip>
+            </Tooltip>}
             <Menu
               id="basic-menu-column-dropdown"
               anchorEl={anchorEl}
@@ -296,17 +301,22 @@ function Columns({ column }) {
               justifyContent: 'space-between',
               gap: 1
             }}>
-              <Button
-                size="small"
-                startIcon={<AddCardIcon />}
-                onClick={toggleOpenNewCardForm}
-                sx={{ textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-              >
-                {tPrimary('addNewCrCard')}
-              </Button>
-              <Tooltip title='Drag to move topic'>
-                <DragHandleIcon sx={{ cursor: 'pointer', flexShrink: 0 }} />
+              <Tooltip title={canEdit ? tPrimary('addNewCrCard') : tPrimary('v7NoPermissionEdit')}>
+                <span>
+                  <Button
+                    size="small"
+                    startIcon={<AddCardIcon />}
+                    onClick={toggleOpenNewCardForm}
+                    disabled={!canEdit}
+                    sx={{ textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  >
+                    {tPrimary('addNewCrCard')}
+                  </Button>
+                </span>
               </Tooltip>
+              {canEdit && <Tooltip title='Drag to move topic'>
+                <DragHandleIcon sx={{ cursor: 'pointer', flexShrink: 0 }} />
+              </Tooltip>}
             </Box>
             : <Box sx={{
               height: '100%',

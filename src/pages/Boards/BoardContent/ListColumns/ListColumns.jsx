@@ -16,11 +16,13 @@ import {
 import { cloneDeep } from 'lodash'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { useCan } from '~/customHooks/useCan'
 
 function ListColumns({ columns }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
   const { tPrimary } = useTranslation()
+  const canEdit = useCan('board:edit')
 
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
   const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
@@ -68,8 +70,8 @@ function ListColumns({ columns }) {
         {columns?.map(column =>
           <Columns key={column._id} column={column} />)}
 
-        {/* Box add new CR Topic column */}
-        {!openNewColumnForm
+        {/* Box add new CR Topic column (hidden for commenter / viewer roles) */}
+        {canEdit && (!openNewColumnForm
           ? <Box onClick={toggleOpenNewColumnForm} sx={{
             minWidth: '260px',
             maxWidth: '260px',
@@ -166,7 +168,7 @@ function ListColumns({ columns }) {
               />
             </Box>
           </Box>
-        }
+        )}
       </Box>
     </SortableContext>
   )
