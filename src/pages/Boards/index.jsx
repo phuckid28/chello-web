@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import AppBar from '~/components/AppBar/AppBar'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
-import LoadingButton from '~/components/Loading/LoadingButton'
 import { runWithReveal } from '~/fx/themeReveal'
 import { fxBurst } from '~/fx/fxEvents'
 import Container from '@mui/material/Container'
@@ -13,34 +12,20 @@ import Divider from '@mui/material/Divider'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import ArrowRightIcon from '@mui/icons-material/ArrowRight'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
-import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
-import Checkbox from '@mui/material/Checkbox'
+import Button from '@mui/material/Button'
 import Pagination from '@mui/material/Pagination'
 import PaginationItem from '@mui/material/PaginationItem'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { fetchBoardsAPI, createNewBoardAPI } from '~/apis'
 import { DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE } from '~/utils/constants'
-import Modal from '@mui/material/Modal'
-import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
-import CancelIcon from '@mui/icons-material/Cancel'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import AbcIcon from '@mui/icons-material/Abc'
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
-import Button from '@mui/material/Button'
-import Radio from '@mui/material/Radio'
-import RadioGroup from '@mui/material/RadioGroup'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import { useForm, Controller } from 'react-hook-form'
-import { FIELD_REQUIRED_MESSAGE } from '~/utils/validators'
-import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
+import { useForm } from 'react-hook-form'
 import { styled } from '@mui/material/styles'
 import {
   ANIME_THEMES,
-  PRIMARY_THEMES_LIST,
   ANIME_BOARD_TEMPLATES,
   SORA_PRESET_COVERS
 } from '~/utils/animeTheme'
@@ -53,6 +38,8 @@ import {
   playOstTrack,
   playUiChime
 } from '~/utils/soundEffects'
+import AwwwardsWorkspaceHero from './AwwwardsWorkspaceHero'
+import { CreateBoardModal, ArtworkLightboxModal } from './CreateBoardModal'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -60,19 +47,19 @@ const SidebarItem = styled(Box)(({ theme }) => ({
   gap: '10px',
   cursor: 'pointer',
   fontWeight: 600,
-  backgroundColor: theme.palette.mode === 'dark' ? '#141824' : '#fff',
+  backgroundColor: theme.palette.mode === 'dark' ? 'var(--chella-raised-dark, #141824)' : 'var(--chella-raised-light, #ffffff)',
   padding: '12px 16px',
   borderRadius: '10px',
-  border: '1px solid rgba(148, 163, 184, 0.22)',
-  transition: 'all 0.2s ease',
+  border: '1px solid var(--chella-border, rgba(148, 163, 184, 0.22))',
+  transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, border-color 0.2s ease',
   '&:hover': {
     backgroundColor: theme.palette.mode === 'dark' ? '#1e293b' : theme.palette.grey[100],
     transform: 'translateX(3px)'
   },
   '&.active': {
-    color: theme.palette.mode === 'dark' ? '#7dd3fc' : '#0284c7',
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(125, 211, 252, 0.14)' : '#f0f9ff',
-    borderColor: '#7dd3fc'
+    color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.14)' : '#f0f9ff',
+    borderColor: 'var(--fx-accent, #38bdf8)'
   }
 }))
 
@@ -162,128 +149,29 @@ function Boards() {
   const starredBoards = boards.filter(b => b.isStarred)
 
   return (
-    <Container disableGutters maxWidth={false}>
+    <Container
+      disableGutters
+      maxWidth={false}
+      sx={{
+        minHeight: '100vh',
+        bgcolor: (theme) => (theme.palette.mode === 'dark'
+          ? 'var(--chella-ground-dark, #0b1120)'
+          : 'var(--chella-ground-light, #f8fafc)')
+      }}
+    >
       <AppBar />
 
-      {/* Chella Multi-Theme Hero Banner */}
-      <Box sx={{
-        position: 'relative',
-        mx: { xs: 2, md: 4 },
-        mt: 3,
-        mb: 4,
-        p: { xs: 3, md: 4 },
-        borderRadius: '18px',
-        overflow: 'hidden',
-        color: 'white',
-        backgroundImage: `${themeConfig.boardOverlayDark}, url(${themeConfig.heroImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        boxShadow: '0 14px 40px rgba(0, 0, 0, 0.32)',
-        border: `1px solid ${themeConfig.accentColor}`
-      }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid xs={12} md={8}>
-            <Chip
-              icon={<SoraRibbonIcon fontSize="small" />}
-              label='Chella — A clone of "C"onfluence - tr"ELL"o - jir"A"'
-              size="small"
-              sx={{
-                mb: 1.5,
-                maxWidth: '100%',
-                bgcolor: 'rgba(15, 23, 42, 0.68)',
-                color: '#f8fafc',
-                border: `1px solid ${themeConfig.accentColor}`,
-                fontWeight: 700,
-                backdropFilter: 'blur(8px)',
-                '& .MuiChip-label': {
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }
-              }}
-            />
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}>
-              {themeConfig.name}
-            </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.94, fontStyle: 'italic', maxWidth: 680, mb: 2.5 }}>
-              {themeConfig.quote}
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {PRIMARY_THEMES_LIST.map((p) => (
-                <Button
-                  key={p.id}
-                  size="small"
-                  startIcon={<Avatar src={p.mascotImage} sx={{ width: 20, height: 20 }} />}
-                  variant={globalPersonaKey === p.id ? 'contained' : 'outlined'}
-                  onClick={(e) => handleSwitchGlobalPersona(p.id, e)}
-                  sx={{
-                    color: 'white',
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    borderColor: p.accentColor,
-                    bgcolor: globalPersonaKey === p.id ? p.accentColor : 'rgba(15, 23, 42, 0.58)',
-                    backdropFilter: 'blur(6px)',
-                    '&:hover': {
-                      bgcolor: p.accentColor,
-                      borderColor: 'white'
-                    }
-                  }}
-                >
-                  {p.name.split('•')[0].trim()} ({p.element})
-                </Button>
-              ))}
-            </Box>
-          </Grid>
-
-          <Grid xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' }, gap: 2 }}>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              p: 1.25,
-              borderRadius: '14px',
-              bgcolor: 'rgba(15, 23, 42, 0.68)',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${themeConfig.accentColor}`
-            }}>
-              <Avatar
-                src={themeConfig.mascotImage}
-                alt={themeConfig.characterName}
-                sx={{ width: 54, height: 54, border: `2px solid ${themeConfig.accentColor}` }}
-              />
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.2 }}>
-                  {themeConfig.characterName}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.78)' }}>
-                  Chella Companion • Sprint & CR Studio
-                </Typography>
-              </Box>
-            </Box>
-
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<LibraryAddIcon />}
-              onClick={handleOpenModal}
-              sx={{
-                px: 3,
-                py: 1.4,
-                fontWeight: 800,
-                textTransform: 'none',
-                borderRadius: '12px',
-                color: '#0f172a',
-                background: `linear-gradient(135deg, #f8fafc 0%, ${themeConfig.accentColor} 55%, ${themeConfig.secondaryAccent} 100%)`,
-                boxShadow: '0 8px 25px rgba(125, 211, 252, 0.45)',
-                '&:hover': {
-                  opacity: 0.94
-                }
-              }}
-            >
-              {t('createNewSprintBoard')}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
+      {/* Awwwards Editorial Spread + Asymmetric Bento Telemetry + Interactive Blueprint Reel */}
+      <AwwwardsWorkspaceHero
+        themeConfig={themeConfig}
+        globalPersonaKey={globalPersonaKey}
+        totalBoards={totalBoards}
+        starredCount={starredBoards.length}
+        onSwitchPersona={handleSwitchGlobalPersona}
+        onOpenCreateModal={handleOpenModal}
+        onQuickCreateTemplate={handleQuickCreateTemplate}
+        t={t}
+      />
 
       <Box sx={{ paddingX: { xs: 2, md: 4 }, my: 3 }}>
         <Grid container spacing={3}>
@@ -331,9 +219,9 @@ function Boards() {
               borderRadius: '14px',
               overflow: 'hidden',
               border: `1px solid ${themeConfig.columnBorder}`,
-              background: (theme) => theme.palette.mode === 'dark'
-                ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 27, 75, 0.85) 100%)'
-                : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)'
+              bgcolor: (theme) => (theme.palette.mode === 'dark'
+                ? 'var(--chella-raised-dark, #131c31)'
+                : 'var(--chella-raised-light, #ffffff)')
             }}>
               <Box sx={{
                 height: 165,
@@ -384,7 +272,7 @@ function Boards() {
                         borderRadius: '7px',
                         cursor: 'pointer',
                         border: '1px solid rgba(148, 163, 184, 0.35)',
-                        transition: 'transform 0.2s ease, border-color 0.2s ease',
+                        transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease',
                         '&:hover': {
                           transform: 'scale(1.06)',
                           borderColor: themeConfig.accentColor
@@ -400,54 +288,78 @@ function Boards() {
           <Grid xs={12} sm={9}>
             {starredBoards.length > 0 && (
               <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <StarRoundedIcon sx={{ color: '#fbbf24' }} />
-                  <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                    {t('starredBoardsTitle')}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <StarRoundedIcon sx={{ color: '#fbbf24' }} />
+                    <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                      {t('starredBoardsTitle')}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontFamily: '"JetBrains Mono", Consolas, monospace',
+                      fontWeight: 800,
+                      color: 'text.secondary',
+                      fontVariantNumeric: 'tabular-nums'
+                    }}
+                  >
+                    FEATURED BENTO ({starredBoards.length})
                   </Typography>
                 </Box>
                 <Grid container spacing={2.5}>
-                  {starredBoards.map(b => {
+                  {starredBoards.map((b, sIdx) => {
                     const bTheme = ANIME_THEMES[b.theme] || themeConfig
+                    const isFeatured = sIdx === 0 && starredBoards.length > 1
                     return (
-                      <Grid xs={12} sm={6} md={4} key={`starred-${b._id}`}>
+                      <Grid xs={12} sm={6} md={isFeatured ? 8 : 4} key={`starred-${b._id}`}>
                         <Card
                           component={Link}
                           to={`/boards/${b._id}`}
                           sx={{
                             display: 'block',
+                            height: '100%',
                             textDecoration: 'none',
-                            borderRadius: '14px',
+                            borderRadius: '16px',
                             overflow: 'hidden',
                             border: `1px solid ${bTheme.accentColor}`,
-                            transition: 'all 0.22s ease',
+                            transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
                             '&:hover': {
-                              transform: 'translateY(-4px)',
-                              boxShadow: '0 12px 28px rgba(125, 211, 252, 0.28)'
+                              transform: 'translateY(-3px)',
+                              boxShadow: '0 14px 30px rgba(15, 23, 42, 0.24)'
                             }
                           }}
                         >
                           <Box sx={{
-                            height: '104px',
+                            height: isFeatured ? '132px' : '112px',
                             position: 'relative',
-                            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.68) 100%), url(${bTheme.heroImage})`,
+                            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%), url(${bTheme.heroImage})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             display: 'flex',
                             alignItems: 'flex-end',
                             justifyContent: 'space-between',
-                            p: 1.25
+                            p: 1.5
                           }}>
-                            <Chip
-                              icon={<SoraBunnyIcon fontSize="small" />}
-                              label={bTheme.element}
-                              size="small"
-                              sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.72)' }}
-                            />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                              <Chip
+                                icon={<SoraBunnyIcon fontSize="small" />}
+                                label={bTheme.element}
+                                size="small"
+                                sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.76)' }}
+                              />
+                              {bTheme.archetypeLabel && (
+                                <Chip
+                                  label={bTheme.archetypeLabel.split('•')[0].trim()}
+                                  size="small"
+                                  sx={{ height: 22, fontSize: '10px', fontWeight: 700, color: bTheme.accentColor, bgcolor: 'rgba(15, 23, 42, 0.82)' }}
+                                />
+                              )}
+                            </Box>
                             <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />
                           </Box>
                           <CardContent sx={{ p: 2, '&:last-child': { p: 2 } }}>
-                            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.05rem', mb: 0.5 }} noWrap>
+                            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.06rem', mb: 0.5 }} noWrap>
                               {b?.title}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" noWrap>
@@ -462,17 +374,30 @@ function Boards() {
               </Box>
             )}
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <SoraRibbonIcon />
-              <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                {t('allBoards')} • Chella Sprint Boards
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SoraRibbonIcon />
+                <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                  {t('allBoards')} • Chella Sprint Boards
+                </Typography>
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontFamily: '"JetBrains Mono", Consolas, monospace',
+                  fontWeight: 800,
+                  color: 'text.secondary',
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                ASYMMETRIC BENTO GRID
               </Typography>
             </Box>
 
-            {boards?.length === 0 &&
+            {boards?.length === 0 && (
               <Box sx={{
                 p: 4,
-                borderRadius: '14px',
+                borderRadius: '16px',
                 border: '1px dashed rgba(148, 163, 184, 0.4)',
                 textAlign: 'center'
               }}>
@@ -487,68 +412,132 @@ function Boards() {
                   {t('createNewSprintBoard')}
                 </Button>
               </Box>
-            }
+            )}
 
-            {boards?.length > 0 &&
+            {boards?.length > 0 && (
               <Grid container spacing={2.5}>
-                {boards.map(b => {
+                {boards.map((b, idx) => {
                   const bTheme = ANIME_THEMES[b.theme] || themeConfig
+                  const isHeroTile = idx === 0 && boards.length >= 3
+                  const sprintIdx = String(idx + 1).padStart(2, '0')
                   return (
-                    <Grid xs={12} sm={6} md={4} key={b._id}>
+                    <Grid xs={12} sm={6} md={isHeroTile ? 8 : 4} key={b._id}>
                       <Card sx={{
-                        borderRadius: '14px',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        borderRadius: '16px',
                         overflow: 'hidden',
-                        border: '1px solid rgba(148, 163, 184, 0.24)',
-                        transition: 'all 0.22s ease',
+                        bgcolor: (theme) => (theme.palette.mode === 'dark'
+                          ? 'var(--chella-raised-dark, #131c31)'
+                          : 'var(--chella-raised-light, #ffffff)'),
+                        border: '1px solid var(--chella-border, rgba(148, 163, 184, 0.24))',
+                        transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
                         '&:hover': {
-                          transform: 'translateY(-4px)',
+                          transform: 'translateY(-3px)',
                           borderColor: bTheme.accentColor,
-                          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.22)'
+                          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.20)'
                         }
                       }}>
                         <Box sx={{
-                          height: '100px',
-                          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.68) 100%), url(${bTheme.heroImage})`,
+                          height: isHeroTile ? '136px' : '108px',
+                          backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.16) 0%, rgba(9, 13, 22, 0.76) 100%), url(${bTheme.heroImage})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           display: 'flex',
-                          alignItems: 'flex-end',
+                          flexDirection: 'column',
                           justifyContent: 'space-between',
-                          p: 1.25
+                          p: 1.5
                         }}>
-                          <Chip
-                            icon={<SoraBunnyIcon fontSize="small" />}
-                            label={`${bTheme.element} • ${bTheme.name.split('•')[0].trim()}`}
-                            size="small"
-                            sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.72)' }}
-                          />
-                          {b.isStarred && <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />}
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography
+                              sx={{
+                                fontFamily: '"JetBrains Mono", Consolas, monospace',
+                                fontSize: '0.68rem',
+                                fontWeight: 800,
+                                letterSpacing: '0.12em',
+                                px: 0.9,
+                                py: 0.25,
+                                borderRadius: '6px',
+                                color: bTheme.accentColor,
+                                bgcolor: 'rgba(9, 13, 22, 0.78)',
+                                fontVariantNumeric: 'tabular-nums'
+                              }}
+                            >
+                              SPRINT {sprintIdx}
+                            </Typography>
+                            {b.isStarred && <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />}
+                          </Box>
+
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                            <Chip
+                              icon={<SoraBunnyIcon fontSize="small" />}
+                              label={`${bTheme.element} • ${bTheme.name.split('•')[0].trim()}`}
+                              size="small"
+                              sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.76)' }}
+                            />
+                            {bTheme.jpTitle && isHeroTile && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  display: { xs: 'none', md: 'block' },
+                                  color: 'rgba(248, 250, 252, 0.85)',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.08em'
+                                }}
+                              >
+                                {bTheme.jpTitle}
+                              </Typography>
+                            )}
+                          </Box>
                         </Box>
-                        <CardContent sx={{ p: 2, '&:last-child': { p: 2 } }}>
-                          <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 700, fontSize: '1.05rem' }} noWrap>
-                            {b?.title}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                            {b?.description}
-                          </Typography>
+
+                        <CardContent sx={{ p: 2.25, '&:last-child': { p: 2.25 }, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <Box>
+                            <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 800, fontSize: isHeroTile ? '1.15rem' : '1.05rem', letterSpacing: '-0.015em' }} noWrap>
+                              {b?.title}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}
+                            >
+                              {b?.description}
+                            </Typography>
+                          </Box>
+
                           <Box
                             component={Link}
                             to={`/boards/${b._id}`}
                             sx={{
-                              mt: 1.5,
+                              mt: 2,
+                              pt: 1.25,
+                              borderTop: (theme) => `1px solid ${theme.palette.divider}`,
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'flex-end',
-                              fontWeight: 700,
-                              fontSize: '0.85rem',
+                              justifyContent: 'space-between',
+                              fontWeight: 800,
+                              fontSize: '0.84rem',
                               textDecoration: 'none',
                               color: 'primary.main',
                               '&:hover': { color: 'primary.light' }
-                            }}>
-                            {t('openBoard')} <ArrowRightIcon fontSize="small" />
+                            }}
+                          >
+                            <Typography
+                              component="span"
+                              sx={{
+                                fontFamily: '"JetBrains Mono", Consolas, monospace',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: 'text.secondary'
+                              }}
+                            >
+                              {bTheme.styleArchetype || 'ledger'}
+                            </Typography>
+                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                              {t('openBoard')} <ArrowRightIcon fontSize="small" />
+                            </Box>
                           </Box>
                         </CardContent>
                       </Card>
@@ -556,9 +545,9 @@ function Boards() {
                   )
                 })}
               </Grid>
-            }
+            )}
 
-            {(totalBoards > 0) &&
+            {(totalBoards > 0) && (
               <Box sx={{ my: 4, pr: 2, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <Pagination
                   size="large"
@@ -576,261 +565,33 @@ function Boards() {
                   )}
                 />
               </Box>
-            }
+            )}
           </Grid>
         </Grid>
       </Box>
 
-      <Modal
-        open={isOpenModal}
+      <CreateBoardModal
+        isOpenModal={isOpenModal}
         onClose={handleCloseModal}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 660,
-          maxWidth: '94vw',
-          bgcolor: 'white',
-          boxShadow: 24,
-          borderRadius: '14px',
-          border: `1px solid ${themeConfig.accentColor}`,
-          outline: 0,
-          padding: '24px 30px',
-          backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : 'white'
-        }}>
-          <Box sx={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            cursor: 'pointer'
-          }}>
-            <CancelIcon
-              color="error"
-              sx={{ '&:hover': { color: 'error.light' } }}
-              onClick={handleCloseModal} />
-          </Box>
-          <Box id="modal-modal-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SoraBunnyIcon />
-            <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
-              {t('createNewSprintBoard')} (Board = Sprint)
-            </Typography>
-          </Box>
-          <Box id="modal-modal-description" sx={{ my: 2 }}>
-            <form onSubmit={handleSubmit(submitCreateNewBoard)}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box>
-                  <TextField
-                    fullWidth
-                    label={tPrimary('boardTitleInputLabel')}
-                    type="text"
-                    variant="outlined"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <AbcIcon fontSize="small" />
-                        </InputAdornment>
-                      )
-                    }}
-                    {...register('title', {
-                      required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: tPrimary('min3CharsMsg') },
-                      maxLength: { value: 50, message: tPrimary('max50CharsMsg') }
-                    })}
-                    error={!!errors['title']}
-                  />
-                  <FieldErrorAlert errors={errors} fieldName={'title'} />
-                </Box>
+        themeConfig={themeConfig}
+        globalPersonaKey={globalPersonaKey}
+        boardTypes={BOARD_TYPES}
+        control={control}
+        register={register}
+        handleSubmit={handleSubmit}
+        onSubmit={submitCreateNewBoard}
+        errors={errors}
+        isSubmitting={isSubmitting}
+        t={t}
+        tPrimary={tPrimary}
+      />
 
-                <Box>
-                  <TextField
-                    fullWidth
-                    label={tPrimary('boardDescInputLabel')}
-                    type="text"
-                    variant="outlined"
-                    multiline
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <DescriptionOutlinedIcon fontSize="small" />
-                        </InputAdornment>
-                      )
-                    }}
-                    {...register('description', {
-                      required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: tPrimary('min3CharsMsg') },
-                      maxLength: { value: 256, message: tPrimary('max256CharsMsg') }
-                    })}
-                    error={!!errors['description']}
-                  />
-                  <FieldErrorAlert errors={errors} fieldName={'description'} />
-                </Box>
-
-                <Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                    {t('selectThemeLabel')}:
-                  </Typography>
-                  <Controller
-                    name="theme"
-                    defaultValue={globalPersonaKey}
-                    control={control}
-                    render={({ field }) => (
-                      <RadioGroup
-                        {...field}
-                        row
-                        onChange={(event, value) => field.onChange(value)}
-                        value={field.value}
-                      >
-                        <FormControlLabel
-                          value="cosmos"
-                          control={<Radio size="small" />}
-                          label="🌌 Vũ Trụ & Hoàng Đạo (Cosmos)"
-                        />
-                        <FormControlLabel
-                          value="wind-chime"
-                          control={<Radio size="small" />}
-                          label="🎐 Bầu Trời Xanh & Chuông Gió (Furin)"
-                        />
-                        <FormControlLabel
-                          value="sora-sky"
-                          control={<Radio size="small" />}
-                          label="☁️ Sora (Distant Sky)"
-                        />
-                        <FormControlLabel
-                          value="furina"
-                          control={<Radio size="small" />}
-                          label="💧 Furina (Fontaine Opera)"
-                        />
-                        <FormControlLabel
-                          value="nahida"
-                          control={<Radio size="small" />}
-                          label="🌿 Nahida (Sumeru Wisdom)"
-                        />
-                        <FormControlLabel
-                          value="sora-twilight"
-                          control={<Radio size="small" />}
-                          label="🎀 Sora (Moonlit Ribbon)"
-                        />
-                        <FormControlLabel
-                          value="sora-usagi"
-                          control={<Radio size="small" />}
-                          label="🐰 Sora & Usagi Plush"
-                        />
-                      </RadioGroup>
-                    )}
-                  />
-                </Box>
-
-                <Controller
-                  name="type"
-                  defaultValue={BOARD_TYPES.PUBLIC}
-                  control={control}
-                  render={({ field }) => (
-                    <RadioGroup
-                      {...field}
-                      row
-                      onChange={(event, value) => field.onChange(value)}
-                      value={field.value}
-                    >
-                      <FormControlLabel
-                        value={BOARD_TYPES.PUBLIC}
-                        control={<Radio size="small" />}
-                        label={tPrimary('publicBoardRadio')}
-                        labelPlacement="start"
-                      />
-                      <FormControlLabel
-                        value={BOARD_TYPES.PRIVATE}
-                        control={<Radio size="small" />}
-                        label={tPrimary('privateBoardRadio')}
-                        labelPlacement="start"
-                      />
-                    </RadioGroup>
-                  )}
-                />
-
-                <Controller
-                  name="useTemplate"
-                  defaultValue={true}
-                  control={control}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={Boolean(field.value)}
-                          onChange={(e) => field.onChange(e.target.checked)}
-                          size="small"
-                        />
-                      }
-                      label={tPrimary('seedTemplateCheckboxLabel')}
-                    />
-                  )}
-                />
-
-                <Box sx={{ alignSelf: 'flex-end' }}>
-                  <LoadingButton
-                    className="interceptor-loading"
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    loading={isSubmitting}
-                  >
-                    {t('createBoardSubmitBtn')}
-                  </LoadingButton>
-                </Box>
-              </Box>
-            </form>
-          </Box>
-        </Box>
-      </Modal>
-
-      {/* Full-Resolution Artwork Lightbox Modal */}
-      <Modal open={Boolean(previewArt)} onClose={() => setPreviewArt(null)}>
-        <Box
-          onClick={() => setPreviewArt(null)}
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 820,
-            maxWidth: '94vw',
-            borderRadius: '18px',
-            overflow: 'hidden',
-            bgcolor: '#090d16',
-            border: `1px solid ${themeConfig.accentColor}`,
-            boxShadow: '0 24px 64px rgba(0, 0, 0, 0.65)',
-            outline: 0,
-            animation: 'chelloFadeSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-        >
-          {previewArt && (
-            <>
-              <Box
-                component="img"
-                src={previewArt.url}
-                alt={previewArt.label}
-                sx={{ width: '100%', maxHeight: '74vh', objectFit: 'contain', display: 'block', bgcolor: '#05070c' }}
-              />
-              <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'white' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <SoraBunnyIcon />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    {previewArt.label}
-                  </Typography>
-                </Box>
-                <Chip
-                  label={`${tPrimary('clickAnywhereToClose')} ${themeConfig.name}`}
-                  size="small"
-                  sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.14)', fontWeight: 700 }}
-                />
-              </Box>
-            </>
-          )}
-        </Box>
-      </Modal>
+      <ArtworkLightboxModal
+        previewArt={previewArt}
+        onClose={() => setPreviewArt(null)}
+        themeConfig={themeConfig}
+        tPrimary={tPrimary}
+      />
     </Container>
   )
 }
