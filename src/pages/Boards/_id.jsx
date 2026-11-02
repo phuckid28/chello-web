@@ -6,7 +6,8 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   updateBoardDetailsAPI,
   updateColumnDetailsAPI,
-  moveCardToDifferentColumnAPI
+  moveCardToDifferentColumnAPI,
+  joinPresence
 } from '~/apis'
 import { cloneDeep } from 'lodash'
 
@@ -55,6 +56,14 @@ function Board() {
     setFiltersState(readStoredFilters(boardId))
     setBoardViewModeState('overview')
   }, [dispatch, boardId])
+
+  useEffect(() => {
+    if (!boardId) return undefined
+    const leavePresence = joinPresence(boardId)
+    return () => {
+      if (typeof leavePresence === 'function') leavePresence()
+    }
+  }, [boardId])
 
   useEffect(() => {
     setBoardThemeOverride(board?._id === boardId ? board?.theme : null)

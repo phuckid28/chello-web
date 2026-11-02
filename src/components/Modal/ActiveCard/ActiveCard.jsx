@@ -22,6 +22,8 @@ import SaveRoundedIcon from '@mui/icons-material/SaveRounded'
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded'
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
 import PictureAsPdfRoundedIcon from '@mui/icons-material/PictureAsPdfRounded'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
@@ -43,7 +45,12 @@ import {
   selectIsShowModalActiveCard,
   updateCurrentActiveCard
 } from '~/redux/activeCard/activeCardSlice'
-import { deleteCardDetailsAPI, updateCardDetailsAPI } from '~/apis'
+import {
+  deleteCardDetailsAPI,
+  setActiveCard,
+  updateCardDetailsAPI,
+  watchCardAPI
+} from '~/apis'
 import {
   selectCurrentActiveBoard,
   updateCardInBoard,
@@ -148,6 +155,14 @@ function ActiveCard() {
   }, [board])
 
   useEffect(() => {
+    if (!board?._id) return undefined
+    setActiveCard(board._id, isShowModalActiveCard && activeCard?._id ? activeCard._id : null)
+    return () => {
+      setActiveCard(board._id, null)
+    }
+  }, [board?._id, isShowModalActiveCard, activeCard?._id])
+
+  useEffect(() => {
     if (activeCard) {
       setCrCode(activeCard.crCode || '')
       setSprint(extractSprintNumberOnly(activeCard.sprint || defaultSprint, defaultSprint))
@@ -207,6 +222,29 @@ function ActiveCard() {
 
   const onUpdateCardDescription = (newDescription) => {
     callApiUpdateCard({ description: newDescription })
+  }
+
+  const isWatching = Boolean(
+    currentUser?._id &&
+    (activeCard?.watcherIds || []).some(id => String(id) === String(currentUser._id))
+  )
+
+  const handleToggleWatchCard = () => {
+    if (!activeCard?._id || !currentUser?._id) return
+    const nextWatch = !isWatching
+    watchCardAPI(activeCard._id, nextWatch)
+      .then((res) => {
+        const currentWatchers = activeCard?.watcherIds || []
+        const nextWatchers = Array.isArray(res?.watcherIds)
+          ? res.watcherIds
+          : nextWatch
+            ? [...new Set([...currentWatchers, currentUser._id])]
+            : currentWatchers.filter(id => String(id) !== String(currentUser._id))
+        const updatedCard = { ...activeCard, watcherIds: nextWatchers }
+        dispatch(updateCurrentActiveCard(updatedCard))
+        dispatch(updateCardInBoard(updatedCard))
+      })
+      .catch(() => {})
   }
 
   const selectedAssigneesList = String(assignee || '')
@@ -1033,7 +1071,7 @@ function ActiveCard() {
                 <AccountTreeRoundedIcon fontSize="small" color="primary" />
                 <span>{t('openCrStudio')}</span>
               </SidebarItem>
-              {currentUser?._id && !activeCard?.memberIds?.includes(currentUser._id) &&
+              {currentUser?._id && !activeCard?.memberIds?.includes(currentUser._id) && (
                 <SidebarItem
                   className="active"
                   onClick={() => onUpdateCardMembers({
@@ -1044,7 +1082,20 @@ function ActiveCard() {
                   <PersonOutlineOutlinedIcon fontSize="small" />
                   <span>{t('joinCardBtn')}</span>
                 </SidebarItem>
-              }
+              )}
+              {currentUser?._id && (
+                <SidebarItem
+                  className="active"
+                  onClick={handleToggleWatchCard}
+                >
+                  {isWatching ? (
+                    <VisibilityOffOutlinedIcon fontSize="small" color="info" />
+                  ) : (
+                    <VisibilityOutlinedIcon fontSize="small" />
+                  )}
+                  <span>{isWatching ? t('collabUnwatchCard') : t('collabWatchCard')}</span>
+                </SidebarItem>
+              )}
               <SidebarItem
                 className="active"
                 onClick={onInsertBaFrdTemplate}

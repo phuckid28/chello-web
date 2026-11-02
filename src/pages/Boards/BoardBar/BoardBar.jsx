@@ -13,6 +13,7 @@ import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlin
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
 import HandymanRoundedIcon from '@mui/icons-material/HandymanRounded'
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded'
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -31,6 +32,7 @@ import DeadlineCenterPopover from './parts/DeadlineCenterPopover'
 import ThemePickerPopover from './parts/ThemePickerPopover'
 import PomodoroPopover from './parts/PomodoroPopover'
 import ToolsMenu from './parts/ToolsMenu'
+import BoardActivityDrawer from './parts/BoardActivityDrawer'
 import { MENU_STYLES, POMODORO_FOCUS_SECONDS } from './parts/boardBarStyles'
 import { updateBoardDetailsAPI } from '~/apis'
 import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
@@ -72,12 +74,13 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { personaKey, themeConfig, changePersona } = usePersonaTheme(board?.theme)
-  const { tPrimary } = useTranslation()
+  const { t, tPrimary } = useTranslation()
   const pomodoro = usePomodoro(POMODORO_FOCUS_SECONDS)
 
   const [anchors, setAnchors] = useState({})
   const [openImportMdModal, setOpenImportMdModal] = useState(false)
   const [openReport, setOpenReport] = useState(false)
+  const [openActivity, setOpenActivity] = useState(false)
   const toolsChipRef = useRef(null)
 
   const openAnchor = (key) => (e) => setAnchors(prev => ({ ...prev, [key]: e.currentTarget }))
@@ -167,6 +170,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
     }}>
       <ImportMarkdownModal open={openImportMdModal} onClose={() => setOpenImportMdModal(false)} accentColor={themeConfig.accentColor} />
       <SprintReportDialog open={openReport} onClose={() => setOpenReport(false)} board={board} />
+      <BoardActivityDrawer open={openActivity} onClose={() => setOpenActivity(false)} boardId={board?._id} />
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0, minWidth: 0 }}>
         <Tooltip title={board?.description || board?.title || ''}>
@@ -261,6 +265,23 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
           </IconButton>
         </Tooltip>
 
+        <Tooltip title={t('collabActivityTitle')}>
+          <IconButton
+            size="small"
+            onClick={() => setOpenActivity(true)}
+            sx={{
+              width: 30,
+              height: 30,
+              color: '#bae6fd',
+              bgcolor: 'rgba(56, 189, 248, 0.18)',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              '&:hover': { bgcolor: 'rgba(56, 189, 248, 0.32)' }
+            }}
+          >
+            <HistoryRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
         <Chip
           size="small"
           ref={toolsChipRef}
@@ -328,7 +349,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
         <InviteBoardUser boardId={board._id} />
-        <BoardUserGroup boardUsers={board?.FE_allUsers} />
+        <BoardUserGroup boardId={board._id} boardUsers={board?.FE_allUsers} />
       </Box>
     </Box>
   )
