@@ -45,8 +45,20 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
 
 ---
 
-## 4. Lộ trình & Kế hoạch đang thực hiện (`docs/plans/`)
-Khi bắt đầu phiên làm việc trên thiết bị mới, hãy kiểm tra thư mục `docs/plans/` để nắm ngay trạng thái công việc đang thực hiện:
-- `docs/plans/account-upgrade-roadmap.md` — Lộ trình nâng cấp toàn diện Tài khoản, Phân quyền (RBAC), Bảo mật (Sessions, 2FA, OAuth, CSRF) & Trang cá nhân.
-- `docs/plans/mail-delivery-plan.md` — Kịch bản hệ thống gửi Email kép (Brevo Transactional API + Gmail qua Google Apps Script Bridge fallback) & xác thực tài khoản an toàn.
-- `docs/plans/multi-device-sync-guide.md` — Hướng dẫn đồng bộ toàn diện cấu hình, biến môi trường (`.env` mã hóa) và phiên làm việc giữa nhiều máy tính.
+## 4. Kiến trúc Hệ thống Người dùng & Cộng tác Đa tầng (User System v7 — Đã hoàn thành 2026-11-02)
+- **Workspaces Đa tầng (3 cấp)**: `Organization` (depth 0) $\rightarrow$ `Space` (depth 1) $\rightarrow$ `Team/Sub-space` (depth 2) với cơ chế kế thừa quyền tự động (`inheritPermissions`).
+- **Ma trận Phân quyền RBAC (5 vai trò)**: `owner > admin > member > guest > viewer` áp dụng xuyên suốt Workspace, Board, Card, Comment và Wiki.
+- **Bảo mật & Định danh**: Quản lý phiên đăng nhập đa thiết bị (`sessions`), Xác thực 2 lớp TOTP (`RFC 6238` + 10 mã dự phòng băm SHA-256 có salt `userId`), khóa tạm thời chống brute-force, đặt lại mật khẩu và đổi email an toàn, CSRF header `X-Requested-With: XMLHttpRequest`.
+- **Hồ sơ & Cá nhân hóa**: Trang cá nhân `/u/:username` (hiển thị cho thành viên cùng chung Workspace/Board theo mặc định), `UserHoverCard`, trạng thái tùy chỉnh (`customStatus`), tải ảnh Avatar/Banner qua Google Drive Bridge, 7 tab Cài đặt (`/settings/*`), xuất dữ liệu JSON (GDPR) và xóa tài khoản có thời gian ân hạn 14 ngày.
+- **Cộng tác Thời gian thực & Điều hành**: Hộp thư thông báo `/inbox`, Không gian việc cá nhân `/my-work`, `@mention` autocomplete, theo dõi thẻ (`watchers`), hiện diện trực tuyến (`presence`), Nhật ký hoạt động (`activities`) và Bảng điều khiển Quản trị Hệ thống (`/admin`).
+- **Giao diện Chủ đề (Global Web App Theme)**: Các template chủ đề (`workspaceTheme`) áp dụng thống nhất cho toàn bộ ứng dụng web, mọi Sprint Board và CR dùng chung một ngôn ngữ thiết kế đồng nhất.
+
+---
+
+## 5. Lộ trình & Kế hoạch trong `docs/plans/`
+Khi bắt đầu phiên làm việc trên thiết bị mới, hãy kiểm tra thư mục `docs/plans/` để nắm ngay trạng thái công việc:
+- `docs/plans/user-system-master-plan.md` — Kế hoạch kiến trúc tổng thể Hệ thống Người dùng, Workspace 3 tầng, RBAC, 2FA, Trang cá nhân & Cộng tác (v7 — **Đã hoàn thành & triển khai lên `master`/`main`**).
+- `docs/plans/user-system-api-contract.md` — Hợp đồng API chi tiết (Sections 0–9) đồng bộ giữa `chello-api` và `chello-web`.
+- `docs/plans/account-upgrade-roadmap.md` — Lộ trình nâng cấp Tài khoản & Bảo mật ban đầu.
+- `docs/plans/mail-delivery-plan.md` — Kịch bản hệ thống gửi Email kép (Brevo Transactional API + Gmail qua Google Apps Script Bridge fallback).
+- `docs/plans/multi-device-sync-guide.md` — Hướng dẫn đồng bộ toàn diện cấu hình, biến môi trường (`.env`) và phiên làm việc giữa nhiều máy tính.
