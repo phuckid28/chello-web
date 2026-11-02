@@ -13,6 +13,7 @@ import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import ArrowRightIcon from '@mui/icons-material/ArrowRight'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
@@ -73,6 +74,8 @@ function Boards() {
   const [totalBoards, setTotalBoards] = useState(null)
   const [isOpenModal, setIsOpenModal] = useState(false)
   const [previewArt, setPreviewArt] = useState(null)
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)
 
   const { globalPersonaKey, themeConfig, changePersona } = usePersonaTheme()
   const { t, tPrimary } = useTranslation()
@@ -101,7 +104,19 @@ function Boards() {
     fetchBoardsAPI(location.search).then(updateStateData)
   }, [location.search])
 
-  const handleOpenModal = () => setIsOpenModal(true)
+  const handleOpenModal = () => {
+    if (selectedTemplate) {
+      reset({
+        title: selectedTemplate.title,
+        description: selectedTemplate.description,
+        type: BOARD_TYPES.PUBLIC,
+        theme: selectedTemplate.theme,
+        useTemplate: true
+      })
+    }
+    setIsOpenModal(true)
+  }
+
   const handleCloseModal = () => {
     setIsOpenModal(false)
     reset()
@@ -127,18 +142,38 @@ function Boards() {
     })
   }
 
-  const handleQuickCreateTemplate = (tpl) => {
-    handleSwitchGlobalPersona(tpl.theme)
-    createNewBoardAPI({
+  // Selecting a blueprint ONLY highlights it, switches the preview persona, and pre-fills the form — never auto-creates a board!
+  const handleSelectTemplate = (tpl, event) => {
+    setSelectedTemplate(tpl)
+    handleSwitchGlobalPersona(tpl.theme, event)
+    reset({
       title: tpl.title,
       description: tpl.description,
       type: BOARD_TYPES.PUBLIC,
       theme: tpl.theme,
       useTemplate: true
+    })
+  }
+
+  // Explicit board creation triggered ONLY when the user clicks "Khởi tạo bảng Sprint" after selecting a template
+  const handleConfirmCreateTemplate = (tpl) => {
+    const targetTpl = tpl || selectedTemplate
+    if (!targetTpl || isCreatingTemplate) return
+    setIsCreatingTemplate(true)
+    createNewBoardAPI({
+      title: targetTpl.title,
+      description: targetTpl.description,
+      type: BOARD_TYPES.PUBLIC,
+      theme: targetTpl.theme,
+      useTemplate: true
     }).then((createdBoard) => {
       if (createdBoard?._id) {
         navigate(`/boards/${createdBoard._id}`)
+      } else {
+        fetchBoardsAPI(location.search).then(updateStateData)
       }
+    }).finally(() => {
+      setIsCreatingTemplate(false)
     })
   }
 
@@ -167,9 +202,12 @@ function Boards() {
         globalPersonaKey={globalPersonaKey}
         totalBoards={totalBoards}
         starredCount={starredBoards.length}
+        selectedTemplate={selectedTemplate}
+        isCreatingTemplate={isCreatingTemplate}
         onSwitchPersona={handleSwitchGlobalPersona}
         onOpenCreateModal={handleOpenModal}
-        onQuickCreateTemplate={handleQuickCreateTemplate}
+        onSelectTemplate={handleSelectTemplate}
+        onConfirmCreateTemplate={handleConfirmCreateTemplate}
         t={t}
       />
 
@@ -197,19 +235,40 @@ function Boards() {
               {t('templatesSidebarTitle')}
             </Typography>
             <Stack direction="column" spacing={1}>
-              {ANIME_BOARD_TEMPLATES.map((tpl) => (
-                <SidebarItem key={tpl.id} onClick={() => handleQuickCreateTemplate(tpl)}>
-                  <SoraBunnyIcon fontSize="small" sx={{ flexShrink: 0 }} />
-                  <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
-                      {tpl.title}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }} noWrap>
-                      {tpl.badge}
-                    </Typography>
-                  </Box>
-                </SidebarItem>
-              ))}
+              {ANIME_BOARD_TEMPLATES.map((tpl) => {
+                const isSelected = selectedTemplate?.id === tpl.id
+                return (
+                  <SidebarItem
+                    key={tpl.id}
+                    className={isSelected ? 'active' : ''}
+                    onClick={(e) => handleSelectTemplate(tpl, e)}
+                  >
+                    <SoraBunnyIcon fontSize="small" sx={{ flexShrink: 0 }} />
+                    <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                        {tpl.title}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }} noWrap>
+                        {tpl.badge}
+                      </Typography>
+                    </Box>
+                    {isSelected && <CheckCircleRoundedIcon fontSize="small" color="info" />}
+                  </SidebarItem>
+                )
+              })}
+              {selectedTemplate && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  fullWidth
+                  disabled={isCreatingTemplate}
+                  startIcon={<LibraryAddIcon fontSize="small" />}
+                  onClick={() => handleConfirmCreateTemplate(selectedTemplate)}
+                  sx={{ mt: 0.5, fontWeight: 800, textTransform: 'none', borderRadius: '10px' }}
+                >
+                  {isCreatingTemplate ? 'Đang khởi tạo...' : `${t('createNewSprintBoard')}: ${selectedTemplate.title.split(' ')[0]}`}
+                </Button>
+              )}
             </Stack>
 
             <Divider sx={{ my: 2.5 }} />

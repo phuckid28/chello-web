@@ -20,7 +20,7 @@ import { useParams } from 'react-router-dom'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
 import { EMPTY_CR_FILTERS, applyFiltersToColumns, normalizeFilters } from '~/utils/crFilters'
-import { BOARD_VIEWS, SWITCH_VIEW_EVENT, persistBoardView, readBoardView } from '~/utils/boardEvents'
+import { BOARD_VIEWS, SWITCH_VIEW_EVENT, persistBoardView } from '~/utils/boardEvents'
 import { useDeadlineReminder } from '~/customHooks/useDeadlineReminder'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { setBoardThemeOverride } from '~/fx/fxThemeStore'
@@ -48,11 +48,12 @@ function Board() {
   const { tPrimary } = useTranslation()
   const { boardId } = useParams()
   const [filters, setFiltersState] = useState(() => readStoredFilters(boardId))
-  const [boardViewMode, setBoardViewModeState] = useState(readBoardView)
+  const [boardViewMode, setBoardViewModeState] = useState('overview')
 
   useEffect(() => {
     dispatch(fetchBoardDetailsAPI(boardId))
     setFiltersState(readStoredFilters(boardId))
+    setBoardViewModeState('overview')
   }, [dispatch, boardId])
 
   useEffect(() => {

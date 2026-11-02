@@ -25,9 +25,12 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded'
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
+import PictureAsPdfRoundedIcon from '@mui/icons-material/PictureAsPdfRounded'
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded'
 import AppBar from '~/components/AppBar/AppBar'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
+import FrdVisualDocument from '~/components/Modal/ActiveCard/FrdVisualDocument'
+import { exportFrdAsPrintablePdf } from '~/utils/frdPdfExporter'
 import {
   fetchBoardDetailsAPI,
   selectCurrentActiveBoard,
@@ -438,6 +441,17 @@ function CrStudio() {
 
           <Button
             size="small"
+            variant="contained"
+            color="error"
+            startIcon={<PictureAsPdfRoundedIcon />}
+            onClick={() => exportFrdAsPrintablePdf(card, card.description, sprintConfig.sprintNumber || '34')}
+            sx={{ textTransform: 'none', fontWeight: 800 }}
+          >
+            Export PDF
+          </Button>
+
+          <Button
+            size="small"
             variant="outlined"
             startIcon={<DownloadRoundedIcon />}
             onClick={() => exportCardAsFrdMarkdown(card, sprintConfig.name)}
@@ -708,7 +722,7 @@ function CrStudio() {
                 </Box>
 
                 <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                  <Grid xs={12} sm={4}>
+                  <Grid xs={12} sm={3.5}>
                     <TextField
                       select
                       fullWidth
@@ -722,7 +736,7 @@ function CrStudio() {
                       ))}
                     </TextField>
                   </Grid>
-                  <Grid xs={12} sm={8}>
+                  <Grid xs={12} sm={8.5}>
                     <TextField
                       fullWidth
                       size="small"
@@ -732,7 +746,7 @@ function CrStudio() {
                       placeholder="Ho Thao Dieu, Hoang Vinh Son"
                     />
                   </Grid>
-                  <Grid xs={12} sm={4}>
+                  <Grid xs={12} sm={4.5}>
                     <TextField
                       fullWidth
                       size="small"
@@ -742,16 +756,16 @@ function CrStudio() {
                       placeholder="2026-11-05 / 5/11"
                     />
                   </Grid>
-                  <Grid xs={6} sm={4}>
+                  <Grid xs={7} sm={4.5}>
                     <ProgressSelect value={devProgressVal} onChange={setDevProgressVal} />
                   </Grid>
-                  <Grid xs={6} sm={4}>
+                  <Grid xs={5} sm={3}>
                     <TextField
                       fullWidth
                       size="small"
                       type="number"
                       inputProps={{ step: '0.5', min: '0' }}
-                      label="Resource used"
+                      label="Story Point"
                       value={resourceUsedVal}
                       onChange={(e) => setResourceUsedVal(e.target.value)}
                     />
@@ -774,22 +788,12 @@ function CrStudio() {
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
                   {t('frdMarkdownContentTitle')}
                 </Typography>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: '12px',
-                    bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(9, 13, 22, 0.72)' : '#f8fafc'),
-                    border: '1px solid rgba(148, 163, 184, 0.25)',
-                    whiteSpace: 'pre-wrap',
-                    fontFamily: 'inherit',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.6,
-                    maxHeight: 380,
-                    overflowY: 'auto'
-                  }}
-                >
-                  {card.description || tPrimary('noFrdContentYet')}
-                </Box>
+                <FrdVisualDocument
+                  card={card}
+                  markdownText={card.description}
+                  sprintNumber={sprintConfig.sprintNumber || '34'}
+                  emptyPlaceholder={tPrimary('noFrdContentYet')}
+                />
               </CardContent>
             </Card>
           </Grid>

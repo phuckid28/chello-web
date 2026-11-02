@@ -6,6 +6,7 @@ import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import NorthEastRoundedIcon from '@mui/icons-material/NorthEastRounded'
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import { ANIME_THEMES, PRIMARY_THEMES_LIST, ANIME_BOARD_TEMPLATES } from '~/utils/animeTheme'
 import { SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 
@@ -14,9 +15,12 @@ function AwwwardsWorkspaceHero({
   globalPersonaKey,
   totalBoards,
   starredCount,
+  selectedTemplate,
+  isCreatingTemplate,
   onSwitchPersona,
   onOpenCreateModal,
-  onQuickCreateTemplate,
+  onSelectTemplate,
+  onConfirmCreateTemplate,
   t
 }) {
   const chapterIndex = themeConfig.chapterIndex || '03'
@@ -491,22 +495,53 @@ function AwwwardsWorkspaceHero({
 
       {/* Interactive Awwwards Gallery Strip for the 7 Curated Sprint Blueprints */}
       <Box sx={{ mt: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25, px: 0.5 }}>
-          <Typography
-            variant="caption"
-            sx={{
-              fontFamily: '"JetBrains Mono", Consolas, monospace',
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'text.secondary'
-            }}
-          >
-            00 / INSTANT SPRINT BLUEPRINTS — INTERACTIVE EXHIBITION REEL
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
-            {t('templatesSidebarTitle')}
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1.25, px: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontFamily: '"JetBrains Mono", Consolas, monospace',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'text.secondary'
+              }}
+            >
+              00 / INSTANT SPRINT BLUEPRINTS — INTERACTIVE EXHIBITION REEL
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+              ({t('templatesSidebarTitle')} — Chọn mẫu trước, sau đó bấm Khởi tạo bảng Sprint)
+            </Typography>
+          </Box>
+
+          {selectedTemplate && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Chip
+                size="small"
+                icon={<CheckCircleRoundedIcon fontSize="small" />}
+                label={`Đã chọn mẫu: ${selectedTemplate.title}`}
+                color="info"
+                sx={{ fontWeight: 800 }}
+              />
+              <Button
+                size="small"
+                variant="contained"
+                disabled={isCreatingTemplate}
+                startIcon={<LibraryAddIcon fontSize="small" />}
+                onClick={() => onConfirmCreateTemplate(selectedTemplate)}
+                sx={{
+                  fontWeight: 800,
+                  borderRadius: '9px',
+                  textTransform: 'none',
+                  color: '#0f172a',
+                  bgcolor: themeConfig.accentColor,
+                  '&:hover': { bgcolor: themeConfig.accentColor, opacity: 0.92 }
+                }}
+              >
+                {isCreatingTemplate ? 'Đang khởi tạo...' : t('createNewSprintBoard')}
+              </Button>
+            </Box>
+          )}
         </Box>
 
         <Box
@@ -514,29 +549,35 @@ function AwwwardsWorkspaceHero({
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             gap: 1.25,
-            minHeight: { md: 118 }
+            minHeight: { md: 132 }
           }}
         >
           {ANIME_BOARD_TEMPLATES.map((tpl, idx) => {
             const tplTheme = ANIME_THEMES[tpl.theme] || themeConfig
-            const isCurrent = globalPersonaKey === tpl.theme
+            const isSelected = selectedTemplate?.id === tpl.id
+            const isCurrent = isSelected || (!selectedTemplate && globalPersonaKey === tpl.theme)
             const idxStr = String(idx + 1).padStart(2, '0')
             return (
               <Box
                 key={tpl.id}
-                onClick={() => onQuickCreateTemplate(tpl)}
+                onClick={(e) => onSelectTemplate(tpl, e)}
                 sx={{
-                  flex: { xs: '1 1 auto', md: isCurrent ? '1.55 1 0%' : '1 1 0%' },
+                  flex: { xs: '1 1 auto', md: isCurrent ? '1.75 1 0%' : '1 1 0%' },
                   position: 'relative',
                   p: 1.75,
                   borderRadius: '14px',
                   overflow: 'hidden',
                   cursor: 'pointer',
                   color: '#f8fafc',
-                  backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.45) 0%, rgba(9, 13, 22, 0.88) 100%), url(${tplTheme.heroImage})`,
+                  backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.45) 0%, rgba(9, 13, 22, 0.90) 100%), url(${tplTheme.heroImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  border: isCurrent ? `1.5px solid ${tplTheme.accentColor}` : '1px solid rgba(148, 163, 184, 0.26)',
+                  border: isSelected
+                    ? `2px solid ${tplTheme.accentColor}`
+                    : isCurrent
+                      ? `1.5px solid ${tplTheme.accentColor}`
+                      : '1px solid rgba(148, 163, 184, 0.26)',
+                  boxShadow: isSelected ? `0 0 0 2px ${tplTheme.accentColor}44` : 'none',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -560,10 +601,24 @@ function AwwwardsWorkspaceHero({
                   >
                     /{idxStr}
                   </Typography>
-                  <NorthEastRoundedIcon sx={{ fontSize: 15, color: 'rgba(248, 250, 252, 0.78)' }} />
+                  {isSelected ? (
+                    <Chip
+                      size="small"
+                      label="✓ Đã chọn"
+                      sx={{
+                        height: 20,
+                        fontSize: '0.66rem',
+                        fontWeight: 800,
+                        color: '#0f172a',
+                        bgcolor: tplTheme.accentColor
+                      }}
+                    />
+                  ) : (
+                    <NorthEastRoundedIcon sx={{ fontSize: 15, color: 'rgba(248, 250, 252, 0.78)' }} />
+                  )}
                 </Box>
 
-                <Box sx={{ mt: 1.5 }}>
+                <Box sx={{ mt: 1.25 }}>
                   <Typography
                     variant="subtitle2"
                     sx={{
@@ -588,6 +643,33 @@ function AwwwardsWorkspaceHero({
                   >
                     {tpl.badge}
                   </Typography>
+
+                  {isSelected && (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      fullWidth
+                      disabled={isCreatingTemplate}
+                      startIcon={<LibraryAddIcon fontSize="small" />}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onConfirmCreateTemplate(tpl)
+                      }}
+                      sx={{
+                        mt: 1,
+                        py: 0.35,
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        textTransform: 'none',
+                        borderRadius: '8px',
+                        color: '#0f172a',
+                        bgcolor: tplTheme.accentColor,
+                        '&:hover': { bgcolor: tplTheme.accentColor, opacity: 0.92 }
+                      }}
+                    >
+                      {isCreatingTemplate ? 'Đang khởi tạo...' : t('createNewSprintBoard')}
+                    </Button>
+                  )}
                 </Box>
               </Box>
             )

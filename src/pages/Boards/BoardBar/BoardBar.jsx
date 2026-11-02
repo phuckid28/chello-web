@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Badge from '@mui/material/Badge'
-import VpnLockIcon from '@mui/icons-material/VpnLock'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import StarBorderRoundedIcon from '@mui/icons-material/StarBorderRounded'
@@ -69,7 +68,7 @@ const deadlineChipColors = (telemetry) => {
   return { bg: 'rgba(16, 185, 129, 0.24)', border: '#34d399' }
 }
 
-function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'kanban', setBoardViewMode }) {
+function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'overview', setBoardViewMode }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { personaKey, themeConfig, changePersona } = usePersonaTheme(board?.theme)
@@ -79,11 +78,15 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
   const [anchors, setAnchors] = useState({})
   const [openImportMdModal, setOpenImportMdModal] = useState(false)
   const [openReport, setOpenReport] = useState(false)
+  const toolsChipRef = useRef(null)
 
   const openAnchor = (key) => (e) => setAnchors(prev => ({ ...prev, [key]: e.currentTarget }))
   const closeAnchor = (key) => () => setAnchors(prev => ({ ...prev, [key]: null }))
 
   const currentSprint = { ...DEFAULT_SPRINT_CONFIG, ...(board?.sprintConfig || {}) }
+  const sprintShortLabel = currentSprint.sprintNumber
+    ? `Sprint ${currentSprint.sprintNumber}`
+    : currentSprint.name
   const telemetry = useMemo(() => computeTelemetry(board), [board])
   const roster = useMemo(() => getSavedTeamRoster(board), [board])
   const activeFilterCount = countActiveFilters(filters)
@@ -154,25 +157,26 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: 1.5,
-      paddingX: 2,
+      gap: 1,
+      paddingX: 1.5,
       overflowX: 'auto',
       overflowY: 'hidden',
       background: (theme) => (theme.palette.mode === 'dark' ? '#0d121f' : '#131c2e'),
       borderBottom: '1px solid rgba(148, 163, 184, 0.16)',
-      '&::-webkit-scrollbar-track': { m: 2 }
+      '&::-webkit-scrollbar': { height: '4px' },
+      '&::-webkit-scrollbar-track': { m: 1 }
     }}>
       <ImportMarkdownModal open={openImportMdModal} onClose={() => setOpenImportMdModal(false)} accentColor={themeConfig.accentColor} />
       <SprintReportDialog open={openReport} onClose={() => setOpenReport(false)} board={board} />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.85, flexShrink: 0 }}>
-        <Tooltip title={board?.description || ''}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pl: 0.5, flexShrink: 0 }}>
-            <SoraRibbonIcon sx={{ fontSize: '20px', flexShrink: 0 }} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0, minWidth: 0 }}>
+        <Tooltip title={board?.description || board?.title || ''}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, pl: 0.25, flexShrink: 0 }}>
+            <SoraRibbonIcon sx={{ fontSize: '18px', flexShrink: 0 }} />
             <Box sx={{
-              width: '175px',
+              width: { xs: '130px', lg: '160px' },
               flexShrink: 0,
-              '& input': { color: 'white !important' },
+              '& input': { color: 'white !important', fontSize: '0.86rem' },
               '& .MuiOutlinedInput-root.Mui-focused': { backgroundColor: 'rgba(255, 255, 255, 0.15)' }
             }}>
               <ToggleFocusInput value={board?.title || ''} onChangedValue={onUpdateBoardTitle} />
@@ -186,6 +190,8 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
             onClick={handleToggleStarBoard}
             sx={{
               flexShrink: 0,
+              width: 30,
+              height: 30,
               color: board?.isStarred ? '#fbbf24' : 'rgba(255,255,255,0.8)',
               bgcolor: 'rgba(255,255,255,0.1)',
               transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.22s ease',
@@ -196,12 +202,12 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
           </IconButton>
         </Tooltip>
 
-        <Tooltip title={tPrimary('configureSprint')}>
+        <Tooltip title={`${tPrimary('configureSprint')} • ${currentSprint.name} (${currentSprint.startDate} – ${currentSprint.endDate})`}>
           <Chip
             size="small"
-            sx={{ ...MENU_STYLES, bgcolor: 'rgba(56, 189, 248, 0.24)', borderColor: themeConfig.accentColor }}
+            sx={{ ...MENU_STYLES, px: 0.75, bgcolor: 'rgba(56, 189, 248, 0.22)', borderColor: themeConfig.accentColor }}
             icon={<CalendarMonthRoundedIcon fontSize="small" />}
-            label={`${currentSprint.name}: ${String(currentSprint.startDate).slice(0, 5)}–${String(currentSprint.endDate).slice(0, 5)}`}
+            label={sprintShortLabel}
             onClick={openAnchor('sprint')}
             clickable
           />
@@ -214,12 +220,13 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
             size="small"
             sx={{
               ...MENU_STYLES,
+              px: 0.75,
               bgcolor: deadlineColors.bg,
               borderColor: deadlineColors.border,
               animation: telemetry.overdueCards.length > 0 ? 'chelloPulseHalo 2.2s infinite' : 'none'
             }}
             icon={telemetry.alertCount > 0 ? <WarningAmberRoundedIcon fontSize="small" /> : <CheckCircleOutlineRoundedIcon fontSize="small" />}
-            label={telemetry.alertCount > 0 ? `${telemetry.alertCount} ${tPrimary('deadlineAlerts')}` : tPrimary('onTrack')}
+            label={telemetry.alertCount > 0 ? `${telemetry.alertCount}` : tPrimary('onTrack')}
             onClick={openAnchor('deadline')}
             clickable
           />
@@ -229,62 +236,68 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
           <Badge color="secondary" badgeContent={activeFilterCount} invisible={activeFilterCount === 0} overlap="rectangular">
             <Chip
               size="small"
-              sx={{ ...MENU_STYLES, bgcolor: activeFilterCount ? 'rgba(125, 211, 252, 0.35)' : MENU_STYLES.bgcolor }}
+              sx={{ ...MENU_STYLES, px: 0.75, bgcolor: activeFilterCount ? 'rgba(125, 211, 252, 0.35)' : MENU_STYLES.bgcolor }}
               icon={<FilterAltIcon fontSize="small" />}
-              label={activeFilterCount ? `${filterStats.shown}/${filterStats.total} CR` : tPrimary('filterCrBtn')}
+              label={activeFilterCount ? `${filterStats.shown}/${filterStats.total}` : tPrimary('filterCrBtn')}
               onClick={openAnchor('filter')}
               clickable
             />
           </Badge>
         </Tooltip>
 
-        <Chip
-          size="small"
-          sx={{ ...MENU_STYLES, bgcolor: 'rgba(167, 139, 250, 0.30)', borderColor: '#a78bfa' }}
-          icon={<MenuBookRoundedIcon fontSize="small" />}
-          label={tPrimary('knowledgeHubBtn')}
-          onClick={openKnowledgeHub}
-          clickable
-        />
+        <Tooltip title={tPrimary('knowledgeHubBtn')}>
+          <IconButton
+            size="small"
+            onClick={openKnowledgeHub}
+            sx={{
+              width: 30,
+              height: 30,
+              color: '#e9d5ff',
+              bgcolor: 'rgba(167, 139, 250, 0.24)',
+              border: '1px solid rgba(167, 139, 250, 0.5)',
+              '&:hover': { bgcolor: 'rgba(167, 139, 250, 0.38)' }
+            }}
+          >
+            <MenuBookRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
 
         <Chip
           size="small"
-          sx={{ ...MENU_STYLES, bgcolor: 'rgba(16, 185, 129, 0.24)', borderColor: '#34d399' }}
+          ref={toolsChipRef}
+          sx={{ ...MENU_STYLES, px: 0.75, bgcolor: 'rgba(16, 185, 129, 0.24)', borderColor: '#34d399' }}
           icon={<HandymanRoundedIcon fontSize="small" />}
           label={tPrimary('toolsMenu')}
           onClick={openAnchor('tools')}
           clickable
         />
 
-        <Tooltip title={tPrimary('selectThemeTitle')}>
+        {pomodoro.isRunning && (
           <Chip
             size="small"
-            sx={{ ...MENU_STYLES, borderColor: themeConfig.accentColor }}
-            icon={<PaletteOutlinedIcon fontSize="small" />}
-            label={themeConfig.name.split('•')[0].trim()}
+            sx={{ ...MENU_STYLES, px: 0.75, bgcolor: 'rgba(244, 114, 182, 0.35)', borderColor: '#f472b6' }}
+            icon={<SoraBunnyIcon fontSize="small" />}
+            label={formatTimer(pomodoro.secondsLeft)}
+            onClick={openAnchor('timer')}
+            clickable
+          />
+        )}
+
+        <Tooltip title={`${tPrimary('selectThemeTitle')}: ${themeConfig.name}`}>
+          <IconButton
+            size="small"
             onClick={openAnchor('theme')}
-            clickable
-          />
-        </Tooltip>
-
-        <Chip
-          size="small"
-          sx={{ ...MENU_STYLES, display: { xs: 'none', xl: 'inline-flex' }, bgcolor: pomodoro.isRunning ? 'rgba(244, 114, 182, 0.35)' : MENU_STYLES.bgcolor }}
-          icon={<SoraBunnyIcon fontSize="small" />}
-          label={pomodoro.isRunning ? formatTimer(pomodoro.secondsLeft) : 'Pomodoro'}
-          onClick={openAnchor('timer')}
-          clickable
-        />
-
-        <Tooltip title={tPrimary('boardVisibilityTooltip')}>
-          <Chip
-            size="small"
-            sx={{ ...MENU_STYLES, display: { xs: 'none', xl: 'inline-flex' } }}
-            icon={<VpnLockIcon fontSize="small" />}
-            label={capitalizeFirstLetter(board?.type)}
-            onClick={handleToggleBoardType}
-            clickable
-          />
+            sx={{
+              width: 30,
+              height: 30,
+              color: themeConfig.accentColor,
+              bgcolor: 'rgba(15, 23, 42, 0.65)',
+              border: `1px solid ${themeConfig.accentColor}`,
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.16)' }
+            }}
+          >
+            <PaletteOutlinedIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       </Box>
 
@@ -308,9 +321,13 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
         onImport={() => setOpenImportMdModal(true)}
         onExportExcel={handleExport(exportSprintCrsToExcel, 'Excel')}
         onExportCsv={handleExport(exportSprintCrsToCsv, 'CSV')}
+        onOpenPomodoro={() => setAnchors(prev => ({ ...prev, timer: toolsChipRef.current }))}
+        onToggleBoardType={handleToggleBoardType}
+        boardType={board?.type}
+        pomodoroLabel={pomodoro.isRunning ? `Pomodoro (${formatTimer(pomodoro.secondsLeft)})` : 'Pomodoro Focus Timer'}
       />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
         <InviteBoardUser boardId={board._id} />
         <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>

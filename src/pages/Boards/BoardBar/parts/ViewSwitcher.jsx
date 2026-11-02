@@ -8,26 +8,50 @@ import { useTranslation } from '~/customHooks/useTranslation'
 import { playUiChime } from '~/utils/soundEffects'
 
 const VIEWS = [
-  { id: 'kanban', labelKey: 'viewKanban', Icon: ViewKanbanOutlinedIcon, color: null },
   { id: 'overview', labelKey: 'viewMatrix', Icon: InsightsRoundedIcon, color: '#f472b6' },
+  { id: 'kanban', labelKey: 'viewKanban', Icon: ViewKanbanOutlinedIcon, color: null },
   { id: 'timeline', labelKey: 'viewTimeline', Icon: ViewTimelineRoundedIcon, color: '#34d399' },
   { id: 'graph', labelKey: 'viewGraph', Icon: HubRoundedIcon, color: '#a78bfa' }
 ]
 
-function ViewSwitcher({ value, onChange, accentColor }) {
+const pillSx = (active, activeColor) => ({
+  height: 28,
+  color: active ? '#0f172a' : 'rgba(248, 250, 252, 0.92)',
+  fontWeight: 800,
+  fontSize: '0.73rem',
+  bgcolor: active ? activeColor : 'transparent',
+  border: 'none',
+  transition: 'background-color 0.2s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+  '& .MuiSvgIcon-root': {
+    color: active ? '#0f172a' : 'rgba(248, 250, 252, 0.85)',
+    fontSize: '16px'
+  },
+  '& .MuiChip-label': {
+    px: 1
+  },
+  '&:hover': {
+    bgcolor: active ? activeColor : 'rgba(255, 255, 255, 0.14)'
+  }
+})
+
+function ViewSwitcher({ value = 'overview', onChange, accentColor }) {
   const { tPrimary } = useTranslation()
+
+  const handleSelect = (id) => {
+    playUiChime('sparkle')
+    onChange?.(id)
+  }
 
   return (
     <Box
-      role="tablist"
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 0.4,
+        gap: 0.35,
         p: 0.35,
         borderRadius: '10px',
-        bgcolor: 'rgba(15, 23, 42, 0.55)',
-        border: '1px solid rgba(255,255,255,0.22)',
+        bgcolor: 'rgba(9, 13, 22, 0.65)',
+        border: '1px solid rgba(148, 163, 184, 0.26)',
         flexShrink: 0
       }}
     >
@@ -36,27 +60,12 @@ function ViewSwitcher({ value, onChange, accentColor }) {
         return (
           <Chip
             key={id}
-            role="tab"
-            aria-selected={active}
             size="small"
             icon={<Icon fontSize="small" />}
             label={tPrimary(labelKey)}
-            onClick={() => {
-              if (active) return
-              playUiChime('sparkle')
-              onChange(id)
-            }}
+            onClick={() => handleSelect(id)}
             clickable
-            sx={{
-              height: 24,
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: 'white',
-              bgcolor: active ? (color || accentColor) : 'transparent',
-              boxShadow: active ? '0 2px 10px rgba(0,0,0,0.25)' : 'none',
-              transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
-              '.MuiSvgIcon-root': { color: 'white !important' }
-            }}
+            sx={pillSx(active, color || accentColor)}
           />
         )
       })}

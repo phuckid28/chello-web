@@ -24,6 +24,7 @@ import { useTranslation } from '~/customHooks/useTranslation'
 import { formatMessage } from '~/utils/i18nV5'
 import { playUiChime } from '~/utils/soundEffects'
 import LoadingButton from '~/components/Loading/LoadingButton'
+import FrdVisualDocument from './FrdVisualDocument'
 
 const extractGoogleDriveFileId = (rawUrl) => {
   const url = String(rawUrl || '').trim()
@@ -385,7 +386,7 @@ function GoogleDriveFrdControls({
             </Button>
           )}
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 0, minHeight: '68vh' }}>
+        <DialogContent dividers sx={{ p: 2, minHeight: '68vh' }}>
           {previewDoc?.previewUrl ? (
             <Box
               component="iframe"
@@ -395,20 +396,11 @@ function GoogleDriveFrdControls({
               allow="autoplay"
             />
           ) : (
-            <Box
-              component="pre"
-              sx={{
-                m: 0,
-                p: 2.5,
-                maxHeight: '68vh',
-                overflowY: 'auto',
-                fontFamily: 'monospace',
-                fontSize: '0.85rem',
-                whiteSpace: 'pre-wrap'
-              }}
-            >
-              {previewDoc?.content || '—'}
-            </Box>
+            <FrdVisualDocument
+              card={activeCard}
+              markdownText={previewDoc?.content || ''}
+              sprintNumber={activeCard?.sprint || '34'}
+            />
           )}
         </DialogContent>
         <DialogActions>

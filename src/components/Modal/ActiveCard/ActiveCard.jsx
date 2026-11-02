@@ -21,6 +21,7 @@ import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded'
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded'
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded'
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
+import PictureAsPdfRoundedIcon from '@mui/icons-material/PictureAsPdfRounded'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
@@ -75,6 +76,7 @@ import { useTranslation } from '~/customHooks/useTranslation'
 import { DEFAULT_PRIORITY, PRIORITY_OPTIONS, normalizePriority } from '~/utils/crMeta'
 import CrAssistantPanel from './CrAssistantPanel'
 import GoogleDriveFrdControls from './GoogleDriveFrdControls'
+import { extractSprintNumberOnly, exportFrdAsPrintablePdf } from '~/utils/frdPdfExporter'
 
 // Converts a timestamp / ISO string into the YYYY-MM-DD value expected by <input type="date">
 const toDateInputValue = (value) => {
@@ -116,7 +118,10 @@ function ActiveCard() {
   const confirmDeleteCard = useConfirm()
   const { t, tPrimary, formatMessage } = useTranslation()
 
-  const defaultSprint = board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.name
+  const defaultSprint = extractSprintNumberOnly(
+    board?.sprintConfig?.sprintNumber || board?.sprintConfig?.name || DEFAULT_SPRINT_CONFIG.sprintNumber,
+    '34'
+  )
 
   const [showCoverInput, setShowCoverInput] = useState(false)
   const [coverUrlInput, setCoverUrlInput] = useState('')
@@ -145,7 +150,7 @@ function ActiveCard() {
   useEffect(() => {
     if (activeCard) {
       setCrCode(activeCard.crCode || '')
-      setSprint(activeCard.sprint || defaultSprint)
+      setSprint(extractSprintNumberOnly(activeCard.sprint || defaultSprint, defaultSprint))
       setAssignee(activeCard.assignee || '')
       setBaStatus(activeCard.baStatus || 'Processing')
       setDevProgress(
@@ -251,7 +256,7 @@ function ActiveCard() {
     try {
       await callApiUpdateCard({
         crCode: crCode.trim(),
-        sprint: sprint.trim() || defaultSprint,
+        sprint: extractSprintNumberOnly(sprint, defaultSprint),
         assignee: assignee.trim(),
         baStatus,
         priority,
@@ -563,78 +568,116 @@ function ActiveCard() {
               </Box>
 
               <Stack spacing={1.5}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                  <TextField
-                    label="Ticket ID (VD: BNPL-945)"
-                    size="small"
-                    value={crCode}
-                    onChange={(e) => setCrCode(e.target.value)}
-                    sx={{ width: { xs: '100%', sm: '180px' } }}
-                  />
-                  <TextField
-                    label="Sprint"
-                    size="small"
-                    value={sprint}
-                    onChange={(e) => setSprint(e.target.value)}
-                    placeholder={defaultSprint}
-                    sx={{ width: { xs: '100%', sm: '140px' } }}
-                  />
-                  <TextField
-                    select
-                    label={t('priorityLabel')}
-                    size="small"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    sx={{ width: { xs: '100%', sm: '150px' } }}
-                  >
-                    {PRIORITY_OPTIONS.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>{opt.icon} {opt.label}</MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    select
-                    label="Status"
-                    size="small"
-                    fullWidth
-                    value={baStatus}
-                    onChange={(e) => setBaStatus(e.target.value)}
-                  >
-                    {BA_STATUS_OPTIONS.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                    ))}
-                  </TextField>
-                </Stack>
+                <Grid container spacing={1.25}>
+                  <Grid xs={12} sm={3.6}>
+                    <TextField
+                      label="Ticket ID (VD: BNPL-945)"
+                      size="small"
+                      fullWidth
+                      value={crCode}
+                      onChange={(e) => setCrCode(e.target.value)}
+                      inputProps={{
+                        autoCorrect: 'off',
+                        autoCapitalize: 'off',
+                        spellCheck: 'false'
+                      }}
+                      sx={{
+                        '& input': {
+                          fontFamily: '"JetBrains Mono", Consolas, monospace',
+                          fontWeight: 700
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid xs={4.5} sm={1.7}>
+                    <TextField
+                      label="Sprint"
+                      size="small"
+                      fullWidth
+                      value={sprint}
+                      onChange={(e) => setSprint(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder={defaultSprint}
+                      inputProps={{
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*'
+                      }}
+                      sx={{
+                        '& input': {
+                          fontFamily: '"JetBrains Mono", Consolas, monospace',
+                          fontWeight: 800,
+                          textAlign: 'center'
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid xs={7.5} sm={3.6}>
+                    <TextField
+                      select
+                      label={t('priorityLabel')}
+                      size="small"
+                      fullWidth
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                    >
+                      {PRIORITY_OPTIONS.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>{opt.icon} {opt.label}</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid xs={12} sm={3.1}>
+                    <TextField
+                      select
+                      label="Status"
+                      size="small"
+                      fullWidth
+                      value={baStatus}
+                      onChange={(e) => setBaStatus(e.target.value)}
+                    >
+                      {BA_STATUS_OPTIONS.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                </Grid>
 
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                  <TextField
-                    label={t('crStartDate')}
-                    type="date"
-                    size="small"
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                  <TextField
-                    label="Due date for dev"
-                    type="date"
-                    size="small"
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                  />
-                  <ProgressSelect value={devProgress} onChange={setDevProgress} />
-                  <TextField
-                    label="Resource used (Point)"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    inputProps={{ step: '0.25', min: 0, max: 100 }}
-                    value={resourceUsed}
-                    onChange={(e) => setResourceUsed(e.target.value)}
-                  />
-                </Stack>
+                <Grid container spacing={1.25}>
+                  <Grid xs={12} sm={3.4}>
+                    <TextField
+                      label={t('crStartDate')}
+                      type="date"
+                      size="small"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={3.4}>
+                    <TextField
+                      label="Due date for dev"
+                      type="date"
+                      size="small"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      value={deadline}
+                      onChange={(e) => setDeadline(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid xs={7} sm={3.2}>
+                    <ProgressSelect value={devProgress} onChange={setDevProgress} />
+                  </Grid>
+                  <Grid xs={5} sm={2}>
+                    <TextField
+                      label="Story Point"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      inputProps={{ step: '0.25', min: 0, max: 100 }}
+                      value={resourceUsed}
+                      onChange={(e) => setResourceUsed(e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
 
                 {/* Handle by (Unregistered Team Roster Multi-Select + Custom Input) */}
                 <Box
@@ -683,7 +726,7 @@ function ActiveCard() {
                       value={newRosterMemberName}
                       onChange={(e) => setNewRosterMemberName(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !e.nativeEvent?.isComposing) {
                           e.preventDefault()
                           handleAddUnregisteredMemberToRoster()
                         }
@@ -732,15 +775,27 @@ function ActiveCard() {
                     {t('frdSectionTitle')}
                   </Typography>
                 </Box>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<DownloadRoundedIcon />}
-                  onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
-                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
-                >
-                  {t('exportCrMdBtn')}
-                </Button>
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="error"
+                    startIcon={<PictureAsPdfRoundedIcon />}
+                    onClick={() => exportFrdAsPrintablePdf(activeCard, activeCard?.description, sprint)}
+                    sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '8px' }}
+                  >
+                    Xuất PDF
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<DownloadRoundedIcon />}
+                    onClick={() => exportCardAsFrdMarkdown(activeCard, sprint)}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                  >
+                    {t('exportCrMdBtn')}
+                  </Button>
+                </Stack>
               </Box>
 
               <GoogleDriveFrdControls
@@ -903,7 +958,7 @@ function ActiveCard() {
                   value={newQuestTitle}
                   onChange={(e) => setNewQuestTitle(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && !e.nativeEvent?.isComposing) {
                       e.preventDefault()
                       onAddChecklistItem()
                     }
@@ -941,6 +996,8 @@ function ActiveCard() {
                 </Button>
               </Box>
               <CardDescriptionMdEditor
+                card={activeCard}
+                sprintNumber={sprint}
                 cardDescriptionProp={activeCard?.description}
                 handleUpdateCardDescription={onUpdateCardDescription}
               />
@@ -994,6 +1051,13 @@ function ActiveCard() {
               >
                 <AutoFixHighRoundedIcon fontSize="small" />
                 <span>{t('insertTemplateBtn')}</span>
+              </SidebarItem>
+              <SidebarItem
+                className="active"
+                onClick={() => exportFrdAsPrintablePdf(activeCard, activeCard?.description, sprint)}
+              >
+                <PictureAsPdfRoundedIcon fontSize="small" color="error" />
+                <span>Xuất FRD (.PDF)</span>
               </SidebarItem>
               <SidebarItem
                 className="active"

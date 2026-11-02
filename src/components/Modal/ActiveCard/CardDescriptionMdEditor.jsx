@@ -2,11 +2,15 @@ import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import EditNoteIcon from '@mui/icons-material/EditNote'
 import { useTranslation } from '~/customHooks/useTranslation'
+import FrdVisualDocument from './FrdVisualDocument'
 
-function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescription }) {
+function CardDescriptionMdEditor({
+  card,
+  sprintNumber = '34',
+  cardDescriptionProp,
+  handleUpdateCardDescription
+}) {
   const { tPrimary } = useTranslation()
   const [markdownEditMode, setMarkdownEditMode] = useState(false)
   const [cardDescription, setCardDescription] = useState(cardDescriptionProp || '')
@@ -21,17 +25,25 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
   }
 
   return (
-    <Box sx={{ mt: -4 }}>
-      {markdownEditMode
-        ? <Box sx={{ mt: 5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box sx={{ mt: 1 }}>
+      {markdownEditMode ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <TextField
             fullWidth
             multiline
-            rows={5}
+            minRows={8}
+            maxRows={18}
             placeholder={tPrimary('addDetailedDescPlaceholder')}
             value={cardDescription}
             onChange={(e) => setCardDescription(e.target.value)}
             autoFocus
+            sx={{
+              '& textarea': {
+                fontFamily: '"JetBrains Mono", Consolas, monospace',
+                fontSize: '0.84rem',
+                lineHeight: 1.6
+              }
+            }}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
             <Button
@@ -56,37 +68,16 @@ function CardDescriptionMdEditor({ cardDescriptionProp, handleUpdateCardDescript
             </Button>
           </Box>
         </Box>
-        : <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Button
-            sx={{ alignSelf: 'flex-end' }}
-            onClick={() => setMarkdownEditMode(true)}
-            type="button"
-            variant="contained"
-            color="info"
-            size="small"
-            startIcon={<EditNoteIcon />}
-          >
-            {tPrimary('editBtn')}
-          </Button>
-          <Box
-            onClick={() => setMarkdownEditMode(true)}
-            sx={{
-              cursor: 'pointer',
-              p: cardDescription ? '12px' : '16px',
-              border: '1px solid',
-              borderColor: (theme) => theme.palette.mode === 'dark' ? ' rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)',
-              borderRadius: '6px',
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#091e420f',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}
-          >
-            <Typography variant="body2" sx={{ color: cardDescription ? 'text.primary' : 'text.secondary' }}>
-              {cardDescription || tPrimary('addDetailedDescPlaceholder')}
-            </Typography>
-          </Box>
-        </Box>
-      }
+      ) : (
+        <FrdVisualDocument
+          card={card}
+          markdownText={cardDescription}
+          sprintNumber={sprintNumber}
+          onEditClick={() => setMarkdownEditMode(true)}
+          editButtonLabel={tPrimary('editBtn')}
+          emptyPlaceholder={tPrimary('addDetailedDescPlaceholder')}
+        />
+      )}
     </Box>
   )
 }

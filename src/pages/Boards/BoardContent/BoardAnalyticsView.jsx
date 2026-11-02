@@ -15,11 +15,13 @@ import TableRow from '@mui/material/TableRow'
 import TableViewRoundedIcon from '@mui/icons-material/TableViewRounded'
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import PlayCircleFilledWhiteRoundedIcon from '@mui/icons-material/PlayCircleFilledWhiteRounded'
+import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { requestSwitchBoardView } from '~/utils/boardEvents'
 import {
   BA_STATUS_OPTIONS,
   DEFAULT_SPRINT_CONFIG,
@@ -221,7 +223,20 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                 Update till: {sprintConfig.updateTill || formatDateVN(new Date())} • By: {sprintConfig.updatedBy || 'Dao Thanh Phuc'}
               </Typography>
             </Box>
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                startIcon={<ViewKanbanOutlinedIcon />}
+                onClick={() => {
+                  playUiChime('sparkle')
+                  requestSwitchBoardView('kanban')
+                }}
+                sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '10px' }}
+              >
+                {tPrimary('viewKanban')}
+              </Button>
               <Button
                 variant="outlined"
                 color="info"
