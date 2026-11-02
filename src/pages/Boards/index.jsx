@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import AppBar from '~/components/AppBar/AppBar'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import { runWithReveal } from '~/fx/themeReveal'
@@ -14,6 +14,9 @@ import ArrowRightIcon from '@mui/icons-material/ArrowRight'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
+import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
+import Avatar from '@mui/material/Avatar'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
@@ -26,8 +29,8 @@ import { DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE } from '~/utils/constants'
 import { useForm } from 'react-hook-form'
 import { styled } from '@mui/material/styles'
 import {
-  ANIME_THEMES,
-  ANIME_BOARD_TEMPLATES,
+  PRIMARY_THEMES_LIST,
+  DEFAULT_SPRINT_TEMPLATE,
   SORA_PRESET_COVERS
 } from '~/utils/animeTheme'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
@@ -74,8 +77,6 @@ function Boards() {
   const [totalBoards, setTotalBoards] = useState(null)
   const [isOpenModal, setIsOpenModal] = useState(false)
   const [previewArt, setPreviewArt] = useState(null)
-  const [selectedTemplate, setSelectedTemplate] = useState(null)
-  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)
 
   const { globalPersonaKey, themeConfig, changePersona } = usePersonaTheme()
   const { t, tPrimary } = useTranslation()
@@ -90,7 +91,6 @@ function Boards() {
       title: '',
       description: '',
       type: BOARD_TYPES.PUBLIC,
-      theme: globalPersonaKey,
       useTemplate: true
     }
   })
@@ -104,24 +104,50 @@ function Boards() {
     fetchBoardsAPI(location.search).then(updateStateData)
   }, [location.search])
 
-  const handleOpenModal = () => {
-    if (selectedTemplate) {
+  const handleOpenModalWithTemplate = useCallback((prefillTemplate = false) => {
+    const nextSprintNum = (totalBoards || 0) + 1
+    if (prefillTemplate) {
       reset({
-        title: selectedTemplate.title,
-        description: selectedTemplate.description,
+        title: `Sprint ${nextSprintNum} • Quản lý CR & FRD`,
+        description: DEFAULT_SPRINT_TEMPLATE.description,
         type: BOARD_TYPES.PUBLIC,
-        theme: selectedTemplate.theme,
+        useTemplate: true
+      })
+    } else {
+      reset({
+        title: '',
+        description: '',
+        type: BOARD_TYPES.PUBLIC,
         useTemplate: true
       })
     }
     setIsOpenModal(true)
-  }
+  }, [reset, totalBoards])
+
+  useEffect(() => {
+    const handleOpenFromMenu = () => handleOpenModalWithTemplate(true)
+    window.addEventListener('chello-open-create-board-modal', handleOpenFromMenu)
+    return () => window.removeEventListener('chello-open-create-board-modal', handleOpenFromMenu)
+  }, [handleOpenModalWithTemplate])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('create') === '1' && boards !== null) {
+      handleOpenModalWithTemplate(true)
+      params.delete('create')
+      const rest = params.toString()
+      navigate(`/boards${rest ? `?${rest}` : ''}`, { replace: true })
+    }
+  }, [location.search, boards, handleOpenModalWithTemplate, navigate])
+
+  const handleOpenModal = () => handleOpenModalWithTemplate(false)
 
   const handleCloseModal = () => {
     setIsOpenModal(false)
     reset()
   }
 
+  // Strictly switches the global visual theme of the web app (never creates a board)
   const handleSwitchGlobalPersona = (themeKey, event) => {
     playUiChime('theme')
     if (event?.currentTarget) fxBurst(event.currentTarget, 14)
@@ -132,48 +158,16 @@ function Boards() {
   }
 
   const submitCreateNewBoard = (data) => {
-    return createNewBoardAPI(data).then((createdBoard) => {
+    return createNewBoardAPI({
+      ...data,
+      theme: globalPersonaKey
+    }).then((createdBoard) => {
       handleCloseModal()
       if (createdBoard?._id) {
         navigate(`/boards/${createdBoard._id}`)
       } else {
         fetchBoardsAPI(location.search).then(updateStateData)
       }
-    })
-  }
-
-  // Selecting a blueprint ONLY highlights it, switches the preview persona, and pre-fills the form — never auto-creates a board!
-  const handleSelectTemplate = (tpl, event) => {
-    setSelectedTemplate(tpl)
-    handleSwitchGlobalPersona(tpl.theme, event)
-    reset({
-      title: tpl.title,
-      description: tpl.description,
-      type: BOARD_TYPES.PUBLIC,
-      theme: tpl.theme,
-      useTemplate: true
-    })
-  }
-
-  // Explicit board creation triggered ONLY when the user clicks "Khởi tạo bảng Sprint" after selecting a template
-  const handleConfirmCreateTemplate = (tpl) => {
-    const targetTpl = tpl || selectedTemplate
-    if (!targetTpl || isCreatingTemplate) return
-    setIsCreatingTemplate(true)
-    createNewBoardAPI({
-      title: targetTpl.title,
-      description: targetTpl.description,
-      type: BOARD_TYPES.PUBLIC,
-      theme: targetTpl.theme,
-      useTemplate: true
-    }).then((createdBoard) => {
-      if (createdBoard?._id) {
-        navigate(`/boards/${createdBoard._id}`)
-      } else {
-        fetchBoardsAPI(location.search).then(updateStateData)
-      }
-    }).finally(() => {
-      setIsCreatingTemplate(false)
     })
   }
 
@@ -196,18 +190,14 @@ function Boards() {
     >
       <AppBar />
 
-      {/* Awwwards Editorial Spread + Asymmetric Bento Telemetry + Interactive Blueprint Reel */}
+      {/* Awwwards Editorial Spread + Asymmetric Bento Telemetry + Web App Theme Gallery Reel */}
       <AwwwardsWorkspaceHero
         themeConfig={themeConfig}
         globalPersonaKey={globalPersonaKey}
         totalBoards={totalBoards}
         starredCount={starredBoards.length}
-        selectedTemplate={selectedTemplate}
-        isCreatingTemplate={isCreatingTemplate}
         onSwitchPersona={handleSwitchGlobalPersona}
-        onOpenCreateModal={handleOpenModal}
-        onSelectTemplate={handleSelectTemplate}
-        onConfirmCreateTemplate={handleConfirmCreateTemplate}
+        onOpenCreateModal={() => handleOpenModalWithTemplate(true)}
         t={t}
       />
 
@@ -231,44 +221,84 @@ function Boards() {
 
             <Divider sx={{ my: 2.5 }} />
 
+            {/* Single Unified Sprint Template Section */}
             <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', px: 1, display: 'block', mb: 1 }}>
-              {t('templatesSidebarTitle')}
+              MẪU SPRINT TIÊU CHUẨN (UNIFIED TEMPLATE)
             </Typography>
-            <Stack direction="column" spacing={1}>
-              {ANIME_BOARD_TEMPLATES.map((tpl) => {
-                const isSelected = selectedTemplate?.id === tpl.id
+            <Card
+              sx={{
+                p: 1.5,
+                borderRadius: '12px',
+                border: `1px solid ${themeConfig.columnBorder}`,
+                bgcolor: (theme) => (theme.palette.mode === 'dark'
+                  ? 'var(--chella-raised-dark, #131c31)'
+                  : 'var(--chella-raised-light, #ffffff)')
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
+                <ViewKanbanRoundedIcon fontSize="small" sx={{ color: themeConfig.accentColor }} />
+                <Typography variant="body2" sx={{ fontWeight: 800 }} noWrap>
+                  {DEFAULT_SPRINT_TEMPLATE.title}
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25, lineHeight: 1.45 }}>
+                Mọi Board & Sprint đều sử dụng chung 1 kiểu template chuẩn: Sprint Matrix, Kanban 3 cột chủ đề CR, đặc tả FRD A4 PDF & Obsidian Graph.
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                startIcon={<LibraryAddIcon fontSize="small" />}
+                onClick={() => handleOpenModalWithTemplate(true)}
+                sx={{
+                  fontWeight: 800,
+                  textTransform: 'none',
+                  borderRadius: '9px',
+                  color: '#0f172a',
+                  bgcolor: themeConfig.accentColor,
+                  '&:hover': { bgcolor: themeConfig.accentColor, opacity: 0.92 }
+                }}
+              >
+                {t('createNewSprintBoard')}
+              </Button>
+            </Card>
+
+            <Divider sx={{ my: 2.5 }} />
+
+            {/* Web App Visual Theme Switcher (7 Themes — Strictly Theme Switching Only) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1, mb: 1 }}>
+              <PaletteOutlinedIcon sx={{ fontSize: 15, color: themeConfig.accentColor }} />
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>
+                CHỦ ĐỀ GIAO DIỆN WEB APP (7 THEMES)
+              </Typography>
+            </Box>
+            <Stack direction="column" spacing={0.85}>
+              {PRIMARY_THEMES_LIST.map((themeItem) => {
+                const isSelected = globalPersonaKey === themeItem.id
                 return (
                   <SidebarItem
-                    key={tpl.id}
+                    key={themeItem.id}
                     className={isSelected ? 'active' : ''}
-                    onClick={(e) => handleSelectTemplate(tpl, e)}
+                    onClick={(e) => handleSwitchGlobalPersona(themeItem.id, e)}
+                    sx={{ py: 1, px: 1.5 }}
                   >
-                    <SoraBunnyIcon fontSize="small" sx={{ flexShrink: 0 }} />
+                    <Avatar
+                      src={themeItem.mascotImage}
+                      alt={themeItem.name}
+                      sx={{ width: 26, height: 26, border: `1.5px solid ${themeItem.accentColor}`, flexShrink: 0 }}
+                    />
                     <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
-                        {tpl.title}
+                      <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.82rem' }} noWrap>
+                        {themeItem.name.split('•')[0].trim()}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }} noWrap>
-                        {tpl.badge}
+                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.68rem' }} noWrap>
+                        {themeItem.element} • {themeItem.archetypeLabel?.split('•')[0]?.trim()}
                       </Typography>
                     </Box>
-                    {isSelected && <CheckCircleRoundedIcon fontSize="small" color="info" />}
+                    {isSelected && <CheckCircleRoundedIcon fontSize="small" sx={{ color: themeItem.accentColor, flexShrink: 0 }} />}
                   </SidebarItem>
                 )
               })}
-              {selectedTemplate && (
-                <Button
-                  variant="contained"
-                  size="small"
-                  fullWidth
-                  disabled={isCreatingTemplate}
-                  startIcon={<LibraryAddIcon fontSize="small" />}
-                  onClick={() => handleConfirmCreateTemplate(selectedTemplate)}
-                  sx={{ mt: 0.5, fontWeight: 800, textTransform: 'none', borderRadius: '10px' }}
-                >
-                  {isCreatingTemplate ? 'Đang khởi tạo...' : `${t('createNewSprintBoard')}: ${selectedTemplate.title.split(' ')[0]}`}
-                </Button>
-              )}
             </Stack>
 
             <Divider sx={{ my: 2.5 }} />
@@ -368,7 +398,6 @@ function Boards() {
                 </Box>
                 <Grid container spacing={2.5}>
                   {starredBoards.map((b, sIdx) => {
-                    const bTheme = ANIME_THEMES[b.theme] || themeConfig
                     const isFeatured = sIdx === 0 && starredBoards.length > 1
                     return (
                       <Grid xs={12} sm={6} md={isFeatured ? 8 : 4} key={`starred-${b._id}`}>
@@ -381,7 +410,7 @@ function Boards() {
                             textDecoration: 'none',
                             borderRadius: '16px',
                             overflow: 'hidden',
-                            border: `1px solid ${bTheme.accentColor}`,
+                            border: `1px solid ${themeConfig.accentColor}`,
                             transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
                             '&:hover': {
                               transform: 'translateY(-3px)',
@@ -392,7 +421,7 @@ function Boards() {
                           <Box sx={{
                             height: isFeatured ? '132px' : '112px',
                             position: 'relative',
-                            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%), url(${bTheme.heroImage})`,
+                            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%), url(${themeConfig.heroImage})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             display: 'flex',
@@ -403,17 +432,15 @@ function Boards() {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                               <Chip
                                 icon={<SoraBunnyIcon fontSize="small" />}
-                                label={bTheme.element}
+                                label={themeConfig.element}
                                 size="small"
                                 sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.76)' }}
                               />
-                              {bTheme.archetypeLabel && (
-                                <Chip
-                                  label={bTheme.archetypeLabel.split('•')[0].trim()}
-                                  size="small"
-                                  sx={{ height: 22, fontSize: '10px', fontWeight: 700, color: bTheme.accentColor, bgcolor: 'rgba(15, 23, 42, 0.82)' }}
-                                />
-                              )}
+                              <Chip
+                                label="Standard Sprint"
+                                size="small"
+                                sx={{ height: 22, fontSize: '10px', fontWeight: 700, color: themeConfig.accentColor, bgcolor: 'rgba(15, 23, 42, 0.82)' }}
+                              />
                             </Box>
                             <StarRoundedIcon fontSize="small" sx={{ color: '#fbbf24' }} />
                           </Box>
@@ -449,7 +476,7 @@ function Boards() {
                   fontVariantNumeric: 'tabular-nums'
                 }}
               >
-                ASYMMETRIC BENTO GRID
+                UNIFIED SPRINT BENTO GRID
               </Typography>
             </Box>
 
@@ -467,7 +494,7 @@ function Boards() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   {t('noBoardsCreatedSub')}
                 </Typography>
-                <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={handleOpenModal}>
+                <Button variant="contained" startIcon={<LibraryAddIcon />} onClick={() => handleOpenModalWithTemplate(true)}>
                   {t('createNewSprintBoard')}
                 </Button>
               </Box>
@@ -476,9 +503,10 @@ function Boards() {
             {boards?.length > 0 && (
               <Grid container spacing={2.5}>
                 {boards.map((b, idx) => {
-                  const bTheme = ANIME_THEMES[b.theme] || themeConfig
                   const isHeroTile = idx === 0 && boards.length >= 3
-                  const sprintIdx = String(idx + 1).padStart(2, '0')
+                  const sprintIdx = b?.sprintConfig?.sprintNumber
+                    ? String(b.sprintConfig.sprintNumber).padStart(2, '0')
+                    : String(idx + 1).padStart(2, '0')
                   return (
                     <Grid xs={12} sm={6} md={isHeroTile ? 8 : 4} key={b._id}>
                       <Card sx={{
@@ -495,13 +523,13 @@ function Boards() {
                         transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
                         '&:hover': {
                           transform: 'translateY(-3px)',
-                          borderColor: bTheme.accentColor,
+                          borderColor: themeConfig.accentColor,
                           boxShadow: '0 12px 28px rgba(0, 0, 0, 0.20)'
                         }
                       }}>
                         <Box sx={{
                           height: isHeroTile ? '136px' : '108px',
-                          backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.16) 0%, rgba(9, 13, 22, 0.76) 100%), url(${bTheme.heroImage})`,
+                          backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.16) 0%, rgba(9, 13, 22, 0.76) 100%), url(${themeConfig.heroImage})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           display: 'flex',
@@ -519,7 +547,7 @@ function Boards() {
                                 px: 0.9,
                                 py: 0.25,
                                 borderRadius: '6px',
-                                color: bTheme.accentColor,
+                                color: themeConfig.accentColor,
                                 bgcolor: 'rgba(9, 13, 22, 0.78)',
                                 fontVariantNumeric: 'tabular-nums'
                               }}
@@ -532,11 +560,11 @@ function Boards() {
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                             <Chip
                               icon={<SoraBunnyIcon fontSize="small" />}
-                              label={`${bTheme.element} • ${bTheme.name.split('•')[0].trim()}`}
+                              label="Unified Sprint • Matrix & Kanban"
                               size="small"
                               sx={{ height: 22, fontSize: '11px', fontWeight: 700, color: 'white', bgcolor: 'rgba(15, 23, 42, 0.76)' }}
                             />
-                            {bTheme.jpTitle && isHeroTile && (
+                            {themeConfig.jpTitle && isHeroTile && (
                               <Typography
                                 variant="caption"
                                 sx={{
@@ -546,7 +574,7 @@ function Boards() {
                                   letterSpacing: '0.08em'
                                 }}
                               >
-                                {bTheme.jpTitle}
+                                {themeConfig.jpTitle}
                               </Typography>
                             )}
                           </Box>
@@ -592,7 +620,7 @@ function Boards() {
                                 color: 'text.secondary'
                               }}
                             >
-                              {bTheme.styleArchetype || 'ledger'}
+                              STANDARD SPRINT
                             </Typography>
                             <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
                               {t('openBoard')} <ArrowRightIcon fontSize="small" />
@@ -633,7 +661,6 @@ function Boards() {
         isOpenModal={isOpenModal}
         onClose={handleCloseModal}
         themeConfig={themeConfig}
-        globalPersonaKey={globalPersonaKey}
         boardTypes={BOARD_TYPES}
         control={control}
         register={register}

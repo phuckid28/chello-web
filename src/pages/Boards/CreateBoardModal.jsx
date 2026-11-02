@@ -6,22 +6,25 @@ import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import AbcIcon from '@mui/icons-material/Abc'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded'
 import Radio from '@mui/material/Radio'
 import RadioGroup from '@mui/material/RadioGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import Chip from '@mui/material/Chip'
+import Stack from '@mui/material/Stack'
 import { Controller } from 'react-hook-form'
 import LoadingButton from '~/components/Loading/LoadingButton'
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import { FIELD_REQUIRED_MESSAGE } from '~/utils/validators'
+import { DEFAULT_SPRINT_TEMPLATE } from '~/utils/animeTheme'
 import { SoraBunnyIcon } from '~/components/Icons/SoraBunnyIcon'
 
 export function CreateBoardModal({
   isOpenModal,
   onClose,
   themeConfig,
-  globalPersonaKey,
   boardTypes,
   control,
   register,
@@ -44,7 +47,7 @@ export function CreateBoardModal({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: 660,
+        width: 640,
         maxWidth: '94vw',
         boxShadow: 24,
         borderRadius: '16px',
@@ -78,6 +81,7 @@ export function CreateBoardModal({
                 <TextField
                   fullWidth
                   label={tPrimary('boardTitleInputLabel')}
+                  placeholder="VD: Sprint 34 • Core Platform & CR Delivery"
                   type="text"
                   variant="outlined"
                   InputProps={{
@@ -101,9 +105,11 @@ export function CreateBoardModal({
                 <TextField
                   fullWidth
                   label={tPrimary('boardDescInputLabel')}
+                  placeholder="Mô tả mục tiêu Sprint, phạm vi CR và tài liệu FRD..."
                   type="text"
                   variant="outlined"
                   multiline
+                  minRows={2}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -121,57 +127,62 @@ export function CreateBoardModal({
                 <FieldErrorAlert errors={errors} fieldName={'description'} />
               </Box>
 
-              <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                  {t('selectThemeLabel')}:
+              {/* Unified Standard Sprint Template Preview */}
+              <Box
+                sx={{
+                  p: 1.75,
+                  borderRadius: '12px',
+                  border: `1px solid ${themeConfig.columnBorder}`,
+                  bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.72)' : 'rgba(248, 250, 252, 0.9)')
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.75 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <ViewKanbanRoundedIcon fontSize="small" sx={{ color: themeConfig.accentColor }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                      {DEFAULT_SPRINT_TEMPLATE.title}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    label={DEFAULT_SPRINT_TEMPLATE.badge}
+                    sx={{ height: 20, fontSize: '0.68rem', fontWeight: 800, color: '#0f172a', bgcolor: themeConfig.accentColor }}
+                  />
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                  Tất cả các Board / Sprint đều dùng chung 1 kiểu template chuẩn thống nhất và tự động hiển thị theo chủ đề giao diện của Web App ({themeConfig.name.split('•')[0].trim()}):
                 </Typography>
+                <Stack spacing={0.4} sx={{ mb: 1 }}>
+                  {DEFAULT_SPRINT_TEMPLATE.modules.map((mod) => (
+                    <Box key={mod} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <CheckCircleOutlineRoundedIcon sx={{ fontSize: 14, color: themeConfig.accentColor, flexShrink: 0 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        {mod}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+
                 <Controller
-                  name="theme"
-                  defaultValue={globalPersonaKey}
+                  name="useTemplate"
+                  defaultValue={true}
                   control={control}
                   render={({ field }) => (
-                    <RadioGroup
-                      {...field}
-                      row
-                      onChange={(event, value) => field.onChange(value)}
-                      value={field.value}
-                    >
-                      <FormControlLabel
-                        value="cosmos"
-                        control={<Radio size="small" />}
-                        label="🌌 Vũ Trụ & Hoàng Đạo (Cosmos)"
-                      />
-                      <FormControlLabel
-                        value="wind-chime"
-                        control={<Radio size="small" />}
-                        label="🎐 Bầu Trời Xanh & Chuông Gió (Furin)"
-                      />
-                      <FormControlLabel
-                        value="sora-sky"
-                        control={<Radio size="small" />}
-                        label="☁️ Sora (Distant Sky)"
-                      />
-                      <FormControlLabel
-                        value="furina"
-                        control={<Radio size="small" />}
-                        label="💧 Furina (Fontaine Opera)"
-                      />
-                      <FormControlLabel
-                        value="nahida"
-                        control={<Radio size="small" />}
-                        label="🌿 Nahida (Sumeru Wisdom)"
-                      />
-                      <FormControlLabel
-                        value="sora-twilight"
-                        control={<Radio size="small" />}
-                        label="🎀 Sora (Moonlit Ribbon)"
-                      />
-                      <FormControlLabel
-                        value="sora-usagi"
-                        control={<Radio size="small" />}
-                        label="🐰 Sora & Usagi Plush"
-                      />
-                    </RadioGroup>
+                    <FormControlLabel
+                      sx={{ m: 0 }}
+                      control={
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                          {tPrimary('seedTemplateCheckboxLabel')}
+                        </Typography>
+                      }
+                    />
                   )}
                 />
               </Box>
@@ -200,24 +211,6 @@ export function CreateBoardModal({
                       labelPlacement="start"
                     />
                   </RadioGroup>
-                )}
-              />
-
-              <Controller
-                name="useTemplate"
-                defaultValue={true}
-                control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                        size="small"
-                      />
-                    }
-                    label={tPrimary('seedTemplateCheckboxLabel')}
-                  />
                 )}
               />
 

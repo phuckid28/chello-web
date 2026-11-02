@@ -134,7 +134,6 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
     playUiChime('theme')
     if (event?.currentTarget) fxBurst(event.currentTarget, 14)
     runWithReveal(event, () => changePersona(nextThemeKey))
-    optimisticBoardUpdate({ theme: nextThemeKey }).catch(() => {})
     if (isMusicBoxActive()) playOstTrack(getDefaultTrackForTheme(nextThemeKey))
     setAnchors(prev => ({ ...prev, theme: null }))
   }

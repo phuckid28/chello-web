@@ -7,7 +7,9 @@ import Chip from '@mui/material/Chip'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import NorthEastRoundedIcon from '@mui/icons-material/NorthEastRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
-import { ANIME_THEMES, PRIMARY_THEMES_LIST, ANIME_BOARD_TEMPLATES } from '~/utils/animeTheme'
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
+import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
+import { PRIMARY_THEMES_LIST, DEFAULT_SPRINT_TEMPLATE } from '~/utils/animeTheme'
 import { SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 
 function AwwwardsWorkspaceHero({
@@ -15,12 +17,8 @@ function AwwwardsWorkspaceHero({
   globalPersonaKey,
   totalBoards,
   starredCount,
-  selectedTemplate,
-  isCreatingTemplate,
   onSwitchPersona,
   onOpenCreateModal,
-  onSelectTemplate,
-  onConfirmCreateTemplate,
   t
 }) {
   const chapterIndex = themeConfig.chapterIndex || '03'
@@ -70,7 +68,7 @@ function AwwwardsWorkspaceHero({
                 fontVariantNumeric: 'tabular-nums'
               }}
             >
-              ISSUE Nº {chapterIndex} / 07
+              THEME Nº {chapterIndex} / 07
             </Typography>
             <Box component="span" sx={{ color: 'rgba(255,255,255,0.28)' }}>/</Box>
             <Typography
@@ -104,7 +102,7 @@ function AwwwardsWorkspaceHero({
 
         {/* Asymmetric Split Spread */}
         <Grid container spacing={0}>
-          {/* Left 8 Cols: Japanese Minimal Vertical Signature + Display Typography + Editorial Switcher */}
+          {/* Left 8 Cols: Japanese Minimal Vertical Signature + Display Typography + Unified Sprint Template Summary */}
           <Grid
             xs={12}
             md={8}
@@ -243,69 +241,69 @@ function AwwwardsWorkspaceHero({
               </Box>
             </Box>
 
-            {/* 7-Chapter Editorial Theme Switcher Bar */}
-            <Box sx={{ mt: 3 }}>
-              <Typography
-                variant="caption"
+            {/* Unified Sprint Template Architecture Banner */}
+            <Box
+              sx={{
+                mt: 3,
+                p: 2,
+                borderRadius: '14px',
+                bgcolor: 'rgba(9, 13, 22, 0.68)',
+                backdropFilter: 'blur(12px)',
+                border: `1px solid ${themeConfig.columnBorder}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1.5
+              }}
+            >
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                  <ViewKanbanRoundedIcon sx={{ fontSize: 16, color: themeConfig.accentColor }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontFamily: '"JetBrains Mono", Consolas, monospace',
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: themeConfig.accentColor
+                    }}
+                  >
+                    UNIFIED SPRINT TEMPLATE • MẪU SPRINT CHUẨN DUY NHẤT
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: '#f8fafc' }}>
+                  {DEFAULT_SPRINT_TEMPLATE.title}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.76)', display: 'block', mt: 0.25 }}>
+                  Tất cả các Board / Sprint đều dùng chung 1 cấu trúc chuẩn (Sprint Matrix • Kanban 3 cột CR • FRD A4 PDF • Obsidian Graph) và tự động đồng bộ theo giao diện chủ đề của Web App.
+                </Typography>
+              </Box>
+
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<LibraryAddIcon fontSize="small" />}
+                onClick={onOpenCreateModal}
                 sx={{
-                  display: 'block',
-                  mb: 1,
-                  fontFamily: '"JetBrains Mono", Consolas, monospace',
-                  fontSize: '0.68rem',
+                  flexShrink: 0,
                   fontWeight: 800,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: 'rgba(248, 250, 252, 0.72)'
+                  borderRadius: '9px',
+                  textTransform: 'none',
+                  color: '#f8fafc',
+                  borderColor: themeConfig.accentColor,
+                  bgcolor: 'rgba(15, 23, 42, 0.65)',
+                  '&:hover': {
+                    bgcolor: themeConfig.accentColor,
+                    color: '#0f172a',
+                    borderColor: themeConfig.accentColor
+                  }
                 }}
               >
-                SELECT ART-DIRECTION CHAPTER (01 — 07)
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.85 }}>
-                {PRIMARY_THEMES_LIST.map((p, idx) => {
-                  const active = globalPersonaKey === p.id
-                  const num = p.chapterIndex || String(idx + 1).padStart(2, '0')
-                  return (
-                    <Button
-                      key={p.id}
-                      size="small"
-                      startIcon={<Avatar src={p.mascotImage} sx={{ width: 18, height: 18 }} />}
-                      variant={active ? 'contained' : 'outlined'}
-                      onClick={(e) => onSwitchPersona(p.id, e)}
-                      sx={{
-                        px: 1.35,
-                        py: 0.55,
-                        borderRadius: '9px',
-                        color: active ? '#0f172a' : '#f8fafc',
-                        fontWeight: active ? 800 : 600,
-                        fontSize: '0.76rem',
-                        borderColor: active ? p.accentColor : 'rgba(255, 255, 255, 0.24)',
-                        bgcolor: active ? p.accentColor : 'rgba(9, 13, 22, 0.58)',
-                        backdropFilter: 'blur(8px)',
-                        transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease',
-                        '&:hover': {
-                          bgcolor: p.accentColor,
-                          color: '#0f172a',
-                          borderColor: p.accentColor
-                        }
-                      }}
-                    >
-                      <Box
-                        component="span"
-                        sx={{
-                          fontFamily: '"JetBrains Mono", Consolas, monospace',
-                          fontSize: '0.68rem',
-                          opacity: 0.78,
-                          mr: 0.5,
-                          fontVariantNumeric: 'tabular-nums'
-                        }}
-                      >
-                        {num}
-                      </Box>
-                      {p.name.split('•')[0].trim()}
-                    </Button>
-                  )
-                })}
-              </Box>
+                {t('createNewSprintBoard')}
+              </Button>
             </Box>
           </Grid>
 
@@ -351,7 +349,7 @@ function AwwwardsWorkspaceHero({
                     color: themeConfig.accentColor
                   }}
                 >
-                  CURATED REALM • {chapterIndex}
+                  ACTIVE WEB APP THEME • {chapterIndex}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc' }} noWrap>
                   {themeConfig.characterName}
@@ -493,10 +491,11 @@ function AwwwardsWorkspaceHero({
         </Grid>
       </Box>
 
-      {/* Interactive Awwwards Gallery Strip for the 7 Curated Sprint Blueprints */}
+      {/* Interactive Awwwards Gallery Strip for the 7 Web App Visual Themes (Strictly Theme Switching Only) */}
       <Box sx={{ mt: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1.25, px: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+            <PaletteOutlinedIcon sx={{ fontSize: 16, color: themeConfig.accentColor }} />
             <Typography
               variant="caption"
               sx={{
@@ -507,41 +506,23 @@ function AwwwardsWorkspaceHero({
                 color: 'text.secondary'
               }}
             >
-              00 / INSTANT SPRINT BLUEPRINTS — INTERACTIVE EXHIBITION REEL
+              00 / WORKSPACE THEME GALLERY — CHỦ ĐỀ GIAO DIỆN WEB APP (01 — 07)
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              ({t('templatesSidebarTitle')} — Chọn mẫu trước, sau đó bấm Khởi tạo bảng Sprint)
+              (Nhấn vào bất kỳ chủ đề nào để đổi giao diện toàn bộ Web App & tất cả các bảng Sprint)
             </Typography>
           </Box>
 
-          {selectedTemplate && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-              <Chip
-                size="small"
-                icon={<CheckCircleRoundedIcon fontSize="small" />}
-                label={`Đã chọn mẫu: ${selectedTemplate.title}`}
-                color="info"
-                sx={{ fontWeight: 800 }}
-              />
-              <Button
-                size="small"
-                variant="contained"
-                disabled={isCreatingTemplate}
-                startIcon={<LibraryAddIcon fontSize="small" />}
-                onClick={() => onConfirmCreateTemplate(selectedTemplate)}
-                sx={{
-                  fontWeight: 800,
-                  borderRadius: '9px',
-                  textTransform: 'none',
-                  color: '#0f172a',
-                  bgcolor: themeConfig.accentColor,
-                  '&:hover': { bgcolor: themeConfig.accentColor, opacity: 0.92 }
-                }}
-              >
-                {isCreatingTemplate ? 'Đang khởi tạo...' : t('createNewSprintBoard')}
-              </Button>
-            </Box>
-          )}
+          <Chip
+            size="small"
+            icon={<CheckCircleRoundedIcon fontSize="small" />}
+            label={`Giao diện đang bật: ${themeConfig.name.split('•')[0].trim()}`}
+            sx={{
+              fontWeight: 800,
+              color: '#0f172a',
+              bgcolor: themeConfig.accentColor
+            }}
+          />
         </Box>
 
         <Box
@@ -549,18 +530,16 @@ function AwwwardsWorkspaceHero({
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             gap: 1.25,
-            minHeight: { md: 132 }
+            minHeight: { md: 124 }
           }}
         >
-          {ANIME_BOARD_TEMPLATES.map((tpl, idx) => {
-            const tplTheme = ANIME_THEMES[tpl.theme] || themeConfig
-            const isSelected = selectedTemplate?.id === tpl.id
-            const isCurrent = isSelected || (!selectedTemplate && globalPersonaKey === tpl.theme)
-            const idxStr = String(idx + 1).padStart(2, '0')
+          {PRIMARY_THEMES_LIST.map((themeItem, idx) => {
+            const isCurrent = globalPersonaKey === themeItem.id
+            const idxStr = themeItem.chapterIndex || String(idx + 1).padStart(2, '0')
             return (
               <Box
-                key={tpl.id}
-                onClick={(e) => onSelectTemplate(tpl, e)}
+                key={themeItem.id}
+                onClick={(e) => onSwitchPersona(themeItem.id, e)}
                 sx={{
                   flex: { xs: '1 1 auto', md: isCurrent ? '1.75 1 0%' : '1 1 0%' },
                   position: 'relative',
@@ -569,15 +548,13 @@ function AwwwardsWorkspaceHero({
                   overflow: 'hidden',
                   cursor: 'pointer',
                   color: '#f8fafc',
-                  backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.45) 0%, rgba(9, 13, 22, 0.90) 100%), url(${tplTheme.heroImage})`,
+                  backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.45) 0%, rgba(9, 13, 22, 0.90) 100%), url(${themeItem.heroImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  border: isSelected
-                    ? `2px solid ${tplTheme.accentColor}`
-                    : isCurrent
-                      ? `1.5px solid ${tplTheme.accentColor}`
-                      : '1px solid rgba(148, 163, 184, 0.26)',
-                  boxShadow: isSelected ? `0 0 0 2px ${tplTheme.accentColor}44` : 'none',
+                  border: isCurrent
+                    ? `2px solid ${themeItem.accentColor}`
+                    : '1px solid rgba(148, 163, 184, 0.26)',
+                  boxShadow: isCurrent ? `0 0 0 2px ${themeItem.accentColor}44` : 'none',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -585,7 +562,7 @@ function AwwwardsWorkspaceHero({
                   '&:hover': {
                     flex: { md: '1.85 1 0%' },
                     transform: 'translateY(-2px)',
-                    borderColor: tplTheme.accentColor
+                    borderColor: themeItem.accentColor
                   }
                 }}
               >
@@ -595,26 +572,26 @@ function AwwwardsWorkspaceHero({
                       fontFamily: '"JetBrains Mono", Consolas, monospace',
                       fontSize: '0.7rem',
                       fontWeight: 800,
-                      color: tplTheme.accentColor,
+                      color: themeItem.accentColor,
                       fontVariantNumeric: 'tabular-nums'
                     }}
                   >
                     /{idxStr}
                   </Typography>
-                  {isSelected ? (
+                  {isCurrent ? (
                     <Chip
                       size="small"
-                      label="✓ Đã chọn"
+                      label="✓ Đang áp dụng"
                       sx={{
                         height: 20,
                         fontSize: '0.66rem',
                         fontWeight: 800,
                         color: '#0f172a',
-                        bgcolor: tplTheme.accentColor
+                        bgcolor: themeItem.accentColor
                       }}
                     />
                   ) : (
-                    <NorthEastRoundedIcon sx={{ fontSize: 15, color: 'rgba(248, 250, 252, 0.78)' }} />
+                    <PaletteOutlinedIcon sx={{ fontSize: 15, color: 'rgba(248, 250, 252, 0.78)' }} />
                   )}
                 </Box>
 
@@ -629,7 +606,7 @@ function AwwwardsWorkspaceHero({
                     }}
                     noWrap
                   >
-                    {tpl.title}
+                    {themeItem.name}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -641,35 +618,8 @@ function AwwwardsWorkspaceHero({
                     }}
                     noWrap
                   >
-                    {tpl.badge}
+                    {themeItem.element} • {themeItem.archetypeLabel?.split('•')[0]?.trim()}
                   </Typography>
-
-                  {isSelected && (
-                    <Button
-                      size="small"
-                      variant="contained"
-                      fullWidth
-                      disabled={isCreatingTemplate}
-                      startIcon={<LibraryAddIcon fontSize="small" />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onConfirmCreateTemplate(tpl)
-                      }}
-                      sx={{
-                        mt: 1,
-                        py: 0.35,
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        textTransform: 'none',
-                        borderRadius: '8px',
-                        color: '#0f172a',
-                        bgcolor: tplTheme.accentColor,
-                        '&:hover': { bgcolor: tplTheme.accentColor, opacity: 0.92 }
-                      }}
-                    >
-                      {isCreatingTemplate ? 'Đang khởi tạo...' : t('createNewSprintBoard')}
-                    </Button>
-                  )}
                 </Box>
               </Box>
             )

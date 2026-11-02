@@ -21,7 +21,7 @@ import { requestBoardView, requestSprintReport } from '~/utils/boardEvents'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useColorScheme } from '@mui/material/styles'
-import { selectCurrentActiveBoard, updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { useTranslation } from '~/customHooks/useTranslation'
@@ -35,7 +35,6 @@ import {
   stopSoraMusicBox,
   isMusicBoxActive
 } from '~/utils/soundEffects'
-import { updateBoardDetailsAPI } from '~/apis'
 import { toast } from 'react-toastify'
 
 function CommandPalette() {
@@ -232,10 +231,6 @@ function CommandPalette() {
         icon: <SoraBunnyIcon fontSize="small" />,
         action: () => {
           changePersona(t.id)
-          if (board?._id) {
-            dispatch(updateCurrentActiveBoard({ ...board, theme: t.id }))
-            updateBoardDetailsAPI(board._id, { theme: t.id })
-          }
           playUiChime('theme')
           toast.info(formatMessage('cmdSwitchThemeTo', { name: t.name }))
         }

@@ -332,57 +332,21 @@ export const SORA_PRESET_COVERS = [
   { key: 'preset:nahida-chibi', label: '🍀 Chibi Nahida Meadow', url: nahidaChibi }
 ]
 
-export const ANIME_BOARD_TEMPLATES = [
-  {
-    id: 'cosmos-zodiac-sprint',
-    title: 'Astral Cosmos & Zodiac Sprint Hub',
-    description: 'Không gian quản lý Sprint, theo dõi CR và sơ đồ tri thức dưới bầu trời sao & dải ngân hà.',
-    theme: 'cosmos',
-    badge: '🌌 Cosmos • Data Terminal'
-  },
-  {
-    id: 'wind-chime-sprint',
-    title: 'Azure Breeze & Furin Sprint Workspace',
-    description: 'Bảng điều phối Sprint thanh mát sắc xanh bầu trời, đồng cỏ và tiếng chuông gió Furin.',
-    theme: 'wind-chime',
-    badge: '🎐 Sky • Framed Sheet'
-  },
-  {
-    id: 'sora-okukozome',
-    title: 'Sora Distant Sky Sprint Hub',
-    description: 'Theo dõi CR, tài liệu FRD và tiến độ Sprint với sắc trắng bạc & xanh bầu trời của Sora Kasugano.',
-    theme: 'sora-sky',
-    badge: '☁️ Sora • Ledger'
-  },
-  {
-    id: 'furina-salon-solitaire',
-    title: 'Fontaine Opera CR & Sprint Hub',
-    description: 'Không gian quản trị CR & nghiệm thu lộng lẫy sắc xanh Hydro vùng Fontaine cùng Furina.',
-    theme: 'furina',
-    badge: '💧 Furina • Accent Ladder'
-  },
-  {
-    id: 'nahida-irminsul-kb',
-    title: 'Surasthana Knowledge Graph Hub',
-    description: 'Tập trung tri thức hệ thống, mô hình hóa nghiệp vụ và liên kết tài liệu FRD cùng Nahida.',
-    theme: 'nahida',
-    badge: '🌿 Nahida • Editorial'
-  },
-  {
-    id: 'sora-moonlit-ribbon',
-    title: 'Moonlit Black Ribbon Sprint Studio',
-    description: 'Bảng phân tích hệ thống tĩnh lặng dưới ánh trăng tím bạc cùng dải ruy-băng đen của Sora.',
-    theme: 'sora-twilight',
-    badge: '🎀 Sora • Obsidian Flat'
-  },
-  {
-    id: 'sora-usagi-sanctuary',
-    title: 'Usagi Plush Sprint Sanctuary',
-    description: 'Không gian quản lý backlog nhẹ nhàng cùng Sora và thỏ bông Usagi.',
-    theme: 'sora-usagi',
-    badge: '🐰 Sora • Pastel Sanctuary'
-  }
-]
+export const DEFAULT_SPRINT_TEMPLATE = {
+  id: 'standard-agile-sprint',
+  title: 'Sprint • Quản lý CR & Đặc tả FRD',
+  description: 'Mẫu Sprint tiêu chuẩn thống nhất cho toàn bộ Workspace: Tích hợp sẵn Sprint Matrix, Kanban 3 cột chủ đề CR, đặc tả FRD trực quan (BNPL-945, BNPL-946, BNPL-947), Timeline & Obsidian Graph.',
+  badge: '📋 Unified Sprint Template',
+  modules: [
+    '01 / Sprint Matrix & Resource Roster (Mặc định khi mở bảng)',
+    '02 / Kanban Board (3 cột Chủ đề CR: Usage Limit, Credit Scoring, Settlement)',
+    '03 / Thẻ CR mẫu (BNPL-945, BNPL-946, BNPL-947) & Tài liệu FRD chuẩn A4 PDF',
+    '04 / Timeline Gantt & Sơ đồ tri thức Obsidian [[WikiLink]]'
+  ]
+}
+
+// Legacy alias kept for backward compatibility; all boards/sprints share DEFAULT_SPRINT_TEMPLATE
+export const ANIME_BOARD_TEMPLATES = [DEFAULT_SPRINT_TEMPLATE]
 
 export const normalizeThemeKey = (key) => {
   if (key === 'celestia') return 'sora-usagi'
@@ -410,10 +374,14 @@ export const savePersonaTheme = (themeKey) => {
 
 export const resolveCardCoverUrl = (coverValue) => {
   if (!coverValue) return null
-  if (coverValue === 'preset:cosmos' || coverValue === 'preset:cosmos-hero') return cosmosHero
+  if (coverValue === 'preset:template-default') {
+    const currentTheme = ANIME_THEMES[getSavedPersonaTheme()] || ANIME_THEMES['sora-sky']
+    return currentTheme.heroImage
+  }
+  if (coverValue === 'preset:cosmos' || coverValue === 'preset:cosmos-hero' || coverValue === 'preset:cosmos-galaxy') return cosmosHero
   if (coverValue === 'preset:cosmos-nebula') return cosmosNebula
   if (coverValue === 'preset:cosmos-starlight') return cosmosStarlight
-  if (coverValue === 'preset:wind-chime' || coverValue === 'preset:wind-sky') return windSkyHero
+  if (coverValue === 'preset:wind-chime' || coverValue === 'preset:wind-sky' || coverValue === 'preset:wind-chime-sky') return windSkyHero
   if (coverValue === 'preset:wind-meadow') return windMeadow
   if (coverValue === 'preset:wind-breeze') return windBreeze
   if (coverValue === 'preset:sora-sky') return soraUsagiBloom

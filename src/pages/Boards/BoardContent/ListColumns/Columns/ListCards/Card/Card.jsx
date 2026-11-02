@@ -32,12 +32,31 @@ import { getProgressColor } from '~/utils/progress'
 import { playUiChime } from '~/utils/soundEffects'
 import { DEFAULT_PRIORITY, getPriorityOption } from '~/utils/crMeta'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+
+const TEMPLATE_DEFAULT_COVER_KEYS = new Set([
+  'preset:template-default',
+  'preset:cosmos',
+  'preset:cosmos-hero',
+  'preset:cosmos-galaxy',
+  'preset:wind-chime',
+  'preset:wind-sky',
+  'preset:wind-chime-sky',
+  'preset:sora-sky',
+  'preset:sora-twilight',
+  'preset:sora-usagi',
+  'preset:furina',
+  'preset:furina-salon',
+  'preset:nahida',
+  'preset:nahida-sanctuary'
+])
 
 function Card({ card }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const board = useSelector(selectCurrentActiveBoard)
   const { tPrimary } = useTranslation()
+  const { themeConfig } = usePersonaTheme()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
     data: { ...card }
@@ -76,7 +95,8 @@ function Card({ card }) {
     }
   }
 
-  const coverUrl = resolveCardCoverUrl(card?.cover)
+  const isSeededTemplateCover = card?.crCode === 'BNPL-945' && TEMPLATE_DEFAULT_COVER_KEYS.has(card?.cover)
+  const coverUrl = isSeededTemplateCover ? themeConfig.heroImage : resolveCardCoverUrl(card?.cover)
 
   return (
     <MuiCard
