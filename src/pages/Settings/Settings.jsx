@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import AppBar from '~/components/AppBar/AppBar'
 import Container from '@mui/material/Container'
 import Box from '@mui/material/Box'
@@ -7,40 +6,48 @@ import Tab from '@mui/material/Tab'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import PersonIcon from '@mui/icons-material/Person'
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined'
 import SecurityIcon from '@mui/icons-material/Security'
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined'
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
+import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import AccountTab from './AccountTab'
 import SecurityTab from './SecurityTab'
-import FxSettingsPanel from './FxSettingsPanel'
+import ProfileTab from './profile/ProfileTab'
+import SessionsTab from './tabs/SessionsTab'
+import NotificationsTab from './tabs/NotificationsTab'
+import PrivacyTab from './tabs/PrivacyTab'
+import AppearanceTab from './tabs/AppearanceTab'
+import DataTab from './tabs/DataTab'
+import { SETTINGS_TAB_KEYS, TAB_LABEL_KEYS, resolveSettingsTab } from './utils/tabs'
 
-const TABS = {
-  ACCOUNT: 'account',
-  SECURITY: 'security',
-  APPEARANCE: 'appearance'
+const TAB_VIEWS = {
+  account: { icon: PersonIcon, Component: AccountTab },
+  profile: { icon: BadgeOutlinedIcon, Component: ProfileTab },
+  security: { icon: SecurityIcon, Component: SecurityTab },
+  sessions: { icon: DevicesOutlinedIcon, Component: SessionsTab },
+  notifications: { icon: NotificationsNoneOutlinedIcon, Component: NotificationsTab },
+  privacy: { icon: VisibilityOutlinedIcon, Component: PrivacyTab },
+  appearance: { icon: AutoAwesomeRoundedIcon, Component: AppearanceTab },
+  data: { icon: StorageOutlinedIcon, Component: DataTab }
 }
 
-const resolveTab = (pathname) => {
-  if (pathname.includes(TABS.SECURITY)) return TABS.SECURITY
-  if (pathname.includes(TABS.APPEARANCE)) return TABS.APPEARANCE
-  return TABS.ACCOUNT
-}
+const raisedBg = (theme) => (theme.palette.mode === 'dark'
+  ? 'var(--chella-raised-dark, #131c31)'
+  : 'var(--chella-raised-light, #ffffff)')
 
 function Settings() {
   const location = useLocation()
   const { t } = useTranslation()
   const { themeConfig } = usePersonaTheme()
-  const [activeTab, setActiveTab] = useState(() => resolveTab(location.pathname))
-
-  useEffect(() => {
-    setActiveTab(resolveTab(location.pathname))
-  }, [location.pathname])
-
-  const handleChangeTab = (event, selectedTab) => {
-    setActiveTab(selectedTab)
-  }
+  // The URL is the single source of truth for the active tab (deep links + back/forward)
+  const activeTab = resolveSettingsTab(location.pathname)
+  const ActiveComponent = TAB_VIEWS[activeTab].Component
 
   return (
     <Container
@@ -54,12 +61,7 @@ function Settings() {
       }}
     >
       <AppBar />
-      <Box sx={{
-        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-        bgcolor: (theme) => (theme.palette.mode === 'dark'
-          ? 'var(--chella-raised-dark, #131c31)'
-          : 'var(--chella-raised-light, #ffffff)')
-      }}>
+      <Box sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, bgcolor: raisedBg }}>
         <Box sx={{
           maxWidth: '1080px',
           mx: 'auto',
@@ -72,8 +74,8 @@ function Settings() {
           gap: 1.5
         }}>
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-              Chella Workspace Settings
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+              {t('setPageTitle')}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
               {themeConfig.name}
@@ -94,51 +96,43 @@ function Settings() {
           )}
         </Box>
 
-        <Box sx={{ maxWidth: '1080px', mx: 'auto', px: { xs: 1, md: 4 }, mt: 1 }}>
+        <Box sx={{ maxWidth: '1080px', mx: 'auto', px: { xs: 0, md: 4 }, mt: 1 }}>
           <Tabs
             value={activeTab}
-            onChange={handleChangeTab}
-            aria-label="Settings tabs"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            aria-label={t('setTabsAria')}
             sx={{
               '& .MuiTab-root': {
                 textTransform: 'none',
                 fontWeight: 700,
-                minHeight: 48
+                minHeight: 48,
+                minWidth: 'auto',
+                px: { xs: 1.5, md: 2 }
               }
             }}
           >
-            <Tab
-              label={t('tabAccount')}
-              value={TABS.ACCOUNT}
-              icon={<PersonIcon fontSize="small" />}
-              iconPosition="start"
-              component={Link}
-              to="/settings/account"
-            />
-            <Tab
-              label={t('tabSecurity')}
-              value={TABS.SECURITY}
-              icon={<SecurityIcon fontSize="small" />}
-              iconPosition="start"
-              component={Link}
-              to="/settings/security"
-            />
-            <Tab
-              label={t('tabAppearance')}
-              value={TABS.APPEARANCE}
-              icon={<AutoAwesomeRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              component={Link}
-              to="/settings/appearance"
-            />
+            {SETTINGS_TAB_KEYS.map((key) => {
+              const Icon = TAB_VIEWS[key].icon
+              return (
+                <Tab
+                  key={key}
+                  label={t(TAB_LABEL_KEYS[key])}
+                  value={key}
+                  icon={<Icon fontSize="small" />}
+                  iconPosition="start"
+                  component={Link}
+                  to={`/settings/${key}`}
+                />
+              )
+            })}
           </Tabs>
         </Box>
       </Box>
 
-      <Box sx={{ maxWidth: '1080px', mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
-        {activeTab === TABS.ACCOUNT && <AccountTab />}
-        {activeTab === TABS.SECURITY && <SecurityTab />}
-        {activeTab === TABS.APPEARANCE && <FxSettingsPanel />}
+      <Box component="main" sx={{ maxWidth: '1080px', mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+        <ActiveComponent />
       </Box>
     </Container>
   )
