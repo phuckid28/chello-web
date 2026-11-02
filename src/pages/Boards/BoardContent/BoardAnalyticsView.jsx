@@ -66,12 +66,14 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
   }
 
   const glassCardSx = {
-    borderRadius: '16px',
-    bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.90)' : 'rgba(255, 255, 255, 0.94)'),
+    borderRadius: 'var(--chella-radius-card, 14px)',
+    bgcolor: (theme) => (theme.palette.mode === 'dark'
+      ? 'var(--chella-surface-dark, rgba(15, 23, 42, 0.90))'
+      : 'var(--chella-surface-light, rgba(255, 255, 255, 0.95))'),
     backdropFilter: 'blur(18px) saturate(160%)',
     border: `1px solid ${themeConfig.columnBorder}`,
-    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.22)',
-    animation: 'chelloFadeSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1)'
+    boxShadow: '0 10px 28px rgba(0, 0, 0, 0.18)',
+    animation: 'chelloFadeSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1)'
   }
 
   const sprintNumber = sprintConfig.sprintNumber || String(sprintConfig.name || '34').replace(/[^0-9]/g, '') || '34'

@@ -17,7 +17,7 @@ import {
 const CANVAS_Z_INDEX = 2400
 const SPARKLE_COUNT = 9
 
-// Mounted once: applies the themed cursor, and renders trail / sparkle / celebration particles.
+// Mounted once: applies the themed cursor, design tokens, and renders trail / sparkle / celebration particles.
 function ThemeFxProvider() {
   const { key, theme } = useFxTheme()
   const settings = useSyncExternalStore(subscribeFxSettings, getFxSettings)
@@ -29,17 +29,28 @@ function ThemeFxProvider() {
     [key, theme.accentColor, theme.secondaryAccent]
   )
 
-  // Theme attributes + cursor variables on <html>
+  // Theme attributes + craft design tokens + cursor variables on <html>
   useEffect(() => {
     const root = document.documentElement
+    const tokens = theme.surfaceTokens || {}
     root.dataset.fxTheme = key
+    root.dataset.chellaArchetype = theme.styleArchetype || 'achromatic-ledger'
     root.dataset.fxCursor = cursorOn ? 'on' : 'off'
     root.style.setProperty('--fx-cursor-default', cursorValues.defaultCursor)
     root.style.setProperty('--fx-cursor-pointer', cursorValues.pointerCursor)
     root.style.setProperty('--fx-accent', theme.accentColor)
     root.style.setProperty('--fx-secondary', theme.secondaryAccent)
+    root.style.setProperty('--chella-surface-light', theme.columnBgLight)
+    root.style.setProperty('--chella-surface-dark', theme.columnBgDark)
+    root.style.setProperty('--chella-border', theme.columnBorder)
+    root.style.setProperty('--chella-ground-light', tokens.groundLight || '#f8fafc')
+    root.style.setProperty('--chella-ground-dark', tokens.groundDark || '#0b1120')
+    root.style.setProperty('--chella-raised-light', tokens.raisedLight || '#ffffff')
+    root.style.setProperty('--chella-raised-dark', tokens.raisedDark || '#131c31')
+    root.style.setProperty('--chella-radius-card', tokens.cardRadius || '12px')
+    root.style.setProperty('--chella-radius-control', tokens.controlRadius || '9px')
     return () => { root.dataset.fxCursor = 'off' }
-  }, [key, cursorOn, cursorValues, theme.accentColor, theme.secondaryAccent])
+  }, [key, cursorOn, cursorValues, theme])
 
   // Elements that declare `cursor: pointer` (via sx / emotion classes) get the themed pointer too
   useEffect(() => {

@@ -189,8 +189,8 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ka
               flexShrink: 0,
               color: board?.isStarred ? '#fbbf24' : 'rgba(255,255,255,0.8)',
               bgcolor: 'rgba(255,255,255,0.1)',
-              transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.22)', transform: 'rotate(-12deg) scale(1.1)' }
+              transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.22s ease',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.22)', transform: 'rotate(-8deg) scale(1.08)' }
             }}
           >
             {board?.isStarred ? <StarRoundedIcon fontSize="small" /> : <StarBorderRoundedIcon fontSize="small" />}

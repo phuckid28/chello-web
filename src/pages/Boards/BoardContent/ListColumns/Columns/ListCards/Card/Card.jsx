@@ -84,8 +84,8 @@ function Card({ card }) {
       ref={setNodeRef} style={dndKitCardStyle} {...attributes} {...listeners}
       sx={{
         cursor: 'pointer',
-        borderRadius: '11px',
-        boxShadow: card?.FE_PlaceholderCard ? 'none' : '0 2px 10px rgba(0, 0, 0, 0.14)',
+        borderRadius: 'var(--chella-radius-card, 11px)',
+        boxShadow: card?.FE_PlaceholderCard ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.12)',
         overflow: 'hidden',
         height: card?.FE_PlaceholderCard ? '0px' : 'unset',
         pointerEvents: card?.FE_PlaceholderCard ? 'none' : 'unset',
@@ -94,16 +94,16 @@ function Card({ card }) {
           : deadlineInfo.code === 'overdue'
             ? '1.5px solid rgba(239, 68, 68, 0.65)'
             : '1px solid rgba(148, 163, 184, 0.22)',
-        transition: 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease',
+        transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease',
         '& .card-cover-img': {
-          transition: 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1)'
+          transition: 'transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)'
         },
         '&:hover': {
-          transform: 'translateY(-3px)',
-          borderColor: (theme) => theme.palette.primary.main,
-          boxShadow: '0 10px 24px -6px rgba(125, 211, 252, 0.35), 0 4px 12px rgba(244, 114, 182, 0.18)',
+          transform: 'translateY(-2px)',
+          borderColor: 'var(--fx-accent, #38bdf8)',
+          boxShadow: '0 8px 20px -4px rgba(15, 23, 42, 0.24)',
           '& .card-cover-img': {
-            transform: 'scale(1.06)'
+            transform: 'scale(1.04)'
           }
         }
       }}
@@ -211,11 +211,11 @@ function Card({ card }) {
 
         <Box sx={{ mt: 1 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
               Dev Progress: {devPercent}%
             </Typography>
             {resourceUsed > 0 && (
-              <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>
+              <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
                 Res: {resourceUsed}
               </Typography>
             )}
@@ -230,7 +230,7 @@ function Card({ card }) {
               '& .MuiLinearProgress-bar': {
                 borderRadius: 2,
                 bgcolor: getProgressColor(devProg),
-                transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
+                transition: 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)'
               }
             }}
           />

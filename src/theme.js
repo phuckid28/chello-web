@@ -6,6 +6,9 @@ const BOARD_CONTENT_HEIGHT = `calc(100vh - ${APP_BAR_HEIGHT} - ${BOARD_BAR_HEIGH
 const COLUMN_HEADER_HEIGHT = '52px'
 const COLUMN_FOOTER_HEIGHT = '56px'
 
+// Exponential ease-out (impeccable craft-floor: smooth deceleration, never elastic/bounce)
+export const CHELLA_EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)'
+
 const theme = extendTheme({
   trello: {
     appBarHeight: APP_BAR_HEIGHT,
@@ -15,7 +18,13 @@ const theme = extendTheme({
     columnFooterHeight: COLUMN_FOOTER_HEIGHT
   },
   typography: {
-    fontFamily: '"Plus Jakarta Sans", "Quicksand", "Noto Sans JP", sans-serif'
+    fontFamily: '"Plus Jakarta Sans", "Quicksand", "Noto Sans JP", sans-serif',
+    h1: { letterSpacing: '-0.025em', fontWeight: 800, textWrap: 'balance' },
+    h2: { letterSpacing: '-0.022em', fontWeight: 800, textWrap: 'balance' },
+    h3: { letterSpacing: '-0.018em', fontWeight: 800, textWrap: 'balance' },
+    h4: { letterSpacing: '-0.016em', fontWeight: 800, textWrap: 'balance' },
+    h5: { letterSpacing: '-0.014em', fontWeight: 800, textWrap: 'balance' },
+    h6: { letterSpacing: '-0.012em', fontWeight: 800, textWrap: 'balance' }
   },
   colorSchemes: {
     light: {
@@ -25,16 +34,24 @@ const theme = extendTheme({
         },
         secondary: {
           main: '#db2777'
+        },
+        background: {
+          default: '#f8fafc',
+          paper: '#ffffff'
         }
       }
     },
     dark: {
       palette: {
         primary: {
-          main: '#7dd3fc'
+          main: '#38bdf8'
         },
         secondary: {
           main: '#f472b6'
+        },
+        background: {
+          default: '#0b1120',
+          paper: '#111827'
         }
       }
     }
@@ -45,16 +62,32 @@ const theme = extendTheme({
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: '9px',
+          letterSpacing: '-0.005em',
+          borderRadius: 'var(--chella-radius-control, 9px)',
           borderWidth: '1px',
-          transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: `transform 0.18s ${CHELLA_EASE_OUT}, background-color 0.18s ${CHELLA_EASE_OUT}, border-color 0.18s ${CHELLA_EASE_OUT}, box-shadow 0.18s ${CHELLA_EASE_OUT}`,
           '&:hover': {
-            borderWidth: '1.5px',
-            transform: 'translateY(-1.5px)'
+            borderWidth: '1px',
+            transform: 'translateY(-1px)'
           },
           '&:active': {
-            transform: 'translateY(0px) scale(0.98)'
+            transform: 'translateY(0px) scale(0.985)'
           }
+        }
+      }
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.005em'
+        }
+      }
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          fontVariantNumeric: 'tabular-nums'
         }
       }
     },
@@ -76,13 +109,13 @@ const theme = extendTheme({
       styleOverrides: {
         root: {
           fontSize: '0.875rem',
-          borderRadius: '9px',
-          transition: 'all 0.2s ease',
+          borderRadius: 'var(--chella-radius-control, 9px)',
+          transition: `border-color 0.18s ${CHELLA_EASE_OUT}, box-shadow 0.18s ${CHELLA_EASE_OUT}`,
           '& fieldset': {
             borderWidth: '1px !important'
           },
           '&:hover fieldset': {
-            borderWidth: '2px !important'
+            borderWidth: '1.5px !important'
           },
           '&.Mui-focused fieldset': {
             borderWidth: '2px !important'
@@ -92,6 +125,36 @@ const theme = extendTheme({
     },
     MuiCssBaseline: {
       styleOverrides: {
+        ':root': {
+          colorScheme: 'light dark',
+          '--chella-ease-out': CHELLA_EASE_OUT
+        },
+        'html[data-mui-color-scheme="light"]': {
+          colorScheme: 'light'
+        },
+        'html[data-mui-color-scheme="dark"]': {
+          colorScheme: 'dark'
+        },
+        '::selection': {
+          backgroundColor: 'color-mix(in oklab, var(--fx-accent, #38bdf8) 28%, transparent)',
+          color: 'inherit'
+        },
+        'input, textarea': {
+          caretColor: 'var(--fx-accent, #38bdf8)'
+        },
+        'a:not(.MuiButtonBase-root)': {
+          textUnderlineOffset: '0.2em',
+          textDecorationThickness: '1px'
+        },
+        ':focus-visible': {
+          outline: '2px solid var(--fx-accent, #38bdf8)',
+          outlineOffset: '2px'
+        },
+        '@media (forced-colors: active)': {
+          '*, *::before, *::after': {
+            borderColor: 'CanvasText'
+          }
+        },
         '@keyframes chelloFloat': {
           '0%, 100%': {
             transform: 'translate3d(0px, 0px, 0px) rotate(0deg)',
@@ -105,7 +168,7 @@ const theme = extendTheme({
         '@keyframes chelloFadeSlideUp': {
           '0%': {
             opacity: 0,
-            transform: 'translateY(12px) scale(0.985)'
+            transform: 'translateY(10px) scale(0.99)'
           },
           '100%': {
             opacity: 1,
@@ -114,10 +177,10 @@ const theme = extendTheme({
         },
         '@keyframes chelloPulseHalo': {
           '0%, 100%': {
-            boxShadow: '0 0 0 0 rgba(244, 114, 182, 0.45), 0 0 14px rgba(125, 211, 252, 0.35)'
+            boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.42), 0 0 12px rgba(56, 189, 248, 0.28)'
           },
           '50%': {
-            boxShadow: '0 0 0 6px rgba(244, 114, 182, 0), 0 0 24px rgba(125, 211, 252, 0.65)'
+            boxShadow: '0 0 0 5px rgba(239, 68, 68, 0), 0 0 20px rgba(56, 189, 248, 0.5)'
           }
         },
         '@keyframes chelloTimelineGrow': {
@@ -138,16 +201,18 @@ const theme = extendTheme({
           }
         },
         body: {
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
           '*::-webkit-scrollbar': {
             width: '7px',
             height: '7px'
           },
           '*::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(148, 163, 184, 0.48)',
+            backgroundColor: 'rgba(148, 163, 184, 0.42)',
             borderRadius: '8px'
           },
           '*::-webkit-scrollbar-thumb:hover': {
-            backgroundColor: 'rgba(125, 211, 252, 0.78)'
+            backgroundColor: 'var(--fx-accent, rgba(56, 189, 248, 0.78))'
           }
         }
       }

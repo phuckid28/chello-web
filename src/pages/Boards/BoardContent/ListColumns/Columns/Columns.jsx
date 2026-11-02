@@ -142,31 +142,35 @@ function Columns({ column }) {
   return (
     <div ref={setNodeRef} style={dndKitColumnStyle} {...attributes}>
       <Box
+        className="chella-kanban-column"
         {...listeners}
         sx={{
           minWidth: '308px',
           maxWidth: '308px',
           overflow: 'hidden',
-          bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.86)' : 'rgba(248, 250, 252, 0.92)'),
-          backdropFilter: 'blur(18px) saturate(160%)',
-          border: '1px solid rgba(255, 255, 255, 0.24)',
-          boxShadow: '0 10px 34px rgba(0, 0, 0, 0.24)',
+          bgcolor: (theme) => (theme.palette.mode === 'dark'
+            ? 'var(--chella-surface-dark, rgba(15, 23, 42, 0.90))'
+            : 'var(--chella-surface-light, rgba(248, 250, 252, 0.95))'),
+          backdropFilter: 'blur(16px) saturate(150%)',
+          border: '1px solid var(--chella-border, rgba(148, 163, 184, 0.28))',
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.20)',
           ml: 2,
           borderRadius: '14px',
           height: 'fit-content',
           maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
-          animation: 'chelloFadeSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
-          transition: 'border-color 0.22s ease, box-shadow 0.22s ease',
+          animation: 'chelloFadeSlideUp 0.26s cubic-bezier(0.22, 1, 0.36, 1)',
+          transition: 'border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
           '&:hover': {
-            borderColor: 'rgba(125, 211, 252, 0.5)',
-            boxShadow: '0 14px 38px rgba(0, 0, 0, 0.3)'
+            borderColor: 'var(--fx-accent, rgba(56, 189, 248, 0.55))',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.26)'
           }
         }}
       >
         <Box sx={{
-          height: '3px',
+          height: '2px',
           width: '100%',
-          background: 'linear-gradient(90deg, #7dd3fc 0%, #f472b6 50%, #a78bfa 100%)'
+          background: 'linear-gradient(90deg, var(--fx-accent, #38bdf8) 0%, var(--fx-secondary, #818cf8) 100%)',
+          opacity: 0.85
         }} />
 
         {/* Column Header (Each Column = 1 CR Topic) */}
@@ -197,7 +201,8 @@ function Columns({ column }) {
               flexShrink: 0,
               fontSize: '0.7rem',
               fontWeight: 800,
-              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(125, 211, 252, 0.16)' : 'rgba(2, 132, 199, 0.12)'),
+              fontVariantNumeric: 'tabular-nums',
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(2, 132, 199, 0.12)'),
               color: 'primary.main'
             }}
           />

@@ -1,6 +1,6 @@
 import GlobalStyles from '@mui/material/GlobalStyles'
 
-// Keyframes + global rules shared by cursors, loaders, page transitions and theme reveal
+// Keyframes + global rules shared by cursors, loaders, page transitions, theme reveal, and Kanban containment
 const FX_STYLES = {
   // ---------- Themed cursor ----------
   'html[data-fx-cursor="on"], html[data-fx-cursor="on"] body': {
@@ -8,6 +8,22 @@ const FX_STYLES = {
   },
   'html[data-fx-cursor="on"] :is(a[href], button:not(:disabled), [role="button"], [role="tab"], [role="menuitem"], [role="option"], summary, select, label[for], input[type="checkbox"], input[type="radio"], input[type="range"], [data-fx-pointer])': {
     cursor: 'var(--fx-cursor-pointer) !important'
+  },
+
+  // ---------- Complex Layout Containment (60fps Kanban INP isolation) ----------
+  '.chella-kanban-column': {
+    contentVisibility: 'auto',
+    containIntrinsicSize: 'auto 308px auto 640px'
+  },
+  '@supports not (content-visibility: auto)': {
+    '.chella-kanban-column': {
+      contain: 'layout style paint'
+    }
+  },
+
+  // ---------- Tabular numeric discipline ----------
+  '.chella-tabular': {
+    fontVariantNumeric: 'tabular-nums'
   },
 
   // ---------- Loader motions ----------

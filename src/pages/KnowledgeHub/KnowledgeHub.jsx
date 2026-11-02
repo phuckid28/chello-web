@@ -55,9 +55,9 @@ function TemplatePicker({ onPick, tPrimary }) {
               borderRadius: '14px',
               cursor: 'pointer',
               border: (theme) => `1px solid ${theme.palette.divider}`,
-              animation: `chelloFadeSlideUp 0.35s ease ${idx * 0.05}s both`,
-              transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease',
-              '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 24px rgba(0,0,0,0.15)' }
+              animation: `chelloFadeSlideUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) ${idx * 0.04}s both`,
+              transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease',
+              '&:hover': { transform: 'translateY(-3px)', borderColor: 'var(--fx-accent, #38bdf8)', boxShadow: '0 8px 20px rgba(0, 0, 0, 0.14)' }
             }}
           >
             <Typography sx={{ fontSize: 28 }}>{tpl.icon}</Typography>

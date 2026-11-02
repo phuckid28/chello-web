@@ -2,6 +2,7 @@ import { useLocation, Navigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
+import Chip from '@mui/material/Chip'
 import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
 import { useSelector } from 'react-redux'
@@ -28,49 +29,78 @@ function Auth() {
       flexDirection: 'column',
       minHeight: '100vh',
       alignItems: 'center',
-      justifyContent: 'flex-start',
+      justifyContent: 'center',
+      px: 2,
+      py: { xs: 9, md: 6 },
       backgroundImage: `${themeConfig.boardOverlayDark}, url("${themeConfig.heroImage}")`,
       backgroundRepeat: 'no-repeat',
       backgroundSize: 'cover',
       backgroundPosition: 'center'
     }}>
-      {/* Floating Sora Kasugano Theme Switcher on Login/Register screen */}
+      {/* Floating Theme Switcher Bar */}
       <Box sx={{
         position: 'fixed',
         top: 16,
         right: 16,
+        left: { xs: 16, md: 'auto' },
         zIndex: 10,
         display: 'flex',
         alignItems: 'center',
-        gap: 1,
-        p: 1,
+        flexWrap: 'wrap',
+        gap: 0.75,
+        px: 1.5,
+        py: 0.85,
         borderRadius: '12px',
-        bgcolor: 'rgba(15, 23, 42, 0.76)',
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${themeConfig.accentColor}`
+        bgcolor: 'rgba(15, 23, 42, 0.82)',
+        backdropFilter: 'blur(14px) saturate(150%)',
+        border: `1px solid ${themeConfig.columnBorder}`,
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.28)'
       }}>
         <SoraBunnyIcon fontSize="small" />
-        <Typography variant="caption" sx={{ color: 'white', fontWeight: 700, px: 0.5 }}>
-          Sora Theme:
+        <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.9)', fontWeight: 700, px: 0.5 }}>
+          Theme:
         </Typography>
-        {PRIMARY_THEMES_LIST.map((p) => (
-          <Button
-            key={p.id}
+        {PRIMARY_THEMES_LIST.map((p) => {
+          const active = globalPersonaKey === p.id
+          return (
+            <Button
+              key={p.id}
+              size="small"
+              variant={active ? 'contained' : 'text'}
+              onClick={() => changePersona(p.id)}
+              sx={{
+                color: active ? '#0f172a' : 'rgba(248, 250, 252, 0.86)',
+                minWidth: 'auto',
+                px: 1.15,
+                py: 0.35,
+                fontSize: '0.72rem',
+                fontWeight: active ? 800 : 600,
+                borderRadius: '8px',
+                bgcolor: active ? p.accentColor : 'transparent',
+                '&:hover': {
+                  bgcolor: active ? p.accentColor : 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              {p.element}
+            </Button>
+          )
+        })}
+        {themeConfig.archetypeLabel && (
+          <Chip
             size="small"
-            variant={globalPersonaKey === p.id ? 'contained' : 'text'}
-            onClick={() => changePersona(p.id)}
+            label={themeConfig.archetypeLabel}
             sx={{
-              color: 'white',
-              minWidth: 'auto',
-              px: 1.2,
-              py: 0.4,
-              fontSize: '0.75rem',
-              bgcolor: globalPersonaKey === p.id ? p.accentColor : 'transparent'
+              display: { xs: 'none', lg: 'inline-flex' },
+              height: 22,
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              color: themeConfig.accentColor,
+              bgcolor: themeConfig.badgeBg,
+              border: `1px solid ${themeConfig.columnBorder}`
             }}
-          >
-            {p.element}
-          </Button>
-        ))}
+          />
+        )}
       </Box>
 
       {isLogin && <LoginForm />}
