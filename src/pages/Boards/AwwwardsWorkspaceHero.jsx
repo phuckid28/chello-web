@@ -6,18 +6,15 @@ import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import NorthEastRoundedIcon from '@mui/icons-material/NorthEastRounded'
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
-import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
 import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
-import { PRIMARY_THEMES_LIST, DEFAULT_SPRINT_TEMPLATE } from '~/utils/animeTheme'
+import { DEFAULT_SPRINT_TEMPLATE } from '~/utils/animeTheme'
 import { SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
 
 function AwwwardsWorkspaceHero({
   themeConfig,
-  globalPersonaKey,
   totalBoards,
   starredCount,
-  onSwitchPersona,
+  currentSprintLabel,
   onOpenCreateModal,
   t
 }) {
@@ -26,8 +23,7 @@ function AwwwardsWorkspaceHero({
   const archetypeCode = (themeConfig.styleArchetype || 'achromatic-ledger').toUpperCase()
 
   return (
-    <Box sx={{ mx: { xs: 2, md: 4 }, mt: 3, mb: 4 }}>
-      {/* Main Awwwards SOTD Editorial Spread & Asymmetric Bento Hero */}
+    <Box sx={{ mx: { xs: 2, md: 4 }, mt: 2.5, mb: 3 }}>
       <Box
         sx={{
           position: 'relative',
@@ -45,7 +41,7 @@ function AwwwardsWorkspaceHero({
         <Box
           sx={{
             px: { xs: 2.5, md: 4 },
-            py: 1.35,
+            py: 1.2,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -68,7 +64,7 @@ function AwwwardsWorkspaceHero({
                 fontVariantNumeric: 'tabular-nums'
               }}
             >
-              THEME Nº {chapterIndex} / 07
+              SPRINT COMMAND CENTER • {currentSprintLabel || 'ACTIVE WORKSPACE'}
             </Typography>
             <Box component="span" sx={{ color: 'rgba(255,255,255,0.28)' }}>/</Box>
             <Typography
@@ -107,7 +103,7 @@ function AwwwardsWorkspaceHero({
             xs={12}
             md={8}
             sx={{
-              p: { xs: 2.5, md: 4.5 },
+              p: { xs: 2.5, md: 3.75 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -115,7 +111,6 @@ function AwwwardsWorkspaceHero({
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'stretch', gap: { xs: 2, md: 3 } }}>
-              {/* Vertical Japanese Kanji Column (Awwwards Japanese Minimal Motif) */}
               <Box
                 sx={{
                   display: { xs: 'none', sm: 'flex' },
@@ -158,9 +153,8 @@ function AwwwardsWorkspaceHero({
                 </Typography>
               </Box>
 
-              {/* Editorial Display Title & Framed Manifesto Quote */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
                   <Chip
                     size="small"
                     label={themeConfig.element}
@@ -192,12 +186,12 @@ function AwwwardsWorkspaceHero({
                 <Typography
                   component="h1"
                   sx={{
-                    fontSize: 'clamp(1.85rem, 3.2vw, 2.85rem)',
+                    fontSize: 'clamp(1.65rem, 2.8vw, 2.55rem)',
                     fontWeight: 800,
                     lineHeight: 1.08,
                     letterSpacing: '-0.03em',
                     textWrap: 'balance',
-                    mb: 2,
+                    mb: 1.5,
                     textShadow: '0 4px 20px rgba(0, 0, 0, 0.55)'
                   }}
                 >
@@ -206,7 +200,7 @@ function AwwwardsWorkspaceHero({
 
                 <Box
                   sx={{
-                    p: 2,
+                    p: 1.75,
                     borderRadius: '12px',
                     bgcolor: 'rgba(9, 13, 22, 0.64)',
                     backdropFilter: 'blur(12px)',
@@ -215,12 +209,12 @@ function AwwwardsWorkspaceHero({
                   }}
                 >
                   <Typography
-                    variant="body1"
+                    variant="body2"
                     sx={{
                       fontStyle: 'italic',
-                      lineHeight: 1.65,
+                      lineHeight: 1.6,
                       color: 'rgba(248, 250, 252, 0.94)',
-                      mb: 0.75
+                      mb: 0.5
                     }}
                   >
                     {themeConfig.quote}
@@ -241,11 +235,10 @@ function AwwwardsWorkspaceHero({
               </Box>
             </Box>
 
-            {/* Unified Sprint Template Architecture Banner */}
             <Box
               sx={{
-                mt: 3,
-                p: 2,
+                mt: 2.25,
+                p: 1.75,
                 borderRadius: '14px',
                 bgcolor: 'rgba(9, 13, 22, 0.68)',
                 backdropFilter: 'blur(12px)',
@@ -258,7 +251,7 @@ function AwwwardsWorkspaceHero({
               }}
             >
               <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.35, flexWrap: 'wrap' }}>
                   <ViewKanbanRoundedIcon sx={{ fontSize: 16, color: themeConfig.accentColor }} />
                   <Typography
                     variant="caption"
@@ -277,8 +270,8 @@ function AwwwardsWorkspaceHero({
                 <Typography variant="body2" sx={{ fontWeight: 700, color: '#f8fafc' }}>
                   {DEFAULT_SPRINT_TEMPLATE.title}
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.76)', display: 'block', mt: 0.25 }}>
-                  Tất cả các Board / Sprint đều dùng chung 1 cấu trúc chuẩn (Sprint Matrix • Kanban 3 cột CR • FRD A4 PDF • Obsidian Graph) và tự động đồng bộ theo giao diện chủ đề của Web App.
+                <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.76)', display: 'block', mt: 0.2 }}>
+                  Mọi Board & Sprint dùng chung 1 template chuẩn; đổi chủ đề giao diện tại menu <b>Giao diện</b> trên thanh điều hướng.
                 </Typography>
               </Box>
 
@@ -312,22 +305,21 @@ function AwwwardsWorkspaceHero({
             xs={12}
             md={4}
             sx={{
-              p: { xs: 2.5, md: 3.5 },
+              p: { xs: 2.5, md: 3.25 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              gap: 2,
+              gap: 1.75,
               bgcolor: 'rgba(9, 13, 22, 0.56)',
               backdropFilter: 'blur(16px)'
             }}
           >
-            {/* Curator / Companion Header Tile */}
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
-                p: 1.5,
+                p: 1.35,
                 borderRadius: '14px',
                 bgcolor: 'rgba(15, 23, 42, 0.74)',
                 border: `1px solid ${themeConfig.columnBorder}`
@@ -336,7 +328,7 @@ function AwwwardsWorkspaceHero({
               <Avatar
                 src={themeConfig.portraitImage || themeConfig.mascotImage}
                 alt={themeConfig.characterName}
-                sx={{ width: 56, height: 56, border: `2px solid ${themeConfig.accentColor}` }}
+                sx={{ width: 52, height: 52, border: `2px solid ${themeConfig.accentColor}` }}
               />
               <Box sx={{ minWidth: 0, flex: 1 }}>
                 <Typography
@@ -355,16 +347,15 @@ function AwwwardsWorkspaceHero({
                   {themeConfig.characterName}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.72)' }} noWrap>
-                  Sprint • CR Studio • Knowledge Graph
+                  Sprint Matrix • Kanban • CR Studio • Graph
                 </Typography>
               </Box>
             </Box>
 
-            {/* 2x2 Bento KPI Matrix */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.15 }}>
               <Box
                 sx={{
-                  p: 1.5,
+                  p: 1.35,
                   borderRadius: '12px',
                   bgcolor: 'rgba(15, 23, 42, 0.68)',
                   border: '1px solid rgba(255, 255, 255, 0.12)'
@@ -384,7 +375,7 @@ function AwwwardsWorkspaceHero({
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: '1.55rem',
+                    fontSize: '1.45rem',
                     fontWeight: 800,
                     lineHeight: 1.15,
                     mt: 0.25,
@@ -398,7 +389,7 @@ function AwwwardsWorkspaceHero({
 
               <Box
                 sx={{
-                  p: 1.5,
+                  p: 1.35,
                   borderRadius: '12px',
                   bgcolor: 'rgba(15, 23, 42, 0.68)',
                   border: '1px solid rgba(255, 255, 255, 0.12)'
@@ -418,7 +409,7 @@ function AwwwardsWorkspaceHero({
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: '1.55rem',
+                    fontSize: '1.45rem',
                     fontWeight: 800,
                     lineHeight: 1.15,
                     mt: 0.25,
@@ -433,7 +424,7 @@ function AwwwardsWorkspaceHero({
               <Box
                 sx={{
                   gridColumn: '1 / -1',
-                  p: 1.5,
+                  p: 1.35,
                   borderRadius: '12px',
                   bgcolor: 'rgba(15, 23, 42, 0.68)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -455,7 +446,7 @@ function AwwwardsWorkspaceHero({
                   >
                     03 / ACTIVE ENGINE ARCHETYPE
                   </Typography>
-                  <Typography sx={{ fontSize: '0.84rem', fontWeight: 800, color: themeConfig.accentColor, mt: 0.2 }}>
+                  <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: themeConfig.accentColor, mt: 0.15 }}>
                     {archetypeCode}
                   </Typography>
                 </Box>
@@ -474,7 +465,7 @@ function AwwwardsWorkspaceHero({
               endIcon={<NorthEastRoundedIcon fontSize="small" />}
               onClick={onOpenCreateModal}
               sx={{
-                py: 1.35,
+                py: 1.25,
                 fontWeight: 800,
                 borderRadius: '12px',
                 color: '#0f172a',
@@ -489,142 +480,6 @@ function AwwwardsWorkspaceHero({
             </Button>
           </Grid>
         </Grid>
-      </Box>
-
-      {/* Interactive Awwwards Gallery Strip for the 7 Web App Visual Themes (Strictly Theme Switching Only) */}
-      <Box sx={{ mt: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1.25, px: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
-            <PaletteOutlinedIcon sx={{ fontSize: 16, color: themeConfig.accentColor }} />
-            <Typography
-              variant="caption"
-              sx={{
-                fontFamily: '"JetBrains Mono", Consolas, monospace',
-                fontWeight: 800,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: 'text.secondary'
-              }}
-            >
-              00 / WORKSPACE THEME GALLERY — CHỦ ĐỀ GIAO DIỆN WEB APP (01 — 07)
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              (Nhấn vào bất kỳ chủ đề nào để đổi giao diện toàn bộ Web App & tất cả các bảng Sprint)
-            </Typography>
-          </Box>
-
-          <Chip
-            size="small"
-            icon={<CheckCircleRoundedIcon fontSize="small" />}
-            label={`Giao diện đang bật: ${themeConfig.name.split('•')[0].trim()}`}
-            sx={{
-              fontWeight: 800,
-              color: '#0f172a',
-              bgcolor: themeConfig.accentColor
-            }}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 1.25,
-            minHeight: { md: 124 }
-          }}
-        >
-          {PRIMARY_THEMES_LIST.map((themeItem, idx) => {
-            const isCurrent = globalPersonaKey === themeItem.id
-            const idxStr = themeItem.chapterIndex || String(idx + 1).padStart(2, '0')
-            return (
-              <Box
-                key={themeItem.id}
-                onClick={(e) => onSwitchPersona(themeItem.id, e)}
-                sx={{
-                  flex: { xs: '1 1 auto', md: isCurrent ? '1.75 1 0%' : '1 1 0%' },
-                  position: 'relative',
-                  p: 1.75,
-                  borderRadius: '14px',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  color: '#f8fafc',
-                  backgroundImage: `linear-gradient(180deg, rgba(9, 13, 22, 0.45) 0%, rgba(9, 13, 22, 0.90) 100%), url(${themeItem.heroImage})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  border: isCurrent
-                    ? `2px solid ${themeItem.accentColor}`
-                    : '1px solid rgba(148, 163, 184, 0.26)',
-                  boxShadow: isCurrent ? `0 0 0 2px ${themeItem.accentColor}44` : 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  transition: 'flex 0.36s cubic-bezier(0.22, 1, 0.36, 1), transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease',
-                  '&:hover': {
-                    flex: { md: '1.85 1 0%' },
-                    transform: 'translateY(-2px)',
-                    borderColor: themeItem.accentColor
-                  }
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", Consolas, monospace',
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      color: themeItem.accentColor,
-                      fontVariantNumeric: 'tabular-nums'
-                    }}
-                  >
-                    /{idxStr}
-                  </Typography>
-                  {isCurrent ? (
-                    <Chip
-                      size="small"
-                      label="✓ Đang áp dụng"
-                      sx={{
-                        height: 20,
-                        fontSize: '0.66rem',
-                        fontWeight: 800,
-                        color: '#0f172a',
-                        bgcolor: themeItem.accentColor
-                      }}
-                    />
-                  ) : (
-                    <PaletteOutlinedIcon sx={{ fontSize: 15, color: 'rgba(248, 250, 252, 0.78)' }} />
-                  )}
-                </Box>
-
-                <Box sx={{ mt: 1.25 }}>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: '0.82rem',
-                      lineHeight: 1.25,
-                      color: '#f8fafc'
-                    }}
-                    noWrap
-                  >
-                    {themeItem.name}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      display: 'block',
-                      color: 'rgba(248, 250, 252, 0.75)',
-                      fontWeight: 600,
-                      mt: 0.25
-                    }}
-                    noWrap
-                  >
-                    {themeItem.element} • {themeItem.archetypeLabel?.split('•')[0]?.trim()}
-                  </Typography>
-                </Box>
-              </Box>
-            )
-          })}
-        </Box>
       </Box>
     </Box>
   )
