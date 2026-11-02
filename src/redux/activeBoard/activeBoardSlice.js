@@ -50,7 +50,9 @@ export const activeBoardSlice = createSlice({
     builder.addCase(fetchBoardDetailsAPI.fulfilled, (state, action) => {
       let board = action.payload
 
-      board.FE_allUsers = (board.owners || []).concat(board.members || [])
+      // v7: `members` may be the new role list [{ userId, role }] — keep only populated user objects here
+      const isUserObject = (entry) => entry && typeof entry === 'object' && entry._id && !entry.userId
+      board.FE_allUsers = (board.owners || []).concat(board.members || []).filter(isUserObject)
 
       // Sắp xếp thứ tự các columns luôn ở đây trước khi đưa dữ liệu xuống bên dưới các component con
       board.columns = mapOrder(board.columns, board.columnOrderIds, '_id')

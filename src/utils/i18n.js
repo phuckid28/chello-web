@@ -2,6 +2,7 @@
 // Keeps technical terms (Sprint, CR, FRD, Ticket ID, Status, Handle by, Resource point, Dev Progress, Kanban, Obsidian Graph) intact
 import { FEATURE_TRANSLATIONS } from '~/utils/i18nV5'
 import { V6_TRANSLATIONS } from '~/utils/i18nV6'
+import { V7_TRANSLATIONS } from '~/utils/i18nV7'
 import { EXTRA_TRANSLATIONS } from '~/utils/i18nExtra'
 import { GRAPH_TRANSLATIONS } from '~/pages/Boards/BoardContent/KnowledgeGraph/graphI18n'
 
@@ -336,7 +337,8 @@ export const TRANSLATIONS = Object.fromEntries(
       ...(FEATURE_TRANSLATIONS[code] || {}),
       ...(V6_TRANSLATIONS[code] || {}),
       ...(EXTRA_TRANSLATIONS[code] || {}),
-      ...(GRAPH_TRANSLATIONS[code] || {})
+      ...(GRAPH_TRANSLATIONS[code] || {}),
+      ...(V7_TRANSLATIONS[code] || {})
     }
   ])
 )

@@ -33,6 +33,7 @@ import { playUiChime } from '~/utils/soundEffects'
 import { DEFAULT_PRIORITY, getPriorityOption } from '~/utils/crMeta'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
+import { useCan } from '~/customHooks/useCan'
 
 const TEMPLATE_DEFAULT_COVER_KEYS = new Set([
   'preset:template-default',
@@ -57,9 +58,12 @@ function Card({ card }) {
   const board = useSelector(selectCurrentActiveBoard)
   const { tPrimary } = useTranslation()
   const { themeConfig } = usePersonaTheme()
+  // v7 roles: only admin / editor may drag CRs between topics
+  const canEdit = useCan('board:edit')
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
-    data: { ...card }
+    data: { ...card },
+    disabled: !canEdit
   })
 
   const dndKitCardStyle = {

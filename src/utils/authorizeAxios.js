@@ -17,6 +17,22 @@ let authorizedAxiosInstance = axios.create()
 authorizedAxiosInstance.defaults.timeout = 1000 * 60 * 10
 // withCredentials: Cho phép axios tự động gửi cookie trong mỗi request lên BE (phục vụ lưu JWT tokens vào httpOnly Cookie của trình duyệt)
 authorizedAxiosInstance.defaults.withCredentials = true
+// CSRF (contract v7 §0): every non-GET request must carry this header; API rejects it otherwise
+authorizedAxiosInstance.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
+
+// Error codes the UI handles inline (login 2FA step, lockout banner, Drive fallback) — never toast them
+export const INLINE_ERROR_CODES = Object.freeze(['TOTP_REQUIRED', 'ACCOUNT_LOCKED', 'DRIVE_NOT_CONFIGURED'])
+
+// Routes where a 401 means "bad credentials", not "session expired" → must not force a logout
+const CREDENTIAL_ROUTES = ['/v1/users/login', '/v1/users/logout', '/v1/users/2fa/', '/v1/users/password', '/v1/users/delete_account']
+
+const isCredentialRoute = (url = '') => CREDENTIAL_ROUTES.some(route => String(url).includes(route))
+
+export const shouldToastError = (error) => {
+  if (error?.config?.silent) return false
+  if (error?.response?.status === 410) return false
+  return !INLINE_ERROR_CODES.includes(error?.response?.data?.code)
+}
 
 // Interceptor Request: can thiệp vào giữa các request API
 authorizedAxiosInstance.interceptors.request.use((config) => {
@@ -43,7 +59,8 @@ authorizedAxiosInstance.interceptors.response.use((response) => {
   interceptorLoadingElements(false)
 
   // Trường hợp 1: Nếu nhận mã 401 từ BE, gọi api đăng xuất luôn
-  if (error.response?.status === 401 && axiosReduxStore) {
+  // (trừ các route xác thực thông tin đăng nhập: sai mật khẩu / cần mã 2FA không phải hết phiên)
+  if (error.response?.status === 401 && axiosReduxStore && !isCredentialRoute(error.config?.url)) {
     axiosReduxStore.dispatch(logoutUserAPI(false))
   }
 
@@ -79,9 +96,9 @@ authorizedAxiosInstance.interceptors.response.use((response) => {
     errorMessage = error.response?.data?.message
   }
 
-  // Ngoại trừ mã 410 - GONE phục vụ việc tự động refresh token
-  if (error.response?.status !== 410) {
-    toast.error(errorMessage)
+  // Ngoại trừ mã 410 - GONE phục vụ việc tự động refresh token, request `silent` và các mã lỗi xử lý inline
+  if (shouldToastError(error)) {
+    toast.error(errorMessage, { toastId: `api-error-${errorMessage}` })
   }
   return Promise.reject(error)
 })

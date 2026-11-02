@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import authorizedAxiosInstance from '~/utils/authorizeAxios'
-import { API_ROOT } from '~/utils/constants'
+import { API_ROOT, BOARD_INVITATION_STATUS } from '~/utils/constants'
 
 const initialState = {
   currentNotifications: null
@@ -34,11 +34,9 @@ export const notificationsSlice = createSlice({
     },
     addNotification: (state, action) => {
       const incomingInvitation = action.payload
-      if (!state.currentNotifications) {
-        state.currentNotifications = [incomingInvitation]
-      } else {
-        state.currentNotifications.unshift(incomingInvitation)
-      }
+      const current = state.currentNotifications || []
+      if (incomingInvitation?._id && current.some(i => i._id === incomingInvitation._id)) return
+      state.currentNotifications = [incomingInvitation, ...current]
     }
   },
   extraReducers: (builder) => {
@@ -65,5 +63,9 @@ export const {
 export const selectCurrentNotifications = (state) => {
   return state.notifications.currentNotifications
 }
+
+// Legacy board invitations (v1 /invitations) still awaiting an answer — shown in the inbox Invites tab
+export const isPendingInvitation = (invitation) =>
+  invitation?.boardInvitation?.status === BOARD_INVITATION_STATUS.PENDING
 
 export const notificationsReducer = notificationsSlice.reducer

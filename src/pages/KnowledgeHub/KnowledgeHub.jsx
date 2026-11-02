@@ -13,6 +13,7 @@ import AppBar from '~/components/AppBar/AppBar'
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
 import PageTree from './PageTree'
 import WikiEditor from './WikiEditor'
+import MarkdownView from './MarkdownView'
 import LinksPanel from './LinksPanel'
 import { WIKI_TEMPLATE_KEYS, getWikiTemplate, renderWikiTemplate } from './wikiTemplates'
 import { extractOutline } from './wikiOutline'
@@ -21,6 +22,7 @@ import { fetchBoardDetailsAPI, selectCurrentActiveBoard } from '~/redux/activeBo
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { useCan } from '~/customHooks/useCan'
 import { computeBacklinks, createWikiResolver, extractWikiLinks } from '~/utils/wikiLinks'
 import { collectBoardCardsWithColumn, formatDateVN } from '~/utils/excelExporter'
 import { formatMessage } from '~/utils/i18nV5'
@@ -77,6 +79,7 @@ function KnowledgeHub() {
   const board = useSelector(selectCurrentActiveBoard)
   const { themeConfig } = usePersonaTheme(board?.theme)
   const { tPrimary, lang } = useTranslation()
+  const canEdit = useCan('board:edit', board?._id === boardId ? board : null)
 
   const [pages, setPages] = useState([])
   const [loading, setLoading] = useState(true)
@@ -215,8 +218,18 @@ function KnowledgeHub() {
           <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: 0.4, color: 'text.secondary', display: 'block', mb: 1 }}>
             {tPrimary('templatesLabel').toUpperCase()}
           </Typography>
-          <TemplatePicker tPrimary={tPrimary} onPick={(templateKey) => createPage({ templateKey })} />
+          {canEdit && <TemplatePicker tPrimary={tPrimary} onPick={(templateKey) => createPage({ templateKey })} />}
           <Alert severity="info" sx={{ mt: 3 }}>{tPrimary('wikiHint')}</Alert>
+        </Box>
+      )
+    }
+    if (!canEdit) {
+      // v7 commenter / viewer: read-only rendering, no editor or delete controls
+      return (
+        <Box>
+          <Alert severity="info" sx={{ mb: 2 }}>{tPrimary('v7NoPermissionEdit')}</Alert>
+          <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>{selectedPage.icon || '📄'} {selectedPage.title}</Typography>
+          <MarkdownView content={selectedPage.content} resolveTarget={resolveTarget} onWikiLinkClick={handleWikiTarget} missingLabel={labels.missingLink} />
         </Box>
       )
     }
@@ -264,7 +277,7 @@ function KnowledgeHub() {
 
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '260px 1fr', xl: '270px 1fr 300px' }, alignItems: 'start' }}>
           <Box sx={{ ...glassSx, p: 1.5, position: { md: 'sticky' }, top: 16, height: { md: 'calc(100vh - 170px)' } }}>
-            <PageTree pages={pages} selectedId={pageId} onSelect={goToPage} onCreate={(parentId) => createPage({ parentId })} labels={labels} />
+            <PageTree pages={pages} selectedId={pageId} onSelect={goToPage} onCreate={canEdit ? (parentId) => createPage({ parentId }) : undefined} labels={labels} />
           </Box>
           <Box sx={{ ...glassSx, p: { xs: 2, md: 3 }, minWidth: 0, minHeight: 'calc(100vh - 170px)' }}>
             {renderMain()}

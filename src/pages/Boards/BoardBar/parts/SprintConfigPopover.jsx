@@ -7,11 +7,13 @@ import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
+import Tooltip from '@mui/material/Tooltip'
 import { toast } from 'react-toastify'
 import { useDispatch } from 'react-redux'
 import { updateBoardDetailsAPI } from '~/apis'
 import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { useTranslation } from '~/customHooks/useTranslation'
+import { useCan } from '~/customHooks/useCan'
 import { playUiChime } from '~/utils/soundEffects'
 import {
   DEFAULT_SPRINT_CONFIG,
@@ -54,6 +56,8 @@ const buildSprintConfigPayload = (form, teamRoster) => {
 function SprintConfigPopover({ anchorEl, onClose, board }) {
   const dispatch = useDispatch()
   const { tPrimary } = useTranslation()
+  // v7: sprint config is a board:edit action (commenter / viewer get a read-only form)
+  const canEdit = useCan('board:edit', board)
   const [form, setForm] = useState(() => toFormState(board))
   const [teamRoster, setTeamRoster] = useState(() => getSavedTeamRoster(board))
   const [newMemberName, setNewMemberName] = useState('')
@@ -148,9 +152,13 @@ function SprintConfigPopover({ anchorEl, onClose, board }) {
           </Button>
           <Stack direction="row" spacing={1}>
             <Button size="small" onClick={onClose}>{tPrimary('cancelBtn')}</Button>
-            <Button size="small" variant="contained" disabled={saving} onClick={handleSave} sx={{ fontWeight: 700 }}>
-              {tPrimary('saveSprintBtn')}
-            </Button>
+            <Tooltip title={canEdit ? '' : tPrimary('v7NoPermissionEdit')}>
+              <span>
+                <Button size="small" variant="contained" disabled={saving || !canEdit} onClick={handleSave} sx={{ fontWeight: 700 }}>
+                  {tPrimary('saveSprintBtn')}
+                </Button>
+              </span>
+            </Tooltip>
           </Stack>
         </Stack>
       </Box>

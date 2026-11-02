@@ -133,3 +133,10 @@ export const sendTelegramNotificationAPI = async (payload) => {
   const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/integrations/telegram/notify`, payload)
   return response.data
 }
+
+// User System v7 (contract: user_system_api_contract.md)
+export * from './userApi'
+export * from './workspaceApi'
+export * from './notificationApi'
+export * from './presenceApi'
+export * from './adminApi'

@@ -5,13 +5,17 @@ import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
+import MuiLink from '@mui/material/Link'
 import MailIcon from '@mui/icons-material/Mail'
 import AccountBoxIcon from '@mui/icons-material/AccountBox'
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
+import { Link as RouterLink } from 'react-router-dom'
 
 import { FIELD_REQUIRED_MESSAGE } from '~/utils/validators'
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
+import { EditorialLabel } from '~/components/Layout/PageShell'
+import { MONO_FONT } from '~/components/Layout/surface'
 import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, updateUserAPI } from '~/redux/user/userSlice'
 import { useForm } from 'react-hook-form'
@@ -19,11 +23,23 @@ import { toast } from 'react-toastify'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import soraAvatar from '~/assets/sora.jpg'
+import { formatDate } from './utils/format'
+
+function AccountFact({ label, children }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block' }}>
+        {label}
+      </Typography>
+      <Box sx={{ mt: 0.25, fontWeight: 600, fontSize: '0.9rem', overflowWrap: 'anywhere' }}>{children}</Box>
+    </Box>
+  )
+}
 
 function AccountTab() {
   const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
-  const { t, tPrimary } = useTranslation()
+  const { t, tPrimary, lang } = useTranslation()
   const { themeConfig } = usePersonaTheme()
 
   const initialGeneralForm = {
@@ -49,6 +65,8 @@ function AccountTab() {
     })
   }
 
+  const roleLabel = currentUser?.role === 'admin' ? tPrimary('setRoleAdmin') : tPrimary('setRoleClient')
+
   return (
     <Box sx={{
       maxWidth: '640px',
@@ -61,6 +79,7 @@ function AccountTab() {
       border: `1px solid ${themeConfig.columnBorder}`,
       boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08)'
     }}>
+      <EditorialLabel index={1} sx={{ mb: 1.5 }}>{tPrimary('setAccountLabel')}</EditorialLabel>
       <Box sx={{
         display: 'flex',
         alignItems: 'center',
@@ -82,7 +101,7 @@ function AccountTab() {
             src={currentUser?.avatar || soraAvatar}
           />
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.015em' }}>
+            <Typography variant="h6" component="h2" sx={{ fontWeight: 800, letterSpacing: '-0.015em' }}>
               {currentUser?.displayName}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
@@ -100,6 +119,20 @@ function AccountTab() {
             border: `1px solid ${themeConfig.columnBorder}`
           }}
         />
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2, mb: 3 }}>
+        <AccountFact label={tPrimary('setAccountRole')}>
+          <Chip size="small" label={roleLabel} variant="outlined" sx={{ fontWeight: 700 }} />
+        </AccountFact>
+        <AccountFact label={tPrimary('setAccountCreated')}>
+          {formatDate(currentUser?.createdAt, lang) || '—'}
+        </AccountFact>
+        <AccountFact label={tPrimary('setAccountStatus')}>
+          <Box component="span" sx={{ fontFamily: MONO_FONT, fontSize: '0.8rem' }}>
+            {currentUser?.twoFactorEnabled ? tPrimary('setTwoFactorOn') : tPrimary('setTwoFactorOff')}
+          </Box>
+        </AccountFact>
       </Box>
 
       <form onSubmit={handleSubmit(submitChangeGeneralInformation)}>
@@ -128,6 +161,11 @@ function AccountTab() {
               label={tPrimary('yourUsernameLabel')}
               type="text"
               variant="filled"
+              helperText={
+                <MuiLink component={RouterLink} to="/settings/profile" underline="hover" sx={{ fontWeight: 700 }}>
+                  {tPrimary('setUsernameChangeInProfile')}
+                </MuiLink>
+              }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -165,6 +203,7 @@ function AccountTab() {
               label={tPrimary('avatarUrlLabel')}
               type="text"
               variant="outlined"
+              helperText={tPrimary('setAvatarUploadHint')}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
