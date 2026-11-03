@@ -5,7 +5,12 @@ import {
   replaceUserInList,
   appendUniqueUsers,
   normalizeUsersPage,
-  buildSignupChart
+  buildSignupChart,
+  formatBytes,
+  formatUptime,
+  buildDualLineChart,
+  buildStackedStatusChart,
+  getThreatBadgeMeta
 } from '~/pages/Admin/adminUtils'
 
 describe('isUserLocked', () => {
@@ -81,5 +86,49 @@ describe('buildSignupChart', () => {
     const chart = buildSignupChart(series, size)
     expect(chart.bars[3].count).toBe(0)
     expect(chart.bars.filter((bar) => bar.showLabel).length).toBeLessThanOrEqual(8)
+  })
+})
+
+describe('v8 observability formatters & SVG chart builders', () => {
+  const size = { width: 400, height: 140, padding: { top: 10, right: 10, bottom: 20, left: 40 } }
+
+  it('formats bytes and uptime human-readably', () => {
+    expect(formatBytes(0)).toBe('0 B')
+    expect(formatBytes(1536)).toBe('1.5 KB')
+    expect(formatBytes(2 * 1024 * 1024)).toBe('2.0 MB')
+    expect(formatUptime(125)).toBe('2m 5s')
+    expect(formatUptime(90061)).toBe('1d 1h 1m')
+  })
+
+  it('builds dual-line SVG paths for Bytes In vs Bytes Out', () => {
+    const series = [
+      { label: '10:00', bytesIn: 1000, bytesOut: 4000 },
+      { label: '10:01', bytesIn: 2500, bytesOut: 8000 },
+      { label: '10:02', bytesIn: 500, bytesOut: 2000 }
+    ]
+    const chart = buildDualLineChart(series, { ...size, keyA: 'bytesIn', keyB: 'bytesOut' })
+    expect(chart.max).toBe(8000)
+    expect(chart.points).toHaveLength(3)
+    expect(chart.pathA).toContain('M ')
+    expect(chart.pathB).toContain('L ')
+    expect(chart.areaA).toContain('Z')
+  })
+
+  it('builds stacked HTTP status bars (2xx, 4xx, 429, 5xx)', () => {
+    const series = [
+      { label: '10:00', status2xx: 10, status3xx: 2, status4xx: 3, status429: 1, status5xx: 0 },
+      { label: '10:01', status2xx: 20, status3xx: 0, status4xx: 5, status429: 4, status5xx: 1 }
+    ]
+    const chart = buildStackedStatusChart(series, size)
+    expect(chart.max).toBe(30)
+    expect(chart.columns).toHaveLength(2)
+    expect(chart.columns[1].total).toBe(30)
+    expect(chart.columns[1].segments.length).toBeGreaterThan(0)
+  })
+
+  it('maps threat levels to badge colors and label keys', () => {
+    expect(getThreatBadgeMeta('critical').color).toBe('error')
+    expect(getThreatBadgeMeta('high').color).toBe('warning')
+    expect(getThreatBadgeMeta('normal').color).toBe('success')
   })
 })

@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import PreferencesSync from '~/components/Account/PreferencesSync'
 import DeletionBanner from '~/components/Account/DeletionBanner'
+import SystemStatusBanner from '~/components/Account/SystemStatusBanner'
 
 // Route-level code splitting: each workspace area is downloaded only when visited
 const Boards = lazy(() => import('~/pages/Boards'))
@@ -37,6 +38,7 @@ const ProtectedRoute = ({ user }) => {
   if (!user) return <Navigate to='/login' replace={true} />
   return (
     <Suspense fallback={<PageLoadingSpinner caption='Chella' />}>
+      <SystemStatusBanner />
       <DeletionBanner />
       <PageTransition>
         <Outlet />
