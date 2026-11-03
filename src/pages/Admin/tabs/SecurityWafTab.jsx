@@ -8,12 +8,15 @@ import MenuItem from '@mui/material/MenuItem'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
 import Chip from '@mui/material/Chip'
+import Alert from '@mui/material/Alert'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded'
+import BugReportRoundedIcon from '@mui/icons-material/BugReportRounded'
 import { EditorialLabel } from '~/components/Layout/PageShell'
 import { surfaceSx, MONO_FONT } from '~/components/Layout/surface'
 import { useTranslation } from '~/customHooks/useTranslation'
@@ -40,7 +43,8 @@ const stickyHeadCellSx = {
   position: 'sticky',
   insetBlockStart: 0,
   zIndex: 1,
-  bgcolor: 'background.paper'
+  bgcolor: 'background.paper',
+  whiteSpace: 'nowrap'
 }
 
 function SecurityWafTab({
@@ -49,6 +53,10 @@ function SecurityWafTab({
   onChangeFilters,
   onCreateIpRule,
   onDeleteIpRule,
+  onVerifyAuditChain,
+  onRunWafSimulator,
+  auditChainResult,
+  wafSimResult,
   busy
 }) {
   const { tPrimary, lang } = useTranslation()
@@ -61,6 +69,7 @@ function SecurityWafTab({
   const posture = securityData?.posture || { score: 100, grade: 'A+', checks: [] }
   const ipRules = securityData?.ipRules || []
   const events = securityData?.events || []
+  const auditIntegrity = auditChainResult || securityData?.auditIntegrity || null
 
   const handleAddRule = async (e) => {
     e.preventDefault()
@@ -90,14 +99,36 @@ function SecurityWafTab({
 
   return (
     <Box>
-      {/* 1. Security Posture Score & Automated Audit Checks */}
+      {/* 1. Security Posture Score, Audit Hash Chain Verification & WAF Self-Test */}
       <Box sx={containmentPanelSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 2 }}>
           <Box>
             <Typography variant='h6' component='h2' sx={{ fontWeight: 800 }}>{tPrimary('admPostureTitle')}</Typography>
             <Typography variant='caption' color='text.secondary'>{tPrimary('admPostureSub')}</Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Button
+              size='small'
+              variant='outlined'
+              color='secondary'
+              startIcon={<BugReportRoundedIcon />}
+              disabled={busy}
+              onClick={onRunWafSimulator}
+              sx={{ fontWeight: 800 }}
+            >
+              Chạy WAF Self-Test
+            </Button>
+            <Button
+              size='small'
+              variant='outlined'
+              color='info'
+              startIcon={<VerifiedRoundedIcon />}
+              disabled={busy}
+              onClick={onVerifyAuditChain}
+              sx={{ fontWeight: 800 }}
+            >
+              Xác thực Chuỗi Hash Audit (SHA-256)
+            </Button>
             <Chip
               color={posture.score >= 85 ? 'success' : posture.score >= 70 ? 'warning' : 'error'}
               label={`SCORE: ${posture.score} / 100 (${posture.grade})`}
@@ -105,6 +136,20 @@ function SecurityWafTab({
             />
           </Box>
         </Box>
+
+        {auditIntegrity && (
+          <Alert severity={auditIntegrity.valid ? 'success' : 'error'} sx={{ mb: 2, fontFamily: MONO_FONT, fontSize: '0.78rem' }}>
+            {auditIntegrity.valid
+              ? `SHA-256 Audit Chain VALID — Đã đối chiếu ${auditIntegrity.checkedCount} sự kiện bảo mật, không phát hiện chỉnh sửa trái phép.`
+              : `CẢNH BÁO: Phát hiện sai lệch chuỗi băm tại sự kiện ${auditIntegrity.brokenAtId}!`}
+          </Alert>
+        )}
+
+        {wafSimResult && (
+          <Alert severity={wafSimResult.passed === wafSimResult.totalScenarios ? 'success' : 'warning'} sx={{ mb: 2, fontFamily: MONO_FONT, fontSize: '0.78rem' }}>
+            WAF Self-Test: Vượt qua {wafSimResult.passed}/{wafSimResult.totalScenarios} kịch bản tấn công (Path Probe /.env, SQLi Union, Brute-Force, Volumetric Flood).
+          </Alert>
+        )}
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
           {(posture.checks || []).map((chk, idx) => (
@@ -181,16 +226,16 @@ function SecurityWafTab({
         </Box>
 
         <TableContainer tabIndex={0} role='region' aria-label={tPrimary('admWafTitle')} sx={stickyTableWrapperSx}>
-          <Table size='small'>
+          <Table size='small' sx={{ tableLayout: 'fixed', minWidth: 840 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColIp')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>Mode</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColRuleSource')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 155 }}>{tPrimary('admColIp')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 95 }}>Mode</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 135 }}>{tPrimary('admColRuleSource')}</TableCell>
                 <TableCell sx={stickyHeadCellSx}>{tPrimary('admIpReasonLabel')}</TableCell>
-                <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColHits')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColExpires')}</TableCell>
-                <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColActions')}</TableCell>
+                <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 95 }}>{tPrimary('admColHits')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 160 }}>{tPrimary('admColExpires')}</TableCell>
+                <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 100 }}>{tPrimary('admColActions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -201,8 +246,8 @@ function SecurityWafTab({
               ) : (
                 ipRules.map((rule) => (
                   <TableRow key={rule._id || rule.ip} hover>
-                    <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontWeight: 700 }}>{rule.ip}</TableCell>
-                    <TableCell>
+                    <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontWeight: 700, whiteSpace: 'nowrap' }}>{rule.ip}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       <Chip
                         size='small'
                         color={rule.mode === 'block' ? 'error' : 'success'}
@@ -210,13 +255,13 @@ function SecurityWafTab({
                         sx={{ fontFamily: MONO_FONT, fontWeight: 700 }}
                       />
                     </TableCell>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                       {rule.source === 'auto_ban' ? `AUTO (${rule.category || 'ddos'})` : 'MANUAL'}
                     </TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>{rule.reason || '—'}</TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT }}>{Number(rule.blockedHits || 0)}</TableCell>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>{formatTime(rule.expiresAtMs || rule.expiresAt)}</TableCell>
-                    <TableCell align='right'>
+                    <TableCell sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{rule.reason || '—'}</TableCell>
+                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{Number(rule.blockedHits || 0)}</TableCell>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{formatTime(rule.expiresAtMs || rule.expiresAt)}</TableCell>
+                    <TableCell align='right' sx={{ whiteSpace: 'nowrap' }}>
                       <Button
                         size='small'
                         color='error'
@@ -276,13 +321,13 @@ function SecurityWafTab({
         </Box>
 
         <TableContainer tabIndex={0} role='region' aria-label={tPrimary('admSecEventsTitle')} sx={stickyTableWrapperSx}>
-          <Table size='small'>
+          <Table size='small' sx={{ tableLayout: 'fixed', minWidth: 860 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColTime')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColSeverity')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColEvent')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColIp')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 165 }}>{tPrimary('admColTime')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 100 }}>{tPrimary('admColSeverity')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 190 }}>{tPrimary('admColEvent')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 135 }}>{tPrimary('admColIp')}</TableCell>
                 <TableCell sx={stickyHeadCellSx}>{tPrimary('admColMessage')}</TableCell>
               </TableRow>
             </TableHead>
@@ -294,10 +339,10 @@ function SecurityWafTab({
               ) : (
                 events.map((ev) => (
                   <TableRow key={ev._id} hover>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                       {formatTime(ev.createdAt)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       <Chip
                         size='small'
                         color={severityColor(ev.severity)}
@@ -305,11 +350,13 @@ function SecurityWafTab({
                         sx={{ fontFamily: MONO_FONT, fontWeight: 700, height: 20 }}
                       />
                     </TableCell>
-                    <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontSize: '0.78rem', fontWeight: 700 }}>
+                    <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {ev.event}
                     </TableCell>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.78rem' }}>{ev.ip || '—'}</TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>{ev.message}</TableCell>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>{ev.ip || '—'}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ev.message}>
+                      {ev.message}
+                    </TableCell>
                   </TableRow>
                 ))
               )}

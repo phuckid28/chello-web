@@ -33,10 +33,7 @@ function ThemeFxProvider() {
   useEffect(() => {
     const root = document.documentElement
     const tokens = theme.surfaceTokens || {}
-    const editorialArchetypes = ['framed-sheet', 'editorial-greeting', 'accent-ladder']
-    const displayFont = editorialArchetypes.includes(theme.styleArchetype)
-      ? '"Instrument Serif", "Noto Serif JP", "Plus Jakarta Sans", serif'
-      : '"Plus Jakarta Sans", "Noto Sans JP", sans-serif'
+    const displayFont = '"Be Vietnam Pro", "Plus Jakarta Sans", "Noto Sans JP", sans-serif'
     root.dataset.fxTheme = key
     root.dataset.chellaArchetype = theme.styleArchetype || 'achromatic-ledger'
     root.dataset.fxCursor = cursorOn ? 'on' : 'off'

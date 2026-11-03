@@ -10,6 +10,7 @@ import { selectCurrentUser } from '~/redux/user/userSlice'
 import PreferencesSync from '~/components/Account/PreferencesSync'
 import DeletionBanner from '~/components/Account/DeletionBanner'
 import SystemStatusBanner from '~/components/Account/SystemStatusBanner'
+import ForcePasswordChangeDialog from '~/components/Account/ForcePasswordChangeDialog'
 
 // Route-level code splitting: each workspace area is downloaded only when visited
 const Boards = lazy(() => import('~/pages/Boards'))
@@ -40,6 +41,7 @@ const ProtectedRoute = ({ user }) => {
     <Suspense fallback={<PageLoadingSpinner caption='Chella' />}>
       <SystemStatusBanner />
       <DeletionBanner />
+      <ForcePasswordChangeDialog />
       <PageTransition>
         <Outlet />
       </PageTransition>

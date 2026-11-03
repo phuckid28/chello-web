@@ -8,6 +8,7 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import Tooltip from '@mui/material/Tooltip'
 import { EditorialLabel } from '~/components/Layout/PageShell'
 import { surfaceSx, MONO_FONT } from '~/components/Layout/surface'
 import { useTranslation } from '~/customHooks/useTranslation'
@@ -24,7 +25,8 @@ const containmentPanelSx = {
 }
 
 const stickyTableWrapperSx = {
-  overflow: 'auto',
+  overflowX: 'auto',
+  overflowY: 'auto',
   maxInlineSize: '100%',
   maxBlockSize: 'min(440px, 70vh)',
   containerType: 'inline-size'
@@ -32,10 +34,24 @@ const stickyTableWrapperSx = {
 
 const stickyHeadCellSx = {
   fontWeight: 800,
+  whiteSpace: 'nowrap',
+  fontVariantNumeric: 'tabular-nums',
   position: 'sticky',
   insetBlockStart: 0,
   zIndex: 1,
   bgcolor: 'background.paper'
+}
+
+const nowrapMonoCellSx = {
+  fontFamily: MONO_FONT,
+  whiteSpace: 'nowrap',
+  fontVariantNumeric: 'tabular-nums'
+}
+
+const ellipsisCellSx = {
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis'
 }
 
 function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
@@ -100,7 +116,7 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
               }}
             >
               <EditorialLabel index={idx + 1}>{item.label}</EditorialLabel>
-              <Typography variant='h5' sx={{ mt: 0.75, fontFamily: MONO_FONT, fontWeight: 800 }}>
+              <Typography variant='h5' sx={{ mt: 0.75, fontFamily: MONO_FONT, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
                 {Number(item.value).toLocaleString(lang)}
               </Typography>
             </Box>
@@ -108,7 +124,7 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
         </Box>
       </Box>
 
-      {/* 2. Top Client IPs Access Monitor with 1-Click WAF Actions */}
+      {/* 2. Top Client IPs Access Monitor with Fixed Column Widths & No-Wrap Tabular Numbers */}
       <Box sx={containmentPanelSx}>
         <Box sx={{ mb: 1.5 }}>
           <Typography variant='h6' component='h2' sx={{ fontWeight: 800 }}>{tPrimary('admTopIpsTitle')}</Typography>
@@ -116,17 +132,17 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
         </Box>
 
         <TableContainer tabIndex={0} role='region' aria-label={tPrimary('admTopIpsTitle')} sx={stickyTableWrapperSx}>
-          <Table size='small'>
+          <Table size='small' sx={{ tableLayout: 'fixed', minWidth: 1080 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColIp')}</TableCell>
-                <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColReq1m15m')}</TableCell>
-                <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColErrors429')}</TableCell>
-                <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColBandwidth')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColDevice')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColLastRoute')}</TableCell>
-                <TableCell sx={stickyHeadCellSx}>{tPrimary('admColWafState')}</TableCell>
-                <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColActions')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 145 }}>{tPrimary('admColIp')}</TableCell>
+                <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 130 }}>{tPrimary('admColReq1m15m')}</TableCell>
+                <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 120 }}>{tPrimary('admColErrors429')}</TableCell>
+                <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 165 }}>{tPrimary('admColBandwidth')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 145 }}>{tPrimary('admColDevice')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 175 }}>{tPrimary('admColLastRoute')}</TableCell>
+                <TableCell sx={{ ...stickyHeadCellSx, width: 95 }}>{tPrimary('admColWafState')}</TableCell>
+                <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 165 }}>{tPrimary('admColActions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -138,23 +154,38 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
                 topIps.map((row) => {
                   const isBlocked = row.firewallStatus === 'block'
                   const isAllowed = row.firewallStatus === 'allow'
+                  const deviceLabel = row.deviceName || `${row.browser} / ${row.os}`
                   return (
                     <TableRow key={row.ip} hover>
-                      <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontWeight: 700 }}>
+                      <TableCell component='th' scope='row' sx={{ ...nowrapMonoCellSx, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {row.ip}
                       </TableCell>
-                      <TableCell align='right' sx={{ fontFamily: MONO_FONT }}>
+                      <TableCell align='right' sx={nowrapMonoCellSx}>
                         {`${row.requests1m || 0} / ${row.requests15m || 0}`}
                       </TableCell>
-                      <TableCell align='right' sx={{ fontFamily: MONO_FONT, color: (row.errors4xx || row.rateLimited) ? 'warning.main' : 'text.primary' }}>
+                      <TableCell
+                        align='right'
+                        sx={{
+                          ...nowrapMonoCellSx,
+                          color: (row.errors4xx || row.rateLimited) ? 'warning.main' : 'text.primary'
+                        }}
+                      >
                         {`${row.errors4xx || 0} / ${row.rateLimited || 0}`}
                       </TableCell>
-                      <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>
+                      <TableCell align='right' sx={{ ...nowrapMonoCellSx, fontSize: '0.75rem' }}>
                         {`↓${formatBytes(row.bytesIn)} ↑${formatBytes(row.bytesOut)}`}
                       </TableCell>
-                      <TableCell sx={{ fontSize: '0.78rem' }}>{row.deviceName || `${row.browser} / ${row.os}`}</TableCell>
-                      <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>{row.lastPath}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{ ...ellipsisCellSx, fontSize: '0.78rem' }}>
+                        <Tooltip title={deviceLabel} placement='top'>
+                          <span>{deviceLabel}</span>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell sx={{ ...nowrapMonoCellSx, ...ellipsisCellSx, fontSize: '0.75rem' }}>
+                        <Tooltip title={row.lastPath || ''} placement='top'>
+                          <span>{row.lastPath}</span>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
                         <Chip
                           size='small'
                           color={isBlocked ? 'error' : isAllowed ? 'success' : 'default'}
@@ -162,8 +193,8 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
                           sx={{ fontFamily: MONO_FONT, fontWeight: 700, height: 22 }}
                         />
                       </TableCell>
-                      <TableCell align='right'>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.75 }}>
+                      <TableCell align='right' sx={{ whiteSpace: 'nowrap' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.75, flexWrap: 'nowrap' }}>
                           {isBlocked ? (
                             <Button
                               size='small'
@@ -171,7 +202,7 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
                               color='success'
                               disabled={busy}
                               onClick={() => onQuickIpAction({ type: 'unblock', ip: row.ip, ruleId: row.ruleId })}
-                              sx={{ fontSize: '0.7rem', py: 0.25 }}
+                              sx={{ fontSize: '0.7rem', py: 0.25, whiteSpace: 'nowrap' }}
                             >
                               {tPrimary('admUnblockIp')}
                             </Button>
@@ -183,7 +214,7 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
                                 color='error'
                                 disabled={busy || row.ip === '127.0.0.1'}
                                 onClick={() => onQuickIpAction({ type: 'block', ip: row.ip, durationMinutes: 60 })}
-                                sx={{ fontSize: '0.7rem', py: 0.25 }}
+                                sx={{ fontSize: '0.7rem', py: 0.25, whiteSpace: 'nowrap' }}
                               >
                                 {tPrimary('admBlockIpNow')}
                               </Button>
@@ -193,7 +224,7 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
                                   variant='text'
                                   disabled={busy}
                                   onClick={() => onQuickIpAction({ type: 'allow', ip: row.ip })}
-                                  sx={{ fontSize: '0.7rem', py: 0.25 }}
+                                  sx={{ fontSize: '0.7rem', py: 0.25, whiteSpace: 'nowrap' }}
                                 >
                                   {tPrimary('admWhitelistIp')}
                                 </Button>
@@ -217,28 +248,30 @@ function AccessDdosTab({ monitoring, onQuickIpAction, busy }) {
           <Typography variant='subtitle1' component='h2' sx={{ fontWeight: 800 }}>{tPrimary('admTopRoutesTitle')}</Typography>
           <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1.5 }}>{tPrimary('admTopRoutesSub')}</Typography>
           <TableContainer tabIndex={0} role='region' aria-label={tPrimary('admTopRoutesTitle')} sx={stickyTableWrapperSx}>
-            <Table size='small'>
+            <Table size='small' sx={{ tableLayout: 'fixed', minWidth: 680 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={stickyHeadCellSx}>{tPrimary('admColRoute')}</TableCell>
-                  <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColRequests')}</TableCell>
-                  <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColErrRate')}</TableCell>
-                  <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColLatencyP95')}</TableCell>
-                  <TableCell align='right' sx={stickyHeadCellSx}>{tPrimary('admColBandwidth')}</TableCell>
+                  <TableCell sx={{ ...stickyHeadCellSx, width: 220 }}>{tPrimary('admColRoute')}</TableCell>
+                  <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 95 }}>{tPrimary('admColRequests')}</TableCell>
+                  <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 105 }}>{tPrimary('admColErrRate')}</TableCell>
+                  <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 115 }}>{tPrimary('admColLatencyP95')}</TableCell>
+                  <TableCell align='right' sx={{ ...stickyHeadCellSx, width: 155 }}>{tPrimary('admColBandwidth')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {topRoutes.map((r) => (
                   <TableRow key={r.route} hover>
-                    <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontSize: '0.78rem', fontWeight: 700 }}>
-                      {r.route}
+                    <TableCell component='th' scope='row' sx={{ ...nowrapMonoCellSx, ...ellipsisCellSx, fontSize: '0.78rem', fontWeight: 700 }}>
+                      <Tooltip title={r.route} placement='top'>
+                        <span>{r.route}</span>
+                      </Tooltip>
                     </TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT }}>{r.requests}</TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, color: r.errorRatePct > 5 ? 'error.main' : 'text.primary' }}>
+                    <TableCell align='right' sx={nowrapMonoCellSx}>{r.requests}</TableCell>
+                    <TableCell align='right' sx={{ ...nowrapMonoCellSx, color: r.errorRatePct > 5 ? 'error.main' : 'text.primary' }}>
                       {`${r.errorRatePct}%`}
                     </TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT }}>{`${r.avgMs} / ${r.p95Ms}`}</TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>
+                    <TableCell align='right' sx={nowrapMonoCellSx}>{`${r.avgMs} / ${r.p95Ms}`}</TableCell>
+                    <TableCell align='right' sx={{ ...nowrapMonoCellSx, fontSize: '0.75rem' }}>
                       {`↓${formatBytes(r.bytesIn)} ↑${formatBytes(r.bytesOut)}`}
                     </TableCell>
                   </TableRow>

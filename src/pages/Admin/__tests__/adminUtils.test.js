@@ -10,7 +10,9 @@ import {
   formatUptime,
   buildDualLineChart,
   buildStackedStatusChart,
-  getThreatBadgeMeta
+  getThreatBadgeMeta,
+  parseBulkUsersText,
+  buildCredentialsCsv
 } from '~/pages/Admin/adminUtils'
 
 describe('isUserLocked', () => {
@@ -130,5 +132,41 @@ describe('v8 observability formatters & SVG chart builders', () => {
     expect(getThreatBadgeMeta('critical').color).toBe('error')
     expect(getThreatBadgeMeta('high').color).toBe('warning')
     expect(getThreatBadgeMeta('normal').color).toBe('success')
+  })
+})
+
+describe('v9 bulk user CSV/JSON parser and credentials CSV builder', () => {
+  it('parses CSV lines with header and normalizes roles', () => {
+    const raw = [
+      'email,displayName,role,password',
+      'alice@example.com,Alice Nguyen,ops_manager,Secret#123',
+      'bob@example.com,Bob Tran,unknown_role,'
+    ].join('\n')
+    const rows = parseBulkUsersText(raw)
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toEqual({
+      email: 'alice@example.com',
+      displayName: 'Alice Nguyen',
+      role: 'ops_manager',
+      password: 'Secret#123'
+    })
+    expect(rows[1].role).toBe('client')
+  })
+
+  it('builds downloadable credentials CSV escaping commas', () => {
+    const csv = buildCredentialsCsv([
+      {
+        email: 'alice@example.com',
+        username: 'alice',
+        displayName: 'Nguyen, Alice',
+        role: 'ops_manager',
+        temporaryPassword: 'Temp#Password1',
+        mustChangePassword: true,
+        action: 'created'
+      }
+    ])
+    expect(csv).toContain('Email,Username,DisplayName,Role,TemporaryPassword,MustChangePassword,Status')
+    expect(csv).toContain('"Nguyen, Alice"')
+    expect(csv).toContain('Temp#Password1')
   })
 })

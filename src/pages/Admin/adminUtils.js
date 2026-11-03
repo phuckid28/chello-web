@@ -1,4 +1,4 @@
-// Pure helpers for the global admin console & v8 observability command center. Kept out of component files.
+// Pure helpers for the global admin console, v8 observability command center & v9 enterprise governance.
 
 export const SEARCH_DEBOUNCE_MS = 350
 const MAX_X_LABELS = 8
@@ -208,4 +208,83 @@ export const getThreatBadgeMeta = (threatLevel = 'normal') => {
     return { color: 'info', severity: 'info', labelKey: 'admThreatElevated' }
   }
   return { color: 'success', severity: 'success', labelKey: 'admThreatNormal' }
+}
+
+/**
+ * Parses CSV, TSV, or JSON array text into an array of bulk user records:
+ * `{ email, displayName, username, role, password }`
+ */
+export const parseBulkUsersText = (rawText = '') => {
+  const trimmed = String(rawText || '').trim()
+  if (!trimmed) return []
+
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter(item => item && typeof item === 'object' && item.email)
+          .map(item => ({
+            email: String(item.email || '').trim().toLowerCase(),
+            displayName: String(item.displayName || '').trim(),
+            username: String(item.username || '').trim(),
+            role: ['admin', 'ops_manager', 'security_auditor', 'client'].includes(String(item.role || '').trim())
+              ? String(item.role).trim()
+              : 'client',
+            password: String(item.password || '').trim()
+          }))
+      }
+    } catch {
+      // Fallback to line-based parsing
+    }
+  }
+
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(Boolean)
+
+  if (lines.length === 0) return []
+
+  const splitLine = (line) => {
+    const delimiter = line.includes('\t') ? '\t' : line.includes(';') ? ';' : ','
+    return line.split(delimiter).map(cell => cell.trim().replace(/^["']|["']$/g, ''))
+  }
+
+  const firstCells = splitLine(lines[0]).map(c => c.toLowerCase())
+  const hasHeader = firstCells.some(c => c === 'email' || c === 'e-mail' || c === 'role' || c === 'displayname')
+  const dataLines = hasHeader ? lines.slice(1) : lines
+
+  return dataLines.map((line) => {
+    const cells = splitLine(line)
+    const email = String(cells[0] || '').trim().toLowerCase()
+    const displayName = String(cells[1] || '').trim()
+    const roleRaw = String(cells[2] || 'client').trim().toLowerCase()
+    const role = ['admin', 'ops_manager', 'security_auditor', 'client'].includes(roleRaw) ? roleRaw : 'client'
+    const password = String(cells[3] || '').trim()
+    return { email, displayName, role, password }
+  }).filter(row => Boolean(row.email))
+}
+
+const escapeCsvCell = (value = '') => {
+  const str = String(value ?? '')
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
+/** Builds a downloadable CSV string for newly created / updated credentials. */
+export const buildCredentialsCsv = (results = []) => {
+  const header = ['Email', 'Username', 'DisplayName', 'Role', 'TemporaryPassword', 'MustChangePassword', 'Status']
+  const rows = (Array.isArray(results) ? results : []).map((r) => [
+    escapeCsvCell(r.email),
+    escapeCsvCell(r.username || ''),
+    escapeCsvCell(r.displayName || ''),
+    escapeCsvCell(r.role || 'client'),
+    escapeCsvCell(r.temporaryPassword || ''),
+    escapeCsvCell(r.mustChangePassword !== false ? 'TRUE' : 'FALSE'),
+    escapeCsvCell(r.action || 'created')
+  ])
+  return [header.join(','), ...rows.map(r => r.join(','))].join('\n')
 }

@@ -10,6 +10,8 @@ const COLUMN_FOOTER_HEIGHT = '48px'
 // Exponential ease-out (impeccable craft-floor: smooth deceleration, never elastic/bounce)
 export const CHELLA_EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)'
 
+const DISPLAY_SANS_STACK = 'var(--chella-font-display, "Be Vietnam Pro", "Plus Jakarta Sans", "Noto Sans JP", sans-serif)'
+
 const theme = extendTheme({
   trello: {
     appBarHeight: APP_BAR_HEIGHT,
@@ -19,13 +21,13 @@ const theme = extendTheme({
     columnFooterHeight: COLUMN_FOOTER_HEIGHT
   },
   typography: {
-    fontFamily: '"Plus Jakarta Sans", "Noto Sans JP", sans-serif',
-    h1: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.025em', fontWeight: 800, textWrap: 'balance' },
-    h2: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.022em', fontWeight: 800, textWrap: 'balance' },
-    h3: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.018em', fontWeight: 800, textWrap: 'balance' },
-    h4: { fontFamily: 'var(--chella-font-display, "Plus Jakarta Sans", sans-serif)', letterSpacing: '-0.016em', fontWeight: 800, textWrap: 'balance' },
-    h5: { letterSpacing: '-0.014em', fontWeight: 800, textWrap: 'balance' },
-    h6: { letterSpacing: '-0.012em', fontWeight: 800, textWrap: 'balance' }
+    fontFamily: '"Be Vietnam Pro", "Plus Jakarta Sans", "Noto Sans JP", sans-serif',
+    h1: { fontFamily: DISPLAY_SANS_STACK, letterSpacing: '-0.02em', fontWeight: 800, lineHeight: 1.22, textWrap: 'balance' },
+    h2: { fontFamily: DISPLAY_SANS_STACK, letterSpacing: '-0.018em', fontWeight: 800, lineHeight: 1.25, textWrap: 'balance' },
+    h3: { fontFamily: DISPLAY_SANS_STACK, letterSpacing: '-0.015em', fontWeight: 800, lineHeight: 1.28, textWrap: 'balance' },
+    h4: { fontFamily: DISPLAY_SANS_STACK, letterSpacing: '-0.014em', fontWeight: 800, lineHeight: 1.28, textWrap: 'balance' },
+    h5: { fontFamily: DISPLAY_SANS_STACK, letterSpacing: '-0.012em', fontWeight: 800, textWrap: 'balance' },
+    h6: { fontFamily: DISPLAY_SANS_STACK, letterSpacing: '-0.01em', fontWeight: 800, textWrap: 'balance' }
   },
   colorSchemes: {
     light: {
