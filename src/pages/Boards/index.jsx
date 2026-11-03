@@ -17,6 +17,7 @@ import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
 import PublicRoundedIcon from '@mui/icons-material/PublicRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
 import Button from '@mui/material/Button'
@@ -486,6 +487,20 @@ function Boards() {
                 <Typography variant='body2' sx={{ fontWeight: 700 }} noWrap>
                   {t('createNewSprintBoard')}
                 </Typography>
+              </SidebarItem>
+
+              <SidebarItem
+                onClick={() => navigate('/admin')}
+                sx={{
+                  borderColor: 'rgba(56, 189, 248, 0.45)',
+                  bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.12)' : 'rgba(14, 165, 233, 0.08)')
+                }}
+              >
+                <AdminPanelSettingsOutlinedIcon fontSize='small' color='info' />
+                <Typography variant='body2' sx={{ fontWeight: 800, flex: 1 }} noWrap>
+                  Giám sát & Bảo mật (SOC)
+                </Typography>
+                <Chip size='small' color='info' label='v8' sx={{ height: 20, fontSize: '0.66rem', fontWeight: 800 }} />
               </SidebarItem>
             </Stack>
 

@@ -14,6 +14,7 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded'
 import ViewTimelineRoundedIcon from '@mui/icons-material/ViewTimelineRounded'
 import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded'
@@ -22,6 +23,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useColorScheme } from '@mui/material/styles'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { useTranslation } from '~/customHooks/useTranslation'
@@ -45,6 +47,7 @@ function CommandPalette() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const currentUser = useSelector(selectCurrentUser)
   const { mode, setMode } = useColorScheme()
   const { themeConfig, changePersona } = usePersonaTheme(board?.theme)
   const { lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary, formatMessage } = useTranslation()
@@ -311,6 +314,18 @@ function CommandPalette() {
       }
     )
 
+    if (currentUser) {
+      list.push({
+        id: 'nav-admin-soc',
+        category: tPrimary('cmdCatNavigation'),
+        title: '🛡️ Trung tâm Giám sát & Bảo mật Hệ thống (SOC / Admin Console)',
+        subtitle: 'Lưu lượng In/Out, DDoS Radar, WAF Auto-Ban, Hạ tầng & Kill Switch',
+        badge: '/admin',
+        icon: <AdminPanelSettingsOutlinedIcon fontSize="small" color="info" />,
+        action: () => navigate('/admin')
+      })
+    }
+
     const q = search.trim().toLowerCase()
     if (!q) return list
     return list.filter(
@@ -320,7 +335,7 @@ function CommandPalette() {
         item.category.toLowerCase().includes(q) ||
         item.badge.toLowerCase().includes(q)
     )
-  }, [board, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary, formatMessage])
+  }, [board, currentUser, search, mode, setMode, changePersona, dispatch, navigate, lang, bilingual, languages, changeLanguage, toggleBilingual, tPrimary, formatMessage])
 
   const handleClose = () => setOpen(false)
 

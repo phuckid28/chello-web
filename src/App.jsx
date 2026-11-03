@@ -47,9 +47,9 @@ const ProtectedRoute = ({ user }) => {
   )
 }
 
-// Global admin console guard (contract §7): non-admins never see the route
+// Global admin console guard: requires authenticated user; backend enforces global admin / auto-bootstrap
 const AdminRoute = ({ user }) => {
-  if (user?.role !== 'admin') return <Navigate to='/boards' replace={true} />
+  if (!user) return <Navigate to='/login' replace={true} />
   return <Outlet />
 }
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Tabs from '@mui/material/Tabs'
@@ -13,7 +12,7 @@ import { toast } from 'react-toastify'
 import PageShell from '~/components/Layout/PageShell'
 import { MONO_FONT } from '~/components/Layout/surface'
 import { useTranslation } from '~/customHooks/useTranslation'
-import { selectCurrentUser } from '~/redux/user/userSlice'
+import { fetchMeAPI, selectCurrentUser } from '~/redux/user/userSlice'
 import {
   fetchAdminStatsAPI,
   fetchAdminUsersAPI,
@@ -43,6 +42,7 @@ import EmergencyControlTab from './tabs/EmergencyControlTab'
 const LIVE_POLL_MS = 5000
 
 function AdminConsole() {
+  const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
   const { tPrimary, formatMessage } = useTranslation()
 
@@ -110,32 +110,25 @@ function AdminConsole() {
   }, [])
 
   useEffect(() => {
-    if (currentUser?.role === 'admin') {
-      loadStatsAndMonitoring()
-      loadSecurity(secFilters)
+    loadStatsAndMonitoring()
+    loadSecurity(secFilters)
+    if (currentUser && currentUser.role !== 'admin') {
+      dispatch(fetchMeAPI())
     }
-  }, [currentUser?.role, loadStatsAndMonitoring, loadSecurity, secFilters])
+  }, [currentUser, dispatch, loadStatsAndMonitoring, loadSecurity, secFilters])
 
   useEffect(() => {
-    if (currentUser?.role === 'admin') loadUsers(debouncedQuery, null)
-  }, [currentUser?.role, debouncedQuery, loadUsers])
+    loadUsers(debouncedQuery, null)
+  }, [debouncedQuery, loadUsers])
 
   useEffect(() => {
-    if (currentUser?.role !== 'admin' || !livePoll) return undefined
+    if (!livePoll) return undefined
     const timer = setInterval(() => {
       loadStatsAndMonitoring()
       if (activeTab === 2) loadSecurity(secFilters)
     }, LIVE_POLL_MS)
     return () => clearInterval(timer)
-  }, [currentUser?.role, livePoll, activeTab, secFilters, loadStatsAndMonitoring, loadSecurity])
-
-  if (currentUser?.role !== 'admin') {
-    return (
-      <PageShell index={1} eyebrow={tPrimary('admEyebrow')} title={tPrimary('admForbiddenTitle')} subtitle={tPrimary('admForbiddenSub')}>
-        <Button component={Link} to='/boards' variant='contained' sx={{ fontWeight: 800 }}>{tPrimary('admBackToBoards')}</Button>
-      </PageShell>
-    )
-  }
+  }, [livePoll, activeTab, secFilters, loadStatsAndMonitoring, loadSecurity])
 
   const userLabel = (u) => u?.displayName || u?.username || u?.email || ''
 

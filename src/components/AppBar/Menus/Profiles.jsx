@@ -227,14 +227,12 @@ function Profiles() {
           {tPrimary('tabAppearance')}
         </MenuItem>
 
-        {currentUser?.role === 'admin' && (
-          <MenuItem component={Link} to='/admin' onClick={handleClose}>
-            <ListItemIcon>
-              <AdminPanelSettingsOutlinedIcon fontSize='small' />
-            </ListItemIcon>
-            {t('v7NavAdmin')}
-          </MenuItem>
-        )}
+        <MenuItem component={Link} to='/admin' onClick={handleClose}>
+          <ListItemIcon>
+            <AdminPanelSettingsOutlinedIcon fontSize='small' color='info' />
+          </ListItemIcon>
+          {t('v7NavAdmin')}
+        </MenuItem>
 
         <Divider />
 

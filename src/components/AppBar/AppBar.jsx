@@ -23,7 +23,10 @@ import QueueMusicRoundedIcon from '@mui/icons-material/QueueMusicRounded'
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
 import TerminalRoundedIcon from '@mui/icons-material/TerminalRounded'
 import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import { Link } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 import Notifications from './Notifications/Notifications'
 import AutoCompleteSearchBoard from './SearchBoards/AutoCompleteSearchBoard'
 import CommandPalette from '~/components/CommandPalette/CommandPalette'
@@ -43,6 +46,7 @@ import {
 import { toast } from 'react-toastify'
 
 function AppBar({ boardTheme }) {
+  const currentUser = useSelector(selectCurrentUser)
   const { personaKey, themeConfig } = usePersonaTheme(boardTheme)
   const {
     lang,
@@ -175,6 +179,31 @@ function AppBar({ boardTheme }) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+        {Boolean(currentUser) && (
+          <Link to='/admin' style={{ textDecoration: 'none', flexShrink: 0 }}>
+            <Tooltip title="Trung tâm Giám sát Hệ thống, DDoS Radar & Bảo mật (SOC / Admin Console)">
+              <Chip
+                icon={<AdminPanelSettingsOutlinedIcon fontSize="small" sx={{ color: '#38bdf8 !important' }} />}
+                label="SOC / Admin"
+                size="small"
+                clickable
+                sx={{
+                  flexShrink: 0,
+                  color: 'white',
+                  fontWeight: 800,
+                  fontSize: '0.72rem',
+                  bgcolor: 'rgba(14, 165, 233, 0.22)',
+                  border: '1px solid rgba(56, 189, 248, 0.55)',
+                  '&:hover': {
+                    bgcolor: 'rgba(14, 165, 233, 0.36)',
+                    borderColor: '#38bdf8'
+                  }
+                }}
+              />
+            </Tooltip>
+          </Link>
+        )}
+
         <Tooltip title="Command Palette & Quick Search (Ctrl + K)">
           <Chip
             icon={<TerminalRoundedIcon fontSize="small" sx={{ color: `${themeConfig.accentColor} !important` }} />}
