@@ -268,7 +268,9 @@ function AdminConsole() {
     try {
       const res = await bulkImportAdminUsersAPI(payload)
       if (!payload.dryRun) {
-        toast.success(`Đã nhập hoàn tất: Tạo mới ${res?.createdCount || 0}, Cập nhật ${res?.updatedCount || 0}`)
+        const created = res?.createdCount ?? res?.summary?.createdCount ?? 0
+        const updated = res?.updatedCount ?? res?.summary?.updatedCount ?? 0
+        toast.success(`Đã nhập hoàn tất: Tạo mới ${created}, Cập nhật ${updated}`)
         await loadUsers(debouncedQuery, null)
       }
       return res
@@ -337,7 +339,7 @@ function AdminConsole() {
     try {
       const res = await verifyAdminAuditChainAPI()
       setAuditChainResult(res)
-      if (res?.valid) toast.success(`Chuỗi băm SHA-256 hợp lệ (${res.checkedCount} bản ghi)`)
+      if (res?.valid) toast.success(`Chuỗi băm SHA-256 hợp lệ (${res.checkedCount ?? res.totalChecked ?? 0} bản ghi)`)
       else toast.error('Phát hiện sai lệch trong chuỗi Audit Log!')
     } finally {
       setActionBusy(false)
@@ -347,9 +349,9 @@ function AdminConsole() {
   const handleRunWafSimulator = async () => {
     setActionBusy(true)
     try {
-      const res = await runAdminWafSimulatorAPI()
+      const res = await runAdminWafSimulatorAPI({ scenario: 'sqli_probe' })
       setWafSimResult(res)
-      toast.success(`WAF Self-Test hoàn tất: ${res?.passed}/${res?.totalScenarios} kịch bản đạt!`)
+      toast.success(res?.reason ? `WAF Self-Test: ${res.code} — ${res.reason}` : 'WAF Self-Test hoàn tất!')
     } finally {
       setActionBusy(false)
     }

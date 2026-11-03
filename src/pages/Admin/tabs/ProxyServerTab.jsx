@@ -79,21 +79,25 @@ function ProxyServerTab({
   const [prxPass, setPrxPass] = useState('')
 
   useEffect(() => {
-    if (networkData?.proxyConfig) {
-      setProxyMode(networkData.proxyConfig.mode || 'standard_proxy')
-      setTrustedHops(Number(networkData.proxyConfig.trustedHops ?? 1))
-      setTrustedCidrsText((networkData.proxyConfig.trustedCidrs || []).join(', '))
+    const tp = networkData?.proxyConfig || networkData?.policy?.trustedProxy
+    if (tp) {
+      setProxyMode(tp.mode || 'standard_proxy')
+      setTrustedHops(Number(tp.trustedHops ?? 1))
+      setTrustedCidrsText((tp.trustedCidrs || []).join(', '))
     }
-    if (networkData?.passwordPolicy) {
-      setMaxHistory(Number(networkData.passwordPolicy.maxHistory ?? 3))
-      setMaxAgeDays(Number(networkData.passwordPolicy.maxAgeDays ?? 0))
-      setEnforceAdmin2fa(Boolean(networkData.passwordPolicy.enforceAdmin2fa))
+    const sp = networkData?.passwordPolicy || networkData?.policy?.securityPolicy
+    if (sp) {
+      setMaxHistory(Number(sp.maxHistory ?? sp.passwordHistoryCount ?? 3))
+      setMaxAgeDays(Number(sp.maxAgeDays ?? sp.passwordMaxAgeDays ?? 0))
+      setEnforceAdmin2fa(Boolean(sp.enforceAdmin2fa))
     }
   }, [networkData])
 
-  const liveChain = networkData?.liveRequestChain || {}
-  const serverNodes = networkData?.serverNodes || []
-  const proxyServers = networkData?.proxyServers || []
+  const liveChain = networkData?.liveRequestChain || networkData?.requestChain || {}
+  const serverNodes = Array.isArray(networkData?.serverNodes) ? networkData.serverNodes : []
+  const proxyServers = Array.isArray(networkData?.proxyServers)
+    ? networkData.proxyServers
+    : (Array.isArray(networkData?.proxies) ? networkData.proxies : [])
 
   const handleSaveNetworkPolicy = async () => {
     const trustedCidrs = trustedCidrsText
@@ -101,14 +105,14 @@ function ProxyServerTab({
       .map(s => s.trim())
       .filter(Boolean)
     await onUpdatePolicy({
-      proxyConfig: {
+      trustedProxy: {
         mode: proxyMode,
         trustedHops: Number(trustedHops),
         trustedCidrs
       },
-      passwordPolicy: {
-        maxHistory: Number(maxHistory),
-        maxAgeDays: Number(maxAgeDays),
+      securityPolicy: {
+        passwordHistoryCount: Number(maxHistory),
+        passwordMaxAgeDays: Number(maxAgeDays),
         enforceAdmin2fa: Boolean(enforceAdmin2fa)
       }
     })
@@ -121,7 +125,7 @@ function ProxyServerTab({
       name: srvName.trim(),
       role: srvRole,
       region: srvRegion.trim() || 'local',
-      baseUrl: srvUrl.trim(),
+      host: srvUrl.trim() || 'internal://node',
       enabled: true
     })
     setSrvName('')
@@ -145,6 +149,13 @@ function ProxyServerTab({
     setPrxUser('')
     setPrxPass('')
   }
+
+  const resolvedIp = liveChain.resolvedClientIp || liveChain.resolvedIp || '—'
+  const socketIp = liveChain.socketIp || '—'
+  const isSocketTrusted = Boolean(liveChain.socketTrusted ?? liveChain.isTrustedHop)
+  const xffList = Array.isArray(liveChain.xffChain)
+    ? liveChain.xffChain
+    : (Array.isArray(liveChain.forwardedChain) ? liveChain.forwardedChain : [])
 
   return (
     <Box>
@@ -241,19 +252,19 @@ function ProxyServerTab({
             <Box>
               <Typography variant='caption' color='text.secondary'>Resolved Client IP</Typography>
               <Typography variant='body2' sx={{ fontFamily: MONO_FONT, fontWeight: 800, color: 'success.main' }}>
-                {liveChain.resolvedClientIp || '—'}
+                {resolvedIp}
               </Typography>
             </Box>
             <Box>
               <Typography variant='caption' color='text.secondary'>Direct Socket Peer IP</Typography>
               <Typography variant='body2' sx={{ fontFamily: MONO_FONT, fontWeight: 700 }}>
-                {liveChain.socketIp || '—'} ({liveChain.socketTrusted ? 'Trusted' : 'Untrusted'})
+                {socketIp} ({isSocketTrusted ? 'Trusted' : 'Untrusted'})
               </Typography>
             </Box>
             <Box>
               <Typography variant='caption' color='text.secondary'>X-Forwarded-For Chain</Typography>
               <Typography variant='body2' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem' }}>
-                {(liveChain.xffChain || []).join(' -> ') || '(Trống)'}
+                {xffList.join(' -> ') || '(Trống)'}
               </Typography>
             </Box>
             <Box>
@@ -308,7 +319,7 @@ function ProxyServerTab({
             </Select>
           </FormControl>
           <TextField size='small' label='Khu vực (Region)' value={srvRegion} onChange={(e) => setSrvRegion(e.target.value)} />
-          <TextField size='small' label='Healthcheck URL (Tùy chọn)' value={srvUrl} onChange={(e) => setSrvUrl(e.target.value)} placeholder='https://api.example.com/v1/status' />
+          <TextField size='small' label='Healthcheck URL / Host' value={srvUrl} onChange={(e) => setSrvUrl(e.target.value)} placeholder='https://api.example.com/v1/status' />
           <Button type='submit' variant='outlined' startIcon={<AddCircleOutlineRoundedIcon />} disabled={busy || !srvName.trim()} sx={{ fontWeight: 800, height: 40 }}>
             Thêm Server
           </Button>
@@ -328,36 +339,42 @@ function ProxyServerTab({
               </TableRow>
             </TableHead>
             <TableBody>
-              {serverNodes.map((node) => (
-                <TableRow key={node._id} hover>
-                  <TableCell component='th' scope='row' sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {node.name}
-                  </TableCell>
-                  <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>{node.role}</TableCell>
-                  <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>{node.region}</TableCell>
-                  <TableCell>
-                    <Chip
-                      size='small'
-                      color={node.lastStatus === 'healthy' ? 'success' : node.lastStatus === 'degraded' ? 'warning' : 'error'}
-                      label={String(node.lastStatus || 'healthy').toUpperCase()}
-                      sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
-                    />
-                  </TableCell>
-                  <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem', fontVariantNumeric: 'tabular-nums' }}>
-                    {node.lastLatencyMs != null ? `${node.lastLatencyMs} ms` : '—'}
-                  </TableCell>
-                  <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.74rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {node.baseUrl || 'Internal Node'}
-                  </TableCell>
-                  <TableCell align='right'>
-                    {!String(node._id).startsWith('srv_') && (
-                      <Button size='small' color='error' disabled={busy} onClick={() => onDeleteServer(node._id)} sx={{ fontWeight: 700 }}>
-                        Xóa
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {serverNodes.map((node) => {
+                const nodeStatus = node.status || node.lastStatus || 'online'
+                const nodeLatency = node.latencyMs ?? node.lastLatencyMs
+                const nodeHost = node.host || node.baseUrl || 'Internal Node'
+                const isHealthy = nodeStatus === 'online' || nodeStatus === 'healthy'
+                return (
+                  <TableRow key={node._id || node.key} hover>
+                    <TableCell component='th' scope='row' sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {node.name}
+                    </TableCell>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>{node.role}</TableCell>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>{node.region}</TableCell>
+                    <TableCell>
+                      <Chip
+                        size='small'
+                        color={isHealthy ? 'success' : nodeStatus === 'degraded' ? 'warning' : 'error'}
+                        label={String(nodeStatus).toUpperCase()}
+                        sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
+                      />
+                    </TableCell>
+                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem', fontVariantNumeric: 'tabular-nums' }}>
+                      {nodeLatency != null ? `${nodeLatency} ms` : '—'}
+                    </TableCell>
+                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.74rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {nodeHost}
+                    </TableCell>
+                    <TableCell align='right'>
+                      {!node.isBuiltIn && !String(node._id).startsWith('srv_') && (
+                        <Button size='small' color='error' disabled={busy} onClick={() => onDeleteServer(node._id)} sx={{ fontWeight: 700 }}>
+                          Xóa
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </TableContainer>
@@ -417,33 +434,37 @@ function ProxyServerTab({
                   </TableCell>
                 </TableRow>
               ) : (
-                proxyServers.map((prx) => (
-                  <TableRow key={prx._id} hover>
-                    <TableCell component='th' scope='row' sx={{ fontWeight: 700 }}>{prx.name}</TableCell>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem' }}>
-                      {prx.protocol}://{prx.host}:{prx.port}
-                    </TableCell>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>
-                      {prx.hasPassword ? `${prx.username || 'user'} (AES-GCM)` : 'No Auth'}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        size='small'
-                        color={prx.lastStatus === 'healthy' ? 'success' : prx.lastStatus === 'unreachable' ? 'error' : 'default'}
-                        label={String(prx.lastStatus || 'untested').toUpperCase()}
-                        sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
-                      />
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem', fontVariantNumeric: 'tabular-nums' }}>
-                      {prx.lastLatencyMs != null ? `${prx.lastLatencyMs} ms` : '—'}
-                    </TableCell>
-                    <TableCell align='right'>
-                      <Button size='small' color='error' disabled={busy} onClick={() => onDeleteProxy(prx._id)} sx={{ fontWeight: 700 }}>
-                        Xóa
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                proxyServers.map((prx) => {
+                  const prxStatus = prx.status || prx.lastStatus || 'online'
+                  const prxLatency = prx.latencyMs ?? prx.lastLatencyMs
+                  return (
+                    <TableRow key={prx._id} hover>
+                      <TableCell component='th' scope='row' sx={{ fontWeight: 700 }}>{prx.name}</TableCell>
+                      <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem' }}>
+                        {prx.protocol}://{prx.host}:{prx.port}
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem' }}>
+                        {prx.hasPassword ? `${prx.username || 'user'} (AES-GCM)` : 'No Auth'}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size='small'
+                          color={prxStatus === 'online' || prxStatus === 'healthy' ? 'success' : 'default'}
+                          label={String(prxStatus).toUpperCase()}
+                          sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
+                        />
+                      </TableCell>
+                      <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem', fontVariantNumeric: 'tabular-nums' }}>
+                        {prxLatency != null ? `${prxLatency} ms` : '—'}
+                      </TableCell>
+                      <TableCell align='right'>
+                        <Button size='small' color='error' disabled={busy} onClick={() => onDeleteProxy(prx._id)} sx={{ fontWeight: 700 }}>
+                          Xóa
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>

@@ -63,8 +63,8 @@ function CronJobsTab({
   busy
 }) {
   const { lang } = useTranslation()
-  const jobs = cronData?.jobs || []
-  const recentRuns = cronData?.recentRuns || []
+  const jobs = Array.isArray(cronData?.jobs) ? cronData.jobs : []
+  const recentRuns = Array.isArray(cronData?.recentRuns) ? cronData.recentRuns : []
 
   const formatTime = (ts) => {
     if (!ts) return '—'
@@ -87,9 +87,15 @@ function CronJobsTab({
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
           {jobs.map((job, idx) => {
+            const jobKey = job.jobKey || job.jobId || `job-${idx}`
+            const jobName = job.name || job.nameVi || job.nameEn || jobKey
+            const jobDesc = job.description || job.descriptionVi || job.descriptionEn || ''
+            const jobSummary = job.lastResultSummary || job.lastMessage || ''
+            const isCircuitOpen = Boolean(job.circuitOpen || (job.consecutiveFailures || 0) >= 3)
+
             const statusColor = job.isRunning
               ? 'info'
-              : job.circuitOpen
+              : isCircuitOpen
                 ? 'error'
                 : job.enabled
                   ? 'success'
@@ -97,12 +103,12 @@ function CronJobsTab({
 
             return (
               <Box
-                key={job.jobId}
+                key={jobKey}
                 sx={{
                   p: 2,
                   borderRadius: 1.5,
                   border: '1px solid',
-                  borderColor: job.circuitOpen ? 'error.main' : job.enabled ? 'divider' : 'action.disabledBackground',
+                  borderColor: isCircuitOpen ? 'error.main' : job.enabled ? 'divider' : 'action.disabledBackground',
                   bgcolor: 'background.default',
                   display: 'flex',
                   flexDirection: 'column',
@@ -113,11 +119,11 @@ function CronJobsTab({
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 0.75 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <EditorialLabel index={idx + 1}>{job.category?.toUpperCase() || 'CRON'}</EditorialLabel>
+                      <EditorialLabel index={idx + 1}>{String(job.category || 'CRON').toUpperCase()}</EditorialLabel>
                       <Chip
                         size='small'
                         color={statusColor}
-                        label={job.isRunning ? 'RUNNING' : job.circuitOpen ? 'CIRCUIT TRIPPED' : job.enabled ? 'ENABLED' : 'PAUSED'}
+                        label={job.isRunning ? 'RUNNING' : isCircuitOpen ? 'CIRCUIT TRIPPED' : job.enabled ? 'ENABLED' : 'PAUSED'}
                         sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
                       />
                     </Box>
@@ -125,23 +131,23 @@ function CronJobsTab({
                       color='success'
                       checked={Boolean(job.enabled)}
                       disabled={busy}
-                      onChange={(e) => onUpdateJob(job.jobId, { enabled: e.target.checked })}
-                      inputProps={{ 'aria-label': job.name }}
+                      onChange={(e) => onUpdateJob(jobKey, { enabled: e.target.checked })}
+                      inputProps={{ 'aria-label': jobName }}
                     />
                   </Box>
 
                   <Typography variant='subtitle1' sx={{ fontWeight: 800 }}>
-                    {job.name}
+                    {jobName}
                   </Typography>
                   <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
-                    {job.description}
+                    {jobDesc}
                   </Typography>
                   <Typography variant='caption' sx={{ fontFamily: MONO_FONT, display: 'block', color: 'text.secondary' }}>
-                    ID: {job.jobId} • Lần chạy cuối: {formatTime(job.lastRunAt)} ({job.lastStatus || 'idle'})
+                    ID: {jobKey} • Lần chạy cuối: {formatTime(job.lastRunAt)} ({job.lastStatus || 'idle'})
                   </Typography>
-                  {job.lastResultSummary && (
+                  {jobSummary && (
                     <Typography variant='caption' sx={{ fontFamily: MONO_FONT, display: 'block', color: 'primary.main', mt: 0.5 }}>
-                      Kết quả: {job.lastResultSummary}
+                      Kết quả: {jobSummary}
                     </Typography>
                   )}
                 </Box>
@@ -153,7 +159,7 @@ function CronJobsTab({
                       label='Chu kỳ lặp lại'
                       value={Number(job.intervalMinutes || 60)}
                       disabled={busy}
-                      onChange={(e) => onUpdateJob(job.jobId, { intervalMinutes: Number(e.target.value) })}
+                      onChange={(e) => onUpdateJob(jobKey, { intervalMinutes: Number(e.target.value) })}
                     >
                       {INTERVAL_OPTIONS.map((opt) => (
                         <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
@@ -166,7 +172,7 @@ function CronJobsTab({
                     variant='contained'
                     startIcon={<PlayArrowRoundedIcon />}
                     disabled={busy || job.isRunning}
-                    onClick={() => onTriggerJob(job.jobId)}
+                    onClick={() => onTriggerJob(jobKey)}
                     sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}
                   >
                     Chạy ngay (Run Now)
@@ -210,36 +216,41 @@ function CronJobsTab({
                   </TableCell>
                 </TableRow>
               ) : (
-                recentRuns.map((run) => (
-                  <TableRow key={run._id || `${run.jobId}-${run.startedAt}`} hover>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                      {formatTime(run.startedAt)}
-                    </TableCell>
-                    <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {run.jobId}
-                    </TableCell>
-                    <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.74rem', whiteSpace: 'nowrap' }}>
-                      {run.trigger === 'manual' ? 'MANUAL' : 'SCHEDULE'}
-                    </TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      <Chip
-                        size='small'
-                        color={run.status === 'success' ? 'success' : 'error'}
-                        label={String(run.status || 'success').toUpperCase()}
-                        sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
-                      />
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                      {Number(run.durationMs || 0)} ms
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                      {Number(run.affectedCount || 0)}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={run.summary}>
-                      {run.summary || '—'}
-                    </TableCell>
-                  </TableRow>
-                ))
+                recentRuns.map((run) => {
+                  const runJobKey = run.jobKey || run.jobId || '—'
+                  const runSummary = run.summary || run.message || '—'
+                  const isManual = String(run.trigger || '').includes('manual')
+                  return (
+                    <TableRow key={run._id || `${runJobKey}-${run.startedAt}`} hover>
+                      <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        {formatTime(run.startedAt)}
+                      </TableCell>
+                      <TableCell component='th' scope='row' sx={{ fontFamily: MONO_FONT, fontSize: '0.76rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {runJobKey}
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: MONO_FONT, fontSize: '0.74rem', whiteSpace: 'nowrap' }}>
+                        {isManual ? 'MANUAL' : 'SCHEDULE'}
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        <Chip
+                          size='small'
+                          color={run.status === 'success' ? 'success' : 'error'}
+                          label={String(run.status || 'success').toUpperCase()}
+                          sx={{ fontFamily: MONO_FONT, fontWeight: 800, height: 20 }}
+                        />
+                      </TableCell>
+                      <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        {Number(run.durationMs || 0)} ms
+                      </TableCell>
+                      <TableCell align='right' sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        {Number(run.affectedCount || 0)}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={runSummary}>
+                        {runSummary}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>

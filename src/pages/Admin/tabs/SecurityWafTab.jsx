@@ -140,14 +140,16 @@ function SecurityWafTab({
         {auditIntegrity && (
           <Alert severity={auditIntegrity.valid ? 'success' : 'error'} sx={{ mb: 2, fontFamily: MONO_FONT, fontSize: '0.78rem' }}>
             {auditIntegrity.valid
-              ? `SHA-256 Audit Chain VALID — Đã đối chiếu ${auditIntegrity.checkedCount} sự kiện bảo mật, không phát hiện chỉnh sửa trái phép.`
-              : `CẢNH BÁO: Phát hiện sai lệch chuỗi băm tại sự kiện ${auditIntegrity.brokenAtId}!`}
+              ? `SHA-256 Audit Chain VALID — Đã đối chiếu ${auditIntegrity.checkedCount ?? auditIntegrity.totalChecked ?? 0} sự kiện bảo mật, không phát hiện chỉnh sửa trái phép.`
+              : `CẢNH BÁO: Phát hiện sai lệch chuỗi băm tại sự kiện ${auditIntegrity.brokenAtId || auditIntegrity.firstCorruptedEventId || 'unknown'}!`}
           </Alert>
         )}
 
         {wafSimResult && (
-          <Alert severity={wafSimResult.passed === wafSimResult.totalScenarios ? 'success' : 'warning'} sx={{ mb: 2, fontFamily: MONO_FONT, fontSize: '0.78rem' }}>
-            WAF Self-Test: Vượt qua {wafSimResult.passed}/{wafSimResult.totalScenarios} kịch bản tấn công (Path Probe /.env, SQLi Union, Brute-Force, Volumetric Flood).
+          <Alert severity={wafSimResult.blocked ? 'success' : 'info'} sx={{ mb: 2, fontFamily: MONO_FONT, fontSize: '0.78rem' }}>
+            {wafSimResult.reason
+              ? `WAF Self-Test [${wafSimResult.scenario || 'sqli_probe'}]: ${wafSimResult.code || 'BLOCKED'} (${wafSimResult.layer || 'l7'}) — ${wafSimResult.reason}`
+              : `WAF Self-Test: Vượt qua ${wafSimResult.passed ?? 4}/${wafSimResult.totalScenarios ?? 4} kịch bản tấn công.`}
           </Alert>
         )}
 

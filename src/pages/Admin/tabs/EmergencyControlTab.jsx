@@ -191,9 +191,9 @@ function EmergencyControlTab({
     const parsedRows = parseBulkUsersText(bulkRawText)
     if (parsedRows.length === 0) return
     const res = await onBulkImportUsers({
-      users: parsedRows,
+      rows: parsedRows,
       conflictMode: bulkConflictMode,
-      mustChangePassword: bulkMustChange,
+      defaultMustChangePassword: bulkMustChange,
       dryRun
     })
     if (res) {
@@ -677,17 +677,17 @@ function EmergencyControlTab({
                     size='small'
                     color='inherit'
                     startIcon={<DownloadRoundedIcon />}
-                    onClick={() => downloadCsvFile(buildCredentialsCsv([createdCredentials]), `chella-user-${createdCredentials.username}.csv`)}
+                    onClick={() => downloadCsvFile(buildCredentialsCsv([createdCredentials]), `chella-user-${createdCredentials.username || createdCredentials.user?.username || 'new'}.csv`)}
                   >
                     Tải CSV
                   </Button>
                 }
               >
                 <Typography variant='body2' sx={{ fontWeight: 800 }}>
-                  Đã tạo: {createdCredentials.email}
+                  Đã tạo: {createdCredentials.email || createdCredentials.user?.email}
                 </Typography>
                 <Typography variant='caption' sx={{ fontFamily: MONO_FONT, display: 'block' }}>
-                  Mật khẩu tạm: <strong>{createdCredentials.temporaryPassword}</strong> (Bắt buộc đổi khi đăng nhập)
+                  Mật khẩu tạm: <strong>{createdCredentials.temporaryPassword || createdCredentials.initialPassword}</strong> (Bắt buộc đổi khi đăng nhập)
                 </Typography>
               </Alert>
             )}
@@ -790,15 +790,18 @@ function EmergencyControlTab({
             <Alert
               severity={bulkReport.dryRun ? 'info' : 'success'}
               action={
-                !bulkReport.dryRun && (bulkReport.credentials || []).length > 0 ? (
+                !bulkReport.dryRun && (bulkReport.credentials || bulkReport.credentialsReport || []).length > 0 ? (
                   <Button
                     size='small'
                     color='inherit'
                     startIcon={<DownloadRoundedIcon />}
-                    onClick={() => downloadCsvFile(buildCredentialsCsv(bulkReport.credentials), 'chella-bulk-credentials.csv')}
+                    onClick={() => {
+                      const creds = bulkReport.credentials || bulkReport.credentialsReport || []
+                      downloadCsvFile(buildCredentialsCsv(creds), 'chella-bulk-credentials.csv')
+                    }}
                     sx={{ fontWeight: 800 }}
                   >
-                    Tải CSV Mật khẩu ({bulkReport.credentials.length})
+                    Tải CSV Mật khẩu ({(bulkReport.credentials || bulkReport.credentialsReport || []).length})
                   </Button>
                 ) : null
               }
@@ -807,7 +810,7 @@ function EmergencyControlTab({
                 {bulkReport.dryRun ? 'KẾT QUẢ KIỂM TRA THỬ (DRY-RUN PREVIEW):' : 'ĐÃ NHẬP TÀI KHOẢN HOÀN TẤT:'}
               </Typography>
               <Typography variant='caption' sx={{ fontFamily: MONO_FONT }}>
-                Tổng dòng: {bulkReport.totalRows} • Hợp lệ: {bulkReport.validCount} • Tạo mới: {bulkReport.createdCount} • Cập nhật: {bulkReport.updatedCount} • Bỏ qua: {bulkReport.skippedCount} • Lỗi: {bulkReport.invalidCount}
+                Tổng dòng: {bulkReport.totalRows ?? bulkReport.summary?.total ?? 0} • Hợp lệ: {bulkReport.validCount ?? bulkReport.summary?.validCount ?? 0} • Tạo mới: {bulkReport.createdCount ?? bulkReport.summary?.createdCount ?? 0} • Cập nhật: {bulkReport.updatedCount ?? bulkReport.summary?.updatedCount ?? 0} • Bỏ qua/Trùng: {bulkReport.skippedCount ?? bulkReport.summary?.skippedCount ?? bulkReport.summary?.duplicateCount ?? 0} • Lỗi: {bulkReport.invalidCount ?? bulkReport.summary?.invalidCount ?? 0}
               </Typography>
             </Alert>
           )}

@@ -278,13 +278,13 @@ const escapeCsvCell = (value = '') => {
 export const buildCredentialsCsv = (results = []) => {
   const header = ['Email', 'Username', 'DisplayName', 'Role', 'TemporaryPassword', 'MustChangePassword', 'Status']
   const rows = (Array.isArray(results) ? results : []).map((r) => [
-    escapeCsvCell(r.email),
-    escapeCsvCell(r.username || ''),
-    escapeCsvCell(r.displayName || ''),
-    escapeCsvCell(r.role || 'client'),
-    escapeCsvCell(r.temporaryPassword || ''),
-    escapeCsvCell(r.mustChangePassword !== false ? 'TRUE' : 'FALSE'),
-    escapeCsvCell(r.action || 'created')
+    escapeCsvCell(r.email || r.user?.email || ''),
+    escapeCsvCell(r.username || r.user?.username || ''),
+    escapeCsvCell(r.displayName || r.user?.displayName || ''),
+    escapeCsvCell(r.role || r.user?.role || 'client'),
+    escapeCsvCell(r.temporaryPassword || r.initialPassword || ''),
+    escapeCsvCell((r.mustChangePassword ?? r.user?.mustChangePassword) !== false ? 'TRUE' : 'FALSE'),
+    escapeCsvCell(r.action || r.status || 'created')
   ])
   return [header.join(','), ...rows.map(r => r.join(','))].join('\n')
 }

@@ -9,7 +9,7 @@ export const fetchAdminUsersAPI = async (params = {}) => {
   return response.data
 }
 
-// patch: { isActive?, role?: 'client' | 'admin' | 'ops_manager' | 'security_auditor', unlock?: true, mustChangePassword?, passwordForceReason? }
+// patch: { isActive?, role?: 'client' | 'admin' | 'ops_manager' | 'security_auditor', unlock?: true }
 export const updateAdminUserAPI = async (userId, patch) => {
   const response = await authorizedAxiosInstance.put(`${ADMIN}/users/${userId}`, patch)
   return response.data
@@ -68,12 +68,15 @@ export const fetchPublicSystemStatusAPI = async () => {
 
 // v9 Enterprise Governance, API Logs Inspector, Cron Jobs, RBAC Matrix, Password Policy, Provisioning & Network/Proxy
 export const fetchAdminApiLogsAPI = async (params = {}) => {
-  const response = await authorizedAxiosInstance.get(`${ADMIN}/api-logs`, { params })
+  const { q = '', method = '', statusGroup = '', minDurationMs = 0, limit = 80 } = params || {}
+  const response = await authorizedAxiosInstance.get(`${ADMIN}/api-logs`, {
+    params: { q, method, statusGroup, minDurationMs, limit }
+  })
   return response.data
 }
 
 export const updateAdminApiLogConfigAPI = async (patch) => {
-  const response = await authorizedAxiosInstance.put(`${ADMIN}/api-logs/config`, patch)
+  const response = await authorizedAxiosInstance.patch(`${ADMIN}/api-logs/config`, patch)
   return response.data
 }
 
@@ -87,13 +90,13 @@ export const fetchAdminCronJobsAPI = async () => {
   return response.data
 }
 
-export const updateAdminCronJobAPI = async (jobId, patch) => {
-  const response = await authorizedAxiosInstance.put(`${ADMIN}/cron-jobs/${encodeURIComponent(jobId)}`, patch)
+export const updateAdminCronJobAPI = async (jobKey, patch) => {
+  const response = await authorizedAxiosInstance.patch(`${ADMIN}/cron-jobs/${encodeURIComponent(jobKey)}`, patch)
   return response.data
 }
 
-export const triggerAdminCronJobAPI = async (jobId) => {
-  const response = await authorizedAxiosInstance.post(`${ADMIN}/cron-jobs/${encodeURIComponent(jobId)}/run`)
+export const triggerAdminCronJobAPI = async (jobKey) => {
+  const response = await authorizedAxiosInstance.post(`${ADMIN}/cron-jobs/${encodeURIComponent(jobKey)}/run`)
   return response.data
 }
 
@@ -102,18 +105,26 @@ export const fetchAdminRbacMatrixAPI = async () => {
   return response.data
 }
 
-export const updateAdminRbacMatrixAPI = async (matrix) => {
-  const response = await authorizedAxiosInstance.put(`${ADMIN}/rbac/matrix`, { matrix })
+export const updateAdminRbacMatrixAPI = async (payload) => {
+  const body = payload && (payload.matrix || payload.resetDefault) ? payload : { matrix: payload }
+  const response = await authorizedAxiosInstance.put(`${ADMIN}/rbac/matrix`, body)
   return response.data
 }
 
-export const simulateAdminUserPermissionsAPI = async (params = {}) => {
-  const response = await authorizedAxiosInstance.get(`${ADMIN}/rbac/simulate`, { params })
+export const simulateAdminUserPermissionsAPI = async (payload = {}) => {
+  const response = await authorizedAxiosInstance.post(`${ADMIN}/rbac/simulate`, payload)
   return response.data
 }
 
-export const forceAdminPasswordChangeAPI = async (payload) => {
-  const response = await authorizedAxiosInstance.post(`${ADMIN}/users/force-password-change`, payload)
+export const forceAdminPasswordChangeAPI = async (payload = {}) => {
+  const { userId, userIds, scope = 'selected', temporaryPassword = null, reason = 'admin_forced' } = payload
+  const response = await authorizedAxiosInstance.post(`${ADMIN}/users/force-password-change`, {
+    userId,
+    userIds,
+    scope,
+    temporaryPassword,
+    reason
+  })
   return response.data
 }
 
@@ -133,7 +144,7 @@ export const fetchAdminNetworkOverviewAPI = async () => {
 }
 
 export const updateAdminNetworkPolicyAPI = async (patch) => {
-  const response = await authorizedAxiosInstance.put(`${ADMIN}/network/policy`, patch)
+  const response = await authorizedAxiosInstance.patch(`${ADMIN}/network/policy`, patch)
   return response.data
 }
 
@@ -148,12 +159,12 @@ export const deleteAdminProxyServerAPI = async (proxyId) => {
 }
 
 export const upsertAdminServerNodeAPI = async (payload) => {
-  const response = await authorizedAxiosInstance.post(`${ADMIN}/network/servers`, payload)
+  const response = await authorizedAxiosInstance.post(`${ADMIN}/network/nodes`, payload)
   return response.data
 }
 
 export const deleteAdminServerNodeAPI = async (serverId) => {
-  const response = await authorizedAxiosInstance.delete(`${ADMIN}/network/servers/${encodeURIComponent(serverId)}`)
+  const response = await authorizedAxiosInstance.delete(`${ADMIN}/network/nodes/${encodeURIComponent(serverId)}`)
   return response.data
 }
 
@@ -163,11 +174,11 @@ export const runAdminNetworkHealthCheckAPI = async () => {
 }
 
 export const verifyAdminAuditChainAPI = async () => {
-  const response = await authorizedAxiosInstance.get(`${ADMIN}/security/audit-verify`)
+  const response = await authorizedAxiosInstance.post(`${ADMIN}/security/verify-audit-chain`)
   return response.data
 }
 
-export const runAdminWafSimulatorAPI = async () => {
-  const response = await authorizedAxiosInstance.post(`${ADMIN}/security/waf-self-test`)
+export const runAdminWafSimulatorAPI = async (payload = { scenario: 'sqli_probe' }) => {
+  const response = await authorizedAxiosInstance.post(`${ADMIN}/security/waf-simulator`, payload)
   return response.data
 }

@@ -81,11 +81,17 @@ function ApiLogsTab({
   const { lang } = useTranslation()
   const [selectedLog, setSelectedLog] = useState(null)
 
-  const items = apiLogsData?.items || []
-  const summary = apiLogsData?.summary || { totalCaptured: 0, count2xx: 0, count4xx: 0, count429: 0, count5xx: 0, slowCount: 0 }
-  const config = apiLogsData?.config || { captureMode: 'errors_and_mutations', slowThresholdMs: 800, maxDbLogs: 2000 }
-  const dbCount = Number(apiLogsData?.dbCount || 0)
-  const maxDbLogs = Number(config.maxDbLogs || 2000)
+  const items = Array.isArray(apiLogsData?.items) ? apiLogsData.items : []
+  const rawSummary = apiLogsData?.summary || {}
+  const config = apiLogsData?.config || rawSummary || { captureMode: 'errors_and_mutations', maxDbLogs: 2000 }
+  const maxDbLogs = Number(config.maxDbLogs || rawSummary.maxDbLogs || 2000)
+  const totalCaptured = Number(rawSummary.totalCaptured ?? rawSummary.bufferedCount ?? items.length)
+  const count2xx = Number(rawSummary.count2xx ?? items.filter(i => i.statusCode >= 200 && i.statusCode < 300).length)
+  const count4xx = Number(rawSummary.count4xx ?? items.filter(i => i.statusCode >= 400 && i.statusCode < 500 && i.statusCode !== 429).length)
+  const count429 = Number(rawSummary.count429 ?? items.filter(i => i.statusCode === 429).length)
+  const count5xx = Number(rawSummary.count5xx ?? items.filter(i => i.statusCode >= 500).length)
+  const slowCount = Number(rawSummary.slowCount ?? items.filter(i => Number(i.durationMs) >= 800).length)
+  const dbCount = Number(apiLogsData?.dbCount ?? totalCaptured)
 
   const formatTime = (ts) => {
     if (!ts) return '—'
@@ -101,6 +107,8 @@ function ApiLogsTab({
       toast.error('Không thể sao chép cURL')
     }
   }
+
+  const selectedCurl = selectedLog?.curl || selectedLog?.curlSnippet || ''
 
   return (
     <Box>
@@ -118,7 +126,7 @@ function ApiLogsTab({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Chip
               color={dbCount >= maxDbLogs * 0.9 ? 'warning' : 'info'}
-              label={`DB FIFO: ${dbCount} / ${maxDbLogs} logs`}
+              label={`FIFO CAP: ${dbCount} / ${maxDbLogs} logs`}
               sx={{ fontFamily: MONO_FONT, fontWeight: 800 }}
             />
             <Button
@@ -135,7 +143,7 @@ function ApiLogsTab({
           </Box>
         </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2, mb: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2, mb: 2 }}>
           <FormControl size='small' fullWidth>
             <InputLabel>Chế độ thu thập (Capture Mode)</InputLabel>
             <Select
@@ -152,26 +160,10 @@ function ApiLogsTab({
           </FormControl>
 
           <FormControl size='small' fullWidth>
-            <InputLabel>Ngưỡng cảnh báo Request chậm</InputLabel>
-            <Select
-              label='Ngưỡng cảnh báo Request chậm'
-              value={Number(config.slowThresholdMs || 800)}
-              disabled={busy}
-              onChange={(e) => onUpdateConfig({ slowThresholdMs: Number(e.target.value) })}
-            >
-              <MenuItem value={300}>&gt;= 300 ms</MenuItem>
-              <MenuItem value={500}>&gt;= 500 ms</MenuItem>
-              <MenuItem value={800}>&gt;= 800 ms (Mặc định)</MenuItem>
-              <MenuItem value={1500}>&gt;= 1500 ms</MenuItem>
-              <MenuItem value={3000}>&gt;= 3000 ms</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl size='small' fullWidth>
             <InputLabel>Giới hạn Lưu trữ Tối đa (FIFO Cap)</InputLabel>
             <Select
               label='Giới hạn Lưu trữ Tối đa (FIFO Cap)'
-              value={Number(config.maxDbLogs || 2000)}
+              value={maxDbLogs}
               disabled={busy}
               onChange={(e) => onUpdateConfig({ maxDbLogs: Number(e.target.value) })}
             >
@@ -187,12 +179,12 @@ function ApiLogsTab({
         {/* Summary Counters */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(6, 1fr)' }, gap: 1.5 }}>
           {[
-            { label: 'BỘ ĐỆM RAM', val: summary.totalCaptured, color: 'text.primary' },
-            { label: '2XX THÀNH CÔNG', val: summary.count2xx, color: 'success.main' },
-            { label: '4XX LỖI CLIENT', val: summary.count4xx, color: 'warning.main' },
-            { label: '429 RATE LIMIT', val: summary.count429, color: 'secondary.main' },
-            { label: '5XX LỖI SERVER', val: summary.count5xx, color: 'error.main' },
-            { label: `CHẬM (>=${config.slowThresholdMs}ms)`, val: summary.slowCount, color: 'info.main' }
+            { label: 'BẢN GHI HIỆN TẠI', val: totalCaptured, color: 'text.primary' },
+            { label: '2XX THÀNH CÔNG', val: count2xx, color: 'success.main' },
+            { label: '4XX LỖI CLIENT', val: count4xx, color: 'warning.main' },
+            { label: '429 RATE LIMIT', val: count429, color: 'secondary.main' },
+            { label: '5XX LỖI SERVER', val: count5xx, color: 'error.main' },
+            { label: 'CHẬM (>=800ms)', val: slowCount, color: 'info.main' }
           ].map((stat, idx) => (
             <Box key={stat.label} sx={{ p: 1.25, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
               <EditorialLabel index={idx + 1}>{stat.label}</EditorialLabel>
@@ -206,19 +198,7 @@ function ApiLogsTab({
 
       {/* 2. Filter Bar & Live API Logs Table */}
       <Box sx={{ ...containmentPanelSx, mb: 0 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: '1.2fr 1.2fr 1.2fr 1.2fr 2fr' }, gap: 1.5, mb: 2 }}>
-          <FormControl size='small'>
-            <InputLabel>Nguồn dữ liệu</InputLabel>
-            <Select
-              label='Nguồn dữ liệu'
-              value={filters.source || 'memory'}
-              onChange={(e) => onChangeFilters({ ...filters, source: e.target.value })}
-            >
-              <MenuItem value='memory'>RAM Ring-Buffer (Tức thì)</MenuItem>
-              <MenuItem value='db'>MongoDB FIFO ({dbCount} bản ghi)</MenuItem>
-            </Select>
-          </FormControl>
-
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: '1.2fr 1.2fr 1.2fr 2.4fr' }, gap: 1.5, mb: 2 }}>
           <FormControl size='small'>
             <InputLabel>HTTP Method</InputLabel>
             <Select
@@ -230,6 +210,7 @@ function ApiLogsTab({
               <MenuItem value='GET'>GET</MenuItem>
               <MenuItem value='POST'>POST</MenuItem>
               <MenuItem value='PUT'>PUT</MenuItem>
+              <MenuItem value='PATCH'>PATCH</MenuItem>
               <MenuItem value='DELETE'>DELETE</MenuItem>
             </Select>
           </FormControl>
@@ -334,8 +315,8 @@ function ApiLogsTab({
                       sx={{
                         fontFamily: MONO_FONT,
                         fontSize: '0.76rem',
-                        fontWeight: log.isSlow ? 800 : 500,
-                        color: log.isSlow ? 'warning.main' : 'text.primary',
+                        fontWeight: Number(log.durationMs) >= 800 ? 800 : 500,
+                        color: Number(log.durationMs) >= 800 ? 'warning.main' : 'text.primary',
                         whiteSpace: 'nowrap',
                         fontVariantNumeric: 'tabular-nums'
                       }}
@@ -392,12 +373,12 @@ function ApiLogsTab({
             <Chip size='small' color={statusChipColor(selectedLog?.statusCode)} label={selectedLog?.statusCode} sx={{ fontFamily: MONO_FONT, fontWeight: 800 }} />
             <Typography variant='subtitle1' sx={{ fontFamily: MONO_FONT, fontWeight: 800 }}>{selectedLog?.path}</Typography>
           </Box>
-          {selectedLog?.curl && (
+          {selectedCurl && (
             <Button
               size='small'
               variant='contained'
               startIcon={<ContentCopyRoundedIcon fontSize='small' />}
-              onClick={() => handleCopyCurl(selectedLog.curl)}
+              onClick={() => handleCopyCurl(selectedCurl)}
               sx={{ fontWeight: 800 }}
             >
               Copy cURL
@@ -435,7 +416,7 @@ function ApiLogsTab({
               Request Headers (Đã lọc PII / Cookie / Authorization)
             </Typography>
             <Box component='pre' sx={{ p: 1.5, borderRadius: 1, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', fontFamily: MONO_FONT, fontSize: '0.75rem', overflow: 'auto', m: 0 }}>
-              {JSON.stringify(selectedLog?.reqHeaders || {}, null, 2)}
+              {JSON.stringify(selectedLog?.reqHeaders || selectedLog?.headers || {}, null, 2)}
             </Box>
           </Box>
 
@@ -444,17 +425,17 @@ function ApiLogsTab({
               Query & Request Body (Đã tự động che giấu mật khẩu & khóa bí mật)
             </Typography>
             <Box component='pre' sx={{ p: 1.5, borderRadius: 1, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', fontFamily: MONO_FONT, fontSize: '0.75rem', overflow: 'auto', m: 0 }}>
-              {JSON.stringify({ query: selectedLog?.reqQuery || {}, body: selectedLog?.reqBody || null }, null, 2)}
+              {JSON.stringify({ query: selectedLog?.reqQuery || selectedLog?.query || {}, body: selectedLog?.reqBody || selectedLog?.body || null }, null, 2)}
             </Box>
           </Box>
 
-          {selectedLog?.curl && (
+          {selectedCurl && (
             <Box>
               <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700 }}>
                 Lệnh cURL tái hiện Request
               </Typography>
               <Box component='pre' sx={{ p: 1.5, borderRadius: 1, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', fontFamily: MONO_FONT, fontSize: '0.75rem', overflow: 'auto', m: 0 }}>
-                {selectedLog.curl}
+                {selectedCurl}
               </Box>
             </Box>
           )}
