@@ -45,7 +45,7 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
 
 ---
 
-## 4. Kiến trúc Hệ thống Hiện hành (v7 + v8 + v9 & Graphify — Cập nhật 2026-11-03)
+## 4. Kiến trúc Hệ thống Hiện hành (v7 + v8 + v9 + v9.1 & Graphify — Cập nhật 2026-11-04)
 - **Hệ thống Người dùng & Cộng tác Đa tầng (User System v7)**:
   - **Workspaces Đa tầng (3 cấp)**: `Organization` (depth 0) $\rightarrow$ `Space` (depth 1) $\rightarrow$ `Team/Sub-space` (depth 2) với cơ chế kế thừa quyền tự động (`inheritPermissions`).
   - **Bảo mật & Định danh**: Quản lý phiên đăng nhập đa thiết bị (`sessions`), Xác thực 2 lớp TOTP (`RFC 6238` + 10 mã dự phòng băm SHA-256 có salt `userId`), khóa tạm thời chống brute-force, đặt lại mật khẩu và đổi email an toàn, CSRF header `X-Requested-With: XMLHttpRequest`.
@@ -59,6 +59,10 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
   - **Ma trận Phân quyền RBAC 3 Tầng (`rbacEngine.js`, `PermissionMatrixTab.jsx`)**: Quản lý trực quan 30 quyền nguyên tử trên Global Roles (`admin`, `ops_manager`, `security_auditor`, `client`), Workspace Roles (`owner`, `admin`, `member`, `viewer`) và Board Roles (`admin`, `editor`, `commenter`, `viewer`) kèm **Effective Permission Simulator & Shadow User View**.
   - **Force Thay đổi Mật khẩu — Phương án B (`ForcePasswordChangeDialog.jsx`)**: Thu hồi toàn bộ phiên đăng nhập (`revokeAllSessions`) ngay lập tức để đăng xuất trên mọi thiết bị VÀ đặt `mustChangePassword = true` bắt buộc đổi mật khẩu mới ở lần đăng nhập kế tiếp (kiểm tra chống trùng `passwordHistory`). Admin không bắt buộc bật 2FA (`enforceAdmin2fa: false`).
   - **Tạo / Nhập Tài khoản Hàng loạt & Quản lý Proxy/Server (`ProxyServerTab.jsx`)**: Tạo tài khoản trực tiếp, Bulk Import Wizard (`CSV`/`TSV`/`JSON` kèm Dry-Run & xuất phiếu CSV mật khẩu), cấu hình Inbound Trusted Reverse Proxy, Outbound Proxy Pool (mã hóa `AES-256-GCM`), danh bạ Server Nodes, xác minh chuỗi băm kiểm toán (`SHA-256 Hash Chain Verifier`) và `WAF Self-Test Simulator`.
+- **Âm thanh Không gian Ngũ cung, Con trỏ Đa người dùng / AI & Sprint Swarm Replay (Swarm Experience v9.1 — Cập nhật 2026-11-04)**:
+  - **Spatial Glass Piano & Key Tick (`swarmEngine.js`, `soundEffects.js`)**: Tổng hợp tiếng đàn Glass Piano 3 sóng hài (`sine` + `triangle` octave + `2.756x` glass bell partial) trên âm giai Ngũ cung Trưởng Mi (`E Major Pentatonic`: `E, F#, G#, B, C#`) kết hợp định vị âm thanh nổi `StereoPannerNode` (`[-0.8, 0.8]`) theo tọa độ ngang màn hình khi kéo-thả thẻ/cột và gõ phím cơ học (`playSpatialKeyTick`).
+  - **Live Multiplayer Cursors & `🤖 Gemini AI` Co-Pilot Cursor (`presenceRoute.js`, `presenceService.js`, `presenceApi.js`, `FigmaCursorPointer.jsx`, `LiveBoardCursorsOverlay.jsx`, `CrAssistantPanel.jsx`)**: Đồng bộ tọa độ con trỏ thời gian thực (`cursor: { xPct, yPct, view, action }`) qua Socket.IO `BE_PRESENCE`, hiển thị con trỏ chuẩn Figma (`arrow`, `cross`, `dup`, `ibeam`) và con trỏ tác tử `🤖 Gemini AI` bay vào thao tác mỗi khi kích hoạt AI CR Assistant.
+  - **Interactive Sprint Swarm Replay (`SprintSwarmReplayOverlay.jsx`, `BoardContent.jsx`, `ToolsMenu.jsx`)**: Tái hiện quá trình dựng Sprint theo thời gian thực (`Alt+Shift+S`) với thước đo Figma 20px, đường gióng Snap Guides đỏ (`#F24822`), đàn `6–14` con trỏ thành viên Sprint dựng cột, nhân bản thẻ `⌥-drag` (`⌥ +12px`), gõ tiêu đề CR và thanh điều khiển HUD (Pause/Resume, tốc độ `1×/2×/3×`, bật/tắt âm thanh, Replay).
 - **Đồ thị Tri thức Kiến trúc (`Graphify` / `graphifyy` v0.9.101)**:
   - Thư mục `graphify-out/` trong mỗi repo (được loại trừ khỏi Git qua `.git/info/exclude`) chứa `GRAPH_REPORT.md`, `graph.json`, `graph.html`, `GRAPH_TREE.html` và `*-callflow.html`. Khi cần tra cứu kiến trúc tổng thể, God Nodes hoặc đường đi giữa các module, ưu tiên đọc `graphify-out/GRAPH_REPORT.md` hoặc dùng skill `~/.gemini/config/skills/graphify/SKILL.md`.
 
