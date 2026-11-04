@@ -18,6 +18,7 @@ import { generateAiCrAssistanceAPI } from '~/apis'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { formatMessage } from '~/utils/i18nV5'
 import { playUiChime } from '~/utils/soundEffects'
+import { triggerAiAgentCursor } from '~/fx/fxEvents'
 import LoadingButton from '~/components/Loading/LoadingButton'
 
 const GEMINI_MODEL_OPTIONS = [
@@ -28,6 +29,12 @@ const GEMINI_MODEL_OPTIONS = [
   { value: 'gemma-4-31b-it', label: 'Gemma 4 31B IT (Open Model)' },
   { value: 'gemma-4-26b-a4b-it', label: 'Gemma 4 26B MoE (Open Model)' }
 ]
+
+const AI_MODE_BADGES = {
+  subtasks: '✨ Generating Subtasks',
+  frd: '📝 Drafting FRD Spec',
+  conflict_check: '🛡️ Scanning CR Conflicts'
+}
 
 function CrAssistantPanel({
   card,
@@ -63,9 +70,18 @@ function CrAssistantPanel({
     }
   }
 
-  const handleToggle = async () => {
+  const handleToggle = async (event) => {
     playUiChime('sparkle')
-    if (!open) await refreshLocal()
+    if (!open) {
+      triggerAiAgentCursor({
+        label: `🤖 ${selectedModel}`,
+        badge: `✏️ ${card?.crCode || 'CR'}`,
+        mode: 'assist',
+        target: event?.currentTarget,
+        durationMs: 1800
+      })
+      await refreshLocal()
+    }
     setOpen((prev) => !prev)
   }
 
@@ -84,9 +100,16 @@ function CrAssistantPanel({
       .join('\n')
   }
 
-  const handleRunGeminiAi = async (mode) => {
+  const handleRunGeminiAi = async (mode, event) => {
     if (!card?.title) return
     setAiBusyMode(mode)
+    triggerAiAgentCursor({
+      label: `🤖 ${selectedModel}`,
+      badge: `${AI_MODE_BADGES[mode] || '✨ AI Co-Pilot'} • ${card.crCode || 'CR'}`,
+      mode,
+      target: event?.currentTarget,
+      durationMs: 3200
+    })
     try {
       const res = await generateAiCrAssistanceAPI({
         mode,
@@ -218,7 +241,7 @@ function CrAssistantPanel({
               loading={aiBusyMode === 'subtasks'}
               loadingLabel={tPrimary('aiGeneratingSubtasks')}
               startIcon={<AutoAwesomeRoundedIcon />}
-              onClick={() => handleRunGeminiAi('subtasks')}
+              onClick={(e) => handleRunGeminiAi('subtasks', e)}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
             >
               {tPrimary('aiSuggestSubtasksBtn')}
@@ -231,7 +254,7 @@ function CrAssistantPanel({
               loading={aiBusyMode === 'frd'}
               loadingLabel={tPrimary('aiWritingFrd')}
               startIcon={<DescriptionRoundedIcon />}
-              onClick={() => handleRunGeminiAi('frd')}
+              onClick={(e) => handleRunGeminiAi('frd', e)}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
             >
               {tPrimary('aiWriteFrdBtn')}
@@ -244,7 +267,7 @@ function CrAssistantPanel({
               loading={aiBusyMode === 'conflict_check'}
               loadingLabel={tPrimary('aiCheckingConflicts')}
               startIcon={<RadarRoundedIcon />}
-              onClick={() => handleRunGeminiAi('conflict_check')}
+              onClick={(e) => handleRunGeminiAi('conflict_check', e)}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
             >
               {tPrimary('aiConflictCheckBtn')}

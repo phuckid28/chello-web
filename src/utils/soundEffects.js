@@ -1,5 +1,6 @@
 // Multi-Theme Ambient & OST Audio Streamer (Cosmos • Wind Chime • Sora • Furina • Nahida)
-// Includes real audio streaming + Web Audio API Cosmic Pad, Glass Furin Wind Chime & Music Box Synthesizers
+// Includes real audio streaming + Web Audio API Cosmic Pad, Glass Furin Wind Chime, Spatial Pentatonic Glass Piano & Music Box Synthesizers
+import { computeSpatialPan, midiToFreq, pickPentatonicMidi } from '~/fx/swarmEngine'
 
 let audioCtx = null
 let musicBoxInterval = null
@@ -112,12 +113,10 @@ const MUSIC_BOX_MELODY = [
   { freq: 493.88, dur: 1.4 }
 ]
 
-// Mysterious cosmic Lydian/pentatonic frequencies
 const COSMOS_CHORD_NOTES = [
   220.00, 277.18, 329.63, 415.30, 493.88, 554.37, 659.25, 830.61
 ]
 
-// High, crystalline Japanese Furin (風鈴) glass wind-chime frequencies
 const FURIN_CHIME_NOTES = [
   1174.66, 1318.51, 1567.98, 1760.00, 1975.53, 2349.32, 2637.02
 ]
@@ -136,11 +135,24 @@ const getAudioContext = () => {
   return audioCtx
 }
 
-const triggerCelestaNote = (ctx, freq, duration = 0.8, volume = 0.06, delaySec = 0) => {
+const connectWithStereoPan = (ctx, sourceNode, panValue = 0, startTime = 0) => {
+  if (typeof ctx.createStereoPanner === 'function') {
+    const panner = ctx.createStereoPanner()
+    panner.pan.setValueAtTime(panValue, startTime || ctx.currentTime)
+    sourceNode.connect(panner)
+    panner.connect(ctx.destination)
+    return panner
+  }
+  sourceNode.connect(ctx.destination)
+  return null
+}
+
+const triggerCelestaNote = (ctx, freq, duration = 0.8, volume = 0.06, delaySec = 0, panValue = 0) => {
   try {
     const startTime = ctx.currentTime + delaySec
     const osc = ctx.createOscillator()
     const overtone = ctx.createOscillator()
+    const glassPartial = ctx.createOscillator()
     const gain = ctx.createGain()
 
     osc.type = 'sine'
@@ -149,25 +161,108 @@ const triggerCelestaNote = (ctx, freq, duration = 0.8, volume = 0.06, delaySec =
     overtone.type = 'triangle'
     overtone.frequency.setValueAtTime(freq * 2, startTime)
 
+    // Inharmonic partial (2.756x) gives the crystalline "glass piano" timbre
+    glassPartial.type = 'sine'
+    glassPartial.frequency.setValueAtTime(freq * 2.756, startTime)
+
     const overtoneGain = ctx.createGain()
     overtoneGain.gain.setValueAtTime(volume * 0.22, startTime)
     overtoneGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.6)
 
+    const glassGain = ctx.createGain()
+    glassGain.gain.setValueAtTime(volume * 0.11, startTime)
+    glassGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.35)
+
     gain.gain.setValueAtTime(0.001, startTime)
-    gain.gain.linearRampToValueAtTime(volume, startTime + 0.02)
+    gain.gain.linearRampToValueAtTime(volume, startTime + 0.018)
     gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
 
     osc.connect(gain)
     overtone.connect(overtoneGain)
     overtoneGain.connect(gain)
-    gain.connect(ctx.destination)
+    glassPartial.connect(glassGain)
+    glassGain.connect(gain)
+    connectWithStereoPan(ctx, gain, panValue, startTime)
 
     osc.start(startTime)
     overtone.start(startTime)
+    glassPartial.start(startTime)
     osc.stop(startTime + duration + 0.05)
     overtone.stop(startTime + duration + 0.05)
+    glassPartial.stop(startTime + duration * 0.4)
   } catch (error) {
     // Ignore audio context errors when autoplay is blocked
+  }
+}
+
+// Spatial E-Major Pentatonic Glass Piano note panned to screen X position
+export const playSpatialGlassNote = ({
+  x = 640,
+  viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280,
+  columnIndex = 0,
+  columnCount = 4,
+  isHeader = false,
+  isCompleteChord = false
+} = {}) => {
+  const ctx = getAudioContext()
+  if (!ctx) return
+  const pan = computeSpatialPan(x, viewportWidth)
+
+  if (isCompleteChord) {
+    // Warm E Major Pentatonic completion chord (E4, G#4, B4, E5) panned across stereo field
+    const chordMidis = [64, 68, 71, 76]
+    chordMidis.forEach((midi, idx) => {
+      const notePan = computeSpatialPan(
+        (viewportWidth * (idx + 1)) / (chordMidis.length + 1),
+        viewportWidth
+      )
+      triggerCelestaNote(ctx, midiToFreq(midi), 1.05, 0.052, idx * 0.075, notePan)
+    })
+    return
+  }
+
+  const midi = pickPentatonicMidi({ x, viewportWidth, columnIndex, columnCount, isHeader })
+  const freq = midiToFreq(midi)
+  triggerCelestaNote(ctx, freq, isHeader ? 0.95 : 0.68, isHeader ? 0.05 : 0.044, 0, pan)
+}
+
+// Crisp mechanical keyboard click + warm low-pass thock panned to cursor X
+export const playSpatialKeyTick = ({
+  x = 640,
+  viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280,
+  isSpace = false
+} = {}) => {
+  const ctx = getAudioContext()
+  if (!ctx) return
+  try {
+    const now = ctx.currentTime
+    const pan = computeSpatialPan(x, viewportWidth)
+
+    const clickOsc = ctx.createOscillator()
+    const thockOsc = ctx.createOscillator()
+    const gain = ctx.createGain()
+
+    clickOsc.type = 'triangle'
+    clickOsc.frequency.setValueAtTime(isSpace ? 920 : 1480, now)
+    clickOsc.frequency.exponentialRampToValueAtTime(240, now + 0.022)
+
+    thockOsc.type = 'sine'
+    thockOsc.frequency.setValueAtTime(isSpace ? 135 : 185, now)
+    thockOsc.frequency.exponentialRampToValueAtTime(65, now + 0.045)
+
+    gain.gain.setValueAtTime(0.026, now)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.048)
+
+    clickOsc.connect(gain)
+    thockOsc.connect(gain)
+    connectWithStereoPan(ctx, gain, pan, now)
+
+    clickOsc.start(now)
+    thockOsc.start(now)
+    clickOsc.stop(now + 0.025)
+    thockOsc.stop(now + 0.05)
+  } catch (e) {
+    // Ignore audio context errors
   }
 }
 
@@ -182,7 +277,7 @@ const triggerCosmicPadChord = (ctx, baseFreq) => {
     padOsc1.type = 'sine'
     padOsc2.type = 'triangle'
     padOsc1.frequency.setValueAtTime(baseFreq, now)
-    padOsc2.frequency.setValueAtTime(baseFreq * 1.498, now) // Fifth interval
+    padOsc2.frequency.setValueAtTime(baseFreq * 1.498, now)
 
     padGain.gain.setValueAtTime(0.0001, now)
     padGain.gain.linearRampToValueAtTime(0.032, now + 1.2)
@@ -197,7 +292,6 @@ const triggerCosmicPadChord = (ctx, baseFreq) => {
     padOsc1.stop(now + 3.7)
     padOsc2.stop(now + 3.7)
 
-    // Add a delicate starlight twinkle harmonic
     triggerCelestaNote(ctx, baseFreq * 2, 1.8, 0.024, 0.4)
   } catch (e) {
     // Ignore
@@ -208,7 +302,6 @@ const triggerCosmicPadChord = (ctx, baseFreq) => {
 const triggerFurinBreezeStep = (ctx) => {
   try {
     const now = ctx.currentTime
-    // 1. Soft filtered breeze swell using white noise buffer
     const bufferSize = ctx.sampleRate * 2.2
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
     const output = noiseBuffer.getChannelData(0)
@@ -236,38 +329,40 @@ const triggerFurinBreezeStep = (ctx) => {
     whiteNoise.start(now)
     whiteNoise.stop(now + 2.2)
 
-    // 2. Glass Furin wind chime ring (1 to 3 delicate strikes)
     const strikeCount = 1 + Math.floor(Math.random() * 2)
     for (let s = 0; s < strikeCount; s++) {
       const f = FURIN_CHIME_NOTES[Math.floor(Math.random() * FURIN_CHIME_NOTES.length)]
       const delay = s * (0.18 + Math.random() * 0.25)
-      triggerCelestaNote(ctx, f, 1.65, 0.036, delay)
-      triggerCelestaNote(ctx, f * 2.756, 0.75, 0.012, delay) // Glass bell inharmonic overtone
+      const pan = (Math.random() - 0.5) * 1.1
+      triggerCelestaNote(ctx, f, 1.65, 0.036, delay, pan)
     }
   } catch (e) {
     // Ignore
   }
 }
 
-export const playUiChime = (type = 'sparkle') => {
+export const playUiChime = (type = 'sparkle', options = {}) => {
   const ctx = getAudioContext()
   if (!ctx) return
+  const pan = options.x != null
+    ? computeSpatialPan(options.x, options.viewportWidth || (typeof window !== 'undefined' ? window.innerWidth : 1280))
+    : 0
 
   if (type === 'complete') {
-    triggerCelestaNote(ctx, 523.25, 0.45, 0.05, 0)
-    triggerCelestaNote(ctx, 659.25, 0.45, 0.05, 0.09)
-    triggerCelestaNote(ctx, 783.99, 0.55, 0.06, 0.18)
-    triggerCelestaNote(ctx, 1046.50, 0.85, 0.06, 0.28)
+    triggerCelestaNote(ctx, 523.25, 0.45, 0.05, 0, pan * 0.5)
+    triggerCelestaNote(ctx, 659.25, 0.45, 0.05, 0.09, pan * 0.7)
+    triggerCelestaNote(ctx, 783.99, 0.55, 0.06, 0.18, pan * 0.9)
+    triggerCelestaNote(ctx, 1046.50, 0.85, 0.06, 0.28, pan)
     return
   }
 
   if (type === 'theme') {
-    triggerCelestaNote(ctx, 659.25, 0.5, 0.045, 0)
-    triggerCelestaNote(ctx, 880.00, 0.7, 0.05, 0.12)
+    triggerCelestaNote(ctx, 659.25, 0.5, 0.045, 0, -0.25)
+    triggerCelestaNote(ctx, 880.00, 0.7, 0.05, 0.12, 0.25)
     return
   }
 
-  triggerCelestaNote(ctx, 880.00, 0.45, 0.04, 0)
+  triggerCelestaNote(ctx, 880.00, 0.45, 0.04, 0, pan)
 }
 
 export const getDefaultTrackForTheme = (themeKey) => {
@@ -341,9 +436,10 @@ const startSynthFallback = (mode = 'celesta') => {
   const playNextStep = () => {
     if (!isPlayingMusicBox) return
     const step = MUSIC_BOX_MELODY[noteIndex % MUSIC_BOX_MELODY.length]
-    triggerCelestaNote(ctx, step.freq, step.dur, 0.048, 0)
+    const pan = Math.sin(noteIndex * 0.7) * 0.45
+    triggerCelestaNote(ctx, step.freq, step.dur, 0.048, 0, pan)
     if (noteIndex % 4 === 0) {
-      triggerCelestaNote(ctx, step.freq / 2, step.dur * 1.4, 0.028, 0)
+      triggerCelestaNote(ctx, step.freq / 2, step.dur * 1.4, 0.028, 0, -pan * 0.5)
     }
     noteIndex++
   }
@@ -388,7 +484,6 @@ export const playOstTrack = (trackId) => {
 
   isPlayingMusicBox = true
 
-  // For Cosmos & Wind Chime or Synth Music Box, layer or use the rich ambient synthesizer immediately
   if (!track.url || track.id === 'synth-music-box' || track.synthMode === 'cosmos' || track.synthMode === 'wind-chime') {
     startSynthFallback(track.synthMode || 'celesta')
     if (track.url) {

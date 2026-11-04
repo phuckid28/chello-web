@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
+import Tooltip from '@mui/material/Tooltip'
 import ListColumns from './ListColumns/ListColumns'
 import {
   DndContext,
@@ -19,11 +20,15 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import Columns from './ListColumns/Columns/Columns'
 import Card from './ListColumns/Columns/ListCards/Card/Card'
 import CompanionHud from './CompanionHud'
+import LiveBoardCursorsOverlay from './LiveBoardCursorsOverlay'
+import SprintSwarmReplayOverlay from './SprintSwarmReplayOverlay'
 
 import { cloneDeep, isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { applyFiltersToColumns } from '~/utils/crFilters'
+import { playSpatialGlassNote } from '~/utils/soundEffects'
+import { FX_SWARM_REPLAY_EVENT } from '~/fx/fxEvents'
 import ThemedLoader from '~/components/Loading/ThemedLoader'
 
 const BoardAnalyticsView = lazy(() => import('./BoardAnalyticsView'))
@@ -41,6 +46,8 @@ const ACTIVE_DRAG_ITEM_TYPE = {
   CARD: 'ACTIVE_DRAG_ITEM_TYPE_CARD'
 }
 
+const COMPLETION_COLUMN_PATTERNS = /done|deploy|complete|finish|hoàn thành/i
+
 function BoardContent({
   board,
   filters,
@@ -56,6 +63,7 @@ function BoardContent({
 
   const [orderedColumns, setOrderedColumns] = useState([])
   const [canvasMode, setCanvasMode] = useState('sheet') // 'sheet' (Framed Sheet V2) | 'art' (Full Art Canvas)
+  const [swarmReplayOpen, setSwarmReplayOpen] = useState(false)
 
   const [activeDragItemId, setActiveDragItemId] = useState(null)
   const [activeDragItemType, setActiveDragItemType] = useState(null)
@@ -63,10 +71,27 @@ function BoardContent({
   const [oldColumnWhenDraggingCard, setOldColumnWhenDraggingCard] = useState(null)
 
   const lastOverId = useRef(null)
+  const sheetContainerRef = useRef(null)
 
   useEffect(() => {
     setOrderedColumns(board.columns)
   }, [board])
+
+  useEffect(() => {
+    const handleOpenSwarm = () => setSwarmReplayOpen(true)
+    const handleKeyDown = (e) => {
+      if (e.altKey && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault()
+        setSwarmReplayOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener(FX_SWARM_REPLAY_EVENT, handleOpenSwarm)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener(FX_SWARM_REPLAY_EVENT, handleOpenSwarm)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   const resetDragState = () => {
     setActiveDragItemId(null)
@@ -177,13 +202,30 @@ function BoardContent({
   }
 
   const handleDragStart = (event) => {
+    const isCard = Boolean(event?.active?.data?.current?.columnId)
     setActiveDragItemId(event?.active?.id)
-    setActiveDragItemType(event?.active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN)
+    setActiveDragItemType(isCard ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN)
     setActiveDragItemData(event?.active?.data?.current)
 
-    if (event?.active?.data?.current?.columnId) {
-      setOldColumnWhenDraggingCard(findColumnByCardId(event?.active?.id))
+    const col = isCard
+      ? findColumnByCardId(event?.active?.id)
+      : orderedColumns.find(c => c._id === event?.active?.id)
+
+    if (isCard) {
+      setOldColumnWhenDraggingCard(col)
     }
+
+    const colIdx = Math.max(0, orderedColumns.findIndex(c => c._id === col?._id))
+    const colCount = Math.max(1, orderedColumns.length)
+    const vw = typeof window !== 'undefined' ? window.innerWidth || 1280 : 1280
+    const approxX = ((colIdx + 0.5) / colCount) * vw
+    playSpatialGlassNote({
+      x: approxX,
+      viewportWidth: vw,
+      columnIndex: colIdx,
+      columnCount: colCount,
+      isHeader: !isCard
+    })
   }
 
   const handleDragOver = (event) => {
@@ -234,7 +276,21 @@ function BoardContent({
         return
       }
 
+      const overColIdx = Math.max(0, orderedColumns.findIndex(c => c._id === overColumn._id))
+      const colCount = Math.max(1, orderedColumns.length)
+      const vw = typeof window !== 'undefined' ? window.innerWidth || 1280 : 1280
+      const approxX = ((overColIdx + 0.5) / colCount) * vw
+      const isCompletionCol =
+        overColIdx === colCount - 1 || COMPLETION_COLUMN_PATTERNS.test(overColumn.title || '')
+
       if (oldColumnWhenDraggingCard?._id !== overColumn._id) {
+        playSpatialGlassNote({
+          x: approxX,
+          viewportWidth: vw,
+          columnIndex: overColIdx,
+          columnCount: colCount,
+          isCompleteChord: isCompletionCol
+        })
         moveCardBetweenDifferentColumns(
           overColumn,
           overCardId,
@@ -250,6 +306,12 @@ function BoardContent({
         const newCardIndex = overColumn?.cards?.findIndex(c => c._id === overCardId)
 
         if (oldCardIndex !== newCardIndex && oldCardIndex >= 0 && newCardIndex >= 0) {
+          playSpatialGlassNote({
+            x: approxX,
+            viewportWidth: vw,
+            columnIndex: overColIdx,
+            columnCount: colCount
+          })
           const dndOrderedCards = arrayMove(oldColumnWhenDraggingCard?.cards, oldCardIndex, newCardIndex)
           const dndOrderedCardIds = dndOrderedCards.map(card => card._id)
 
@@ -272,6 +334,15 @@ function BoardContent({
       if (active.id !== over.id) {
         const oldColumnIndex = orderedColumns.findIndex(c => c._id === active.id)
         const newColumnIndex = orderedColumns.findIndex(c => c._id === over.id)
+        const colCount = Math.max(1, orderedColumns.length)
+        const vw = typeof window !== 'undefined' ? window.innerWidth || 1280 : 1280
+        playSpatialGlassNote({
+          x: ((newColumnIndex + 0.5) / colCount) * vw,
+          viewportWidth: vw,
+          columnIndex: newColumnIndex,
+          columnCount: colCount,
+          isHeader: true
+        })
 
         const dndOrderedColumns = arrayMove(orderedColumns, oldColumnIndex, newColumnIndex)
         setOrderedColumns(dndOrderedColumns)
@@ -331,6 +402,9 @@ function BoardContent({
   }
 
   const isSheetMode = canvasMode === 'sheet'
+  const activeDragLabel = activeDragItemData
+    ? `🤚 ${activeDragItemData.crCode || activeDragItemData.title || 'Dragging'}`
+    : ''
 
   return (
     <DndContext
@@ -357,6 +431,7 @@ function BoardContent({
       >
         {/* Inset Framed Sheet Canvas (taste-skill Framed Sheet + Achromatic Ledger Architecture) */}
         <Box
+          ref={sheetContainerRef}
           sx={{
             position: 'relative',
             flex: 1,
@@ -456,6 +531,27 @@ function BoardContent({
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
+              <Tooltip title="Tái hiện quá trình dựng Sprint bằng đàn con trỏ đa tác tử & âm thanh Spatial Glass Piano (Alt+Shift+S)">
+                <Chip
+                  size="small"
+                  label={swarmReplayOpen ? '✨ Swarm: Playing' : '✨ Swarm Replay'}
+                  onClick={() => setSwarmReplayOpen(prev => !prev)}
+                  clickable
+                  sx={{
+                    height: 22,
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    fontFamily: '"JetBrains Mono", Consolas, monospace',
+                    color: '#f8fafc',
+                    bgcolor: swarmReplayOpen ? 'rgba(168, 85, 247, 0.88)' : 'rgba(15, 23, 42, 0.78)',
+                    border: '1px solid #a855f7',
+                    '&:hover': {
+                      bgcolor: 'rgba(168, 85, 247, 0.95)'
+                    }
+                  }}
+                />
+              </Tooltip>
+
               <Chip
                 size="small"
                 label={isSheetMode ? 'Canvas: Clean Sheet' : 'Canvas: Full Art'}
@@ -496,6 +592,20 @@ function BoardContent({
               {renderActiveView()}
             </Suspense>
           </Box>
+
+          <LiveBoardCursorsOverlay
+            boardId={board?._id}
+            boardViewMode={boardViewMode}
+            activeDragLabel={activeDragLabel}
+            containerRef={sheetContainerRef}
+          />
+
+          <SprintSwarmReplayOverlay
+            open={swarmReplayOpen}
+            onClose={() => setSwarmReplayOpen(false)}
+            board={{ ...board, columns: orderedColumns }}
+            themeConfig={themeConfig}
+          />
 
           <CompanionHud personaKey={personaKey} themeConfig={themeConfig} sprintName={board?.sprintConfig?.name || 'Sprint'} />
         </Box>
