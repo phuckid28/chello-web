@@ -19,6 +19,7 @@ import { getPriorityOption } from '~/utils/crMeta'
 import { getDeadlineStatus, getStatusOption } from '~/utils/excelExporter'
 import { formatMessage } from '~/utils/i18nV5'
 import { formatProgress, getProgressColor, progressToPercent } from '~/utils/progress'
+import { auditCrConvergence } from '~/utils/specKitAudit'
 import { DOWNSTREAM_COLOR, EVIDENCE_BEACON_COLOR, TYPE_COLORS, UPSTREAM_COLOR } from './graphConstants'
 import { computeInsights, computeNodeEvidence, computeReachability, memberWorkload, topicProgress } from './graphModel'
 import { PanelSection } from './GraphPanelParts'
@@ -246,6 +247,7 @@ function CrDetails({ t, node, graph, accent, secondary, onSelectNode, onOpenCrSt
   const prioOpt = getPriorityOption(node.priority)
   const pct = progressToPercent(node.progress)
   const isOrphan = graph.orphans.has(node.id)
+  const specAudit = auditCrConvergence(card)
 
   return (
     <Stack spacing={1.25}>
@@ -253,6 +255,18 @@ function CrDetails({ t, node, graph, accent, secondary, onSelectNode, onOpenCrSt
         <Chip size="small" label={node.label} sx={{ fontFamily: 'monospace', fontWeight: 800, bgcolor: `${accent}33`, color: TEXT_PRIMARY }} />
         <Chip size="small" label={node.status} sx={{ fontWeight: 700, bgcolor: `${stOpt.color}28`, color: stOpt.color }} />
         <Chip size="small" label={`${prioOpt.icon} ${prioOpt.label}`} sx={{ fontWeight: 700, bgcolor: `${prioOpt.color}26`, color: prioOpt.color }} />
+        <Chip
+          size="small"
+          label={`${specAudit.beaconLabel} (${specAudit.score}%)`}
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontWeight: 800,
+            fontSize: '0.66rem',
+            bgcolor: specAudit.verdictMeta.bg,
+            color: specAudit.verdictMeta.color,
+            border: `1px solid ${specAudit.verdictMeta.color}66`
+          }}
+        />
       </Box>
 
       <Typography variant="subtitle1" sx={{ fontWeight: 800, color: TEXT_PRIMARY, lineHeight: 1.3 }}>

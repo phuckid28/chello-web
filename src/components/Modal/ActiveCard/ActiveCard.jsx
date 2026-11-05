@@ -83,6 +83,7 @@ import { useTranslation } from '~/customHooks/useTranslation'
 import { DEFAULT_PRIORITY, PRIORITY_OPTIONS, normalizePriority } from '~/utils/crMeta'
 import CrAssistantPanel from './CrAssistantPanel'
 import GoogleDriveFrdControls from './GoogleDriveFrdControls'
+import SpecKitConvergencePanel from './SpecKitConvergencePanel'
 import { extractSprintNumberOnly, exportFrdAsPrintablePdf } from '~/utils/frdPdfExporter'
 
 // Converts a timestamp / ISO string into the YYYY-MM-DD value expected by <input type="date">
@@ -932,6 +933,12 @@ function ActiveCard() {
             </Box>
 
             {/* Subtasks / Acceptance Criteria Checklist Section */}
+            <SpecKitConvergencePanel
+              card={activeCard}
+              onAppendSubtasks={onAddSuggestedSubtasks}
+              onAppendDescription={onUpdateCardDescription}
+            />
+
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

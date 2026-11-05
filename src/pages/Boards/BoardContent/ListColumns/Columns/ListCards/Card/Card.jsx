@@ -31,6 +31,7 @@ import {
 import { getProgressColor } from '~/utils/progress'
 import { playUiChime } from '~/utils/soundEffects'
 import { DEFAULT_PRIORITY, getPriorityOption } from '~/utils/crMeta'
+import { SPEC_KIT_VERDICTS, auditCrConvergence } from '~/utils/specKitAudit'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 import { useCan } from '~/customHooks/useCan'
@@ -81,6 +82,11 @@ function Card({ card }) {
   const frdCount = card?.frdDocuments?.length || 0
   const linkedCount = card?.linkedCardIds?.length || 0
   const srcEvidenceCount = frdCount + linkedCount
+  const specAudit = auditCrConvergence(card)
+  const showSpecBeacon =
+    specAudit.verdict === SPEC_KIT_VERDICTS.CONVERGED ||
+    specAudit.verdict === SPEC_KIT_VERDICTS.NEEDS_CLARIFICATION ||
+    specAudit.verdict === SPEC_KIT_VERDICTS.CONTRADICTS
   const deadlineInfo = getDeadlineStatus(card)
   const priorityOpt = getPriorityOption(card?.priority)
   const statusOpt = getStatusOption(card?.baStatus)
@@ -192,6 +198,33 @@ function Card({ card }) {
           </Box>
 
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.45 }}>
+            {showSpecBeacon && (
+              <Tooltip
+                title={`Spec-Kit ${specAudit.verdictMeta.label} (${specAudit.score}%)${
+                  specAudit.findings.length > 0 ? ` • ${specAudit.findings[0].message}` : ''
+                }`}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    px: 0.55,
+                    py: 0.12,
+                    borderRadius: '999px',
+                    fontFamily: '"JetBrains Mono", Consolas, monospace',
+                    fontSize: '0.58rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.05em',
+                    bgcolor: specAudit.verdictMeta.bg,
+                    color: specAudit.verdictMeta.color,
+                    border: `1px solid ${specAudit.verdictMeta.color}88`
+                  }}
+                >
+                  {specAudit.beaconLabel}
+                </Box>
+              </Tooltip>
+            )}
             {srcEvidenceCount > 0 && (
               <Tooltip title={`Verified Sources: ${frdCount} FRD • ${linkedCount} Linked`}>
                 <Box

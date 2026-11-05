@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import Box from '@mui/material/Box'
 import Grid from '@mui/material/Unstable_Grid2'
 import Card from '@mui/material/Card'
@@ -16,6 +17,7 @@ import TableViewRoundedIcon from '@mui/icons-material/TableViewRounded'
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import PlayCircleFilledWhiteRoundedIcon from '@mui/icons-material/PlayCircleFilledWhiteRounded'
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
+import StorageRoundedIcon from '@mui/icons-material/StorageRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { showModalActiveCard, updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
@@ -37,7 +39,9 @@ import {
   normalizeCrStatus
 } from '~/utils/excelExporter'
 import { formatProgress } from '~/utils/progress'
+import { buildSprintDatasetSources } from '~/utils/datavizPalette'
 import SprintPulse from '~/components/SprintPulse/SprintPulse'
+import DataLineageDrawer from '~/components/SprintPulse/DataLineageDrawer'
 import { playUiChime } from '~/utils/soundEffects'
 
 function BoardAnalyticsView({ columns = [], themeConfig }) {
@@ -46,6 +50,16 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
   const board = useSelector(selectCurrentActiveBoard)
   const { tPrimary } = useTranslation()
   const sprintConfig = board?.sprintConfig || DEFAULT_SPRINT_CONFIG
+  const [lineageOpen, setLineageOpen] = useState(false)
+  const [selectedKpiId, setSelectedKpiId] = useState('total_crs')
+
+  const lineage = useMemo(() => buildSprintDatasetSources(board, columns), [board, columns])
+
+  const handleOpenLineage = (kpiId) => {
+    playUiChime('sparkle')
+    setSelectedKpiId(kpiId)
+    setLineageOpen(true)
+  }
 
   const allRealCards = []
   columns.forEach((col) => {
@@ -90,7 +104,58 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
         py: 2
       }}
     >
-      <SprintPulse columns={columns} sprintConfig={sprintConfig} themeConfig={themeConfig} sx={{ mb: 2.5 }} />
+      <SprintPulse columns={columns} sprintConfig={sprintConfig} themeConfig={themeConfig} sx={{ mb: 2 }} />
+
+      {/* Baoyu-Design Traceable KPI Sources & Dataviz Palette Verification Strip */}
+      <Card sx={{ ...glassCardSx, mb: 2.5 }}>
+        <CardContent sx={{ p: 1.75, '&:last-child': { p: 1.75 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Chip
+                size="small"
+                icon={<StorageRoundedIcon sx={{ fontSize: '15px !important' }} />}
+                label="TRACEABLE KPI SOURCES (click any metric to inspect rows)"
+                onClick={() => handleOpenLineage('total_crs')}
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '0.68rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  bgcolor: 'rgba(56, 189, 248, 0.16)',
+                  color: '#38bdf8',
+                  cursor: 'pointer'
+                }}
+              />
+              {['total_crs', 'avg_dev_progress', 'total_resource_points', 'converged_crs', 'spec_attention_crs'].map((id) => {
+                const kpi = lineage.kpiById[id]
+                if (!kpi) return null
+                return (
+                  <Chip
+                    key={id}
+                    size="small"
+                    variant="outlined"
+                    data-source={kpi.datasetId}
+                    data-field={kpi.field}
+                    data-where={kpi.whereClause}
+                    label={`${kpi.title}: ${kpi.formattedValue}`}
+                    onClick={() => handleOpenLineage(id)}
+                    sx={{ fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer' }}
+                  />
+                )
+              })}
+            </Box>
+            <Button
+              size="small"
+              variant="outlined"
+              color="success"
+              startIcon={<StorageRoundedIcon />}
+              onClick={() => handleOpenLineage(selectedKpiId)}
+              sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '8px', fontSize: '0.74rem' }}
+            >
+              Sources &amp; CVD ΔE {lineage.paletteAudit.dark.worstCvdDeltaE} PASS
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
       {/* Top 3-Block Template Header (Sprint Meta | Status List | Handle by & Resource Point) */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
@@ -151,7 +216,15 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                   {BA_STATUS_OPTIONS.map(st => {
                     const count = allRealCards.filter(c => normalizeCrStatus(c.baStatus) === st.value).length
                     return (
-                      <TableRow key={st.value}>
+                      <TableRow
+                        key={st.value}
+                        hover
+                        data-source="datasets/sprint_crs"
+                        data-field="baStatus"
+                        data-where={`baStatus=${st.value}`}
+                        onClick={() => handleOpenLineage(`status:${st.value}`)}
+                        sx={{ cursor: 'pointer' }}
+                      >
                         <TableCell sx={{ py: 0.65 }}>
                           <Chip
                             label={st.value}
@@ -195,7 +268,15 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
                   </TableHead>
                   <TableBody>
                     {teamResourceRows.map(row => (
-                      <TableRow key={row.name} hover>
+                      <TableRow
+                        key={row.name}
+                        hover
+                        data-source="datasets/team_roster"
+                        data-field="resourceUsed"
+                        data-where={`assignee CONTAINS ${row.name}`}
+                        onClick={() => handleOpenLineage(`member:${row.name}`)}
+                        sx={{ cursor: 'pointer' }}
+                      >
                         <TableCell sx={{ fontWeight: 700, py: 0.6 }}>{row.name}</TableCell>
                         <TableCell align="center" sx={{ py: 0.6 }}>{row.crCount}</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 800, py: 0.6, color: row.points > 0 ? '#10b981' : 'text.secondary' }}>
@@ -360,6 +441,18 @@ function BoardAnalyticsView({ columns = [], themeConfig }) {
           </TableContainer>
         </CardContent>
       </Card>
+
+      <DataLineageDrawer
+        open={lineageOpen}
+        onClose={() => setLineageOpen(false)}
+        selectedKpi={lineage.kpiById[selectedKpiId]}
+        lineage={lineage}
+        onSelectKpi={setSelectedKpiId}
+        onOpenCard={(card) => {
+          setLineageOpen(false)
+          handleOpenCard(card)
+        }}
+      />
     </Box>
   )
 }
