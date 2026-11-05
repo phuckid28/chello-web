@@ -12,6 +12,7 @@ import CenterFocusStrongRoundedIcon from '@mui/icons-material/CenterFocusStrongR
 import RouteRoundedIcon from '@mui/icons-material/RouteRounded'
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded'
+import IosShareRoundedIcon from '@mui/icons-material/IosShareRounded'
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded'
 import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -99,6 +100,9 @@ function GraphToolbar({ t, accent, sprintName, mode, onModeChange, depth, onDept
       <ToolbarButton label={`${t('kgFit')} (F)`} accent={accent} onClick={actions.fit}><CenterFocusStrongRoundedIcon fontSize="small" /></ToolbarButton>
       <Divider />
       <ToolbarButton label={t('kgExportPng')} accent={accent} onClick={actions.exportPng}><ImageRoundedIcon fontSize="small" /></ToolbarButton>
+      {actions.exportShareCard && (
+        <ToolbarButton label={t('kgExportShareCard')} accent={accent} onClick={actions.exportShareCard}><IosShareRoundedIcon fontSize="small" /></ToolbarButton>
+      )}
       <ToolbarButton label={flags.fullscreen ? t('kgExitFullscreen') : t('kgFullscreen')} accent={accent} active={flags.fullscreen} onClick={actions.toggleFullscreen}>
         {flags.fullscreen ? <FullscreenExitRoundedIcon fontSize="small" /> : <FullscreenRoundedIcon fontSize="small" />}
       </ToolbarButton>

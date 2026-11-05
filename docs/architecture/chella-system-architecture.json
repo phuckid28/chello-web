@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Chella Enterprise Sprint, CR & Evidence Graph Architecture",
+    "output": "docs/architecture/chella-system-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Sprint Teams", "sublabel": "Browser / Desktop", "pos": [40, 240], "size": [130, 60] },
+    { "id": "auth", "type": "security", "label": "Auth & TOTP 2FA", "sublabel": "JWT + 3-Tier RBAC", "pos": [260, 80], "size": [140, 62], "tag": "RFC 6238" },
+    { "id": "web", "type": "frontend", "label": "Chella Web SPA", "sublabel": "React 18 + Redux", "pos": [260, 240], "size": [140, 60], "tag": "Vercel Edge" },
+    { "id": "graph", "type": "frontend", "label": "Evidence Graph", "sublabel": "Canvas 2D + Swarm", "pos": [260, 400], "size": [140, 60], "tag": "SRC Beacons" },
+    { "id": "waf", "type": "security", "label": "SOC / WAF Guard", "sublabel": "L7 DDoS + Auto-Ban", "pos": [485, 80], "size": [140, 62], "tag": "EWMA Z-Score" },
+    { "id": "api", "type": "backend", "label": "Chella API Server", "sublabel": "Express + REST v1", "pos": [485, 240], "size": [140, 60], "tag": "Render Node" },
+    { "id": "socket", "type": "messagebus", "label": "Socket.IO Hub", "sublabel": "Live Cursors & CR", "pos": [485, 400], "size": [140, 60] },
+    { "id": "cron", "type": "backend", "label": "Cron & Audit Log", "sublabel": "6 Jobs + SHA-256", "pos": [710, 80], "size": [145, 62] },
+    { "id": "mongo", "type": "database", "label": "MongoDB Atlas", "sublabel": "Sprints / CRs / IAM", "pos": [710, 240], "size": [145, 60] },
+    { "id": "drive", "type": "cloud", "label": "FRD & Wiki Vault", "sublabel": "Knowledge Storage", "pos": [710, 400], "size": [145, 60] },
+    { "id": "gemini", "type": "external", "label": "Gemini AI & Brevo", "sublabel": "Co-Pilot & SMTP", "pos": [940, 240], "size": [145, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Chella Managed Cloud (Vercel + Render)", "wraps": ["auth", "web", "graph", "waf", "api", "socket", "cron", "mongo", "drive"] },
+    { "kind": "security-group", "label": "Zero-Trust API Perimeter", "wraps": ["waf", "api"] }
+  ],
+  "connections": [
+    { "id": "users-to-web", "from": "users", "to": "web", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "web-to-auth", "from": "web", "to": "auth", "label": "TOTP / JWT", "variant": "security" },
+    { "id": "web-to-graph", "from": "web", "to": "graph", "label": "Canvas IR" },
+    { "id": "web-to-api", "from": "web", "to": "api", "label": "REST + CSRF", "variant": "emphasis" },
+    { "id": "waf-to-api", "from": "waf", "to": "api", "label": "inspect L7", "variant": "security" },
+    { "id": "graph-to-socket", "from": "graph", "to": "socket", "label": "presence", "variant": "dashed" },
+    { "id": "api-to-socket", "from": "api", "to": "socket", "label": "broadcast" },
+    { "id": "api-to-cron", "from": "api", "to": "cron", "label": "schedule", "variant": "dashed" },
+    { "id": "api-to-mongo", "from": "api", "to": "mongo", "label": "queries", "variant": "emphasis" },
+    { "id": "cron-to-mongo", "from": "cron", "to": "mongo", "label": "reconcile" },
+    { "id": "mongo-to-drive", "from": "mongo", "to": "drive", "label": "FRD refs" },
+    { "id": "mongo-to-gemini", "from": "mongo", "to": "gemini", "label": "AI & mail", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Frontend & Evidence Console (v9.2)",
+      "items": [
+        "React 18 SPA with Obsidian Knowledge Graph, Upstream/Downstream Reachability, and SRC n Verified Source Beacons",
+        "Spatial E-Major Pentatonic Glass Piano, Live Multiplayer Cursors, and 1200x630 Share Card PNG Exporter"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend, Telemetry & Cron Plane",
+      "items": [
+        "Express REST API + Socket.IO real-time presence and board synchronization",
+        "6 background Cron Jobs with circuit breakers and FIFO API Log Inspector"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Zero-Trust IAM & SOC/WAF Defense",
+      "items": [
+        "3-Tier Workspace RBAC, TOTP 2FA (RFC 6238), and Force Password Reset with session revocation",
+        "EWMA + Z-Score L7 DDoS detection, dynamic IP/CIDR WAF rules, and SHA-256 tamper-evident audit chain"
+      ]
+    }
+  ]
+}

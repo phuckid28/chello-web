@@ -23,7 +23,7 @@ const HIT_TOLERANCE_PX = 5
 const HUB_EXCLUDED = ['sprint', 'topic']
 
 const emptyView = {
-  hoverId: null, selectedId: null, matchIds: null, pathIds: null, pathKeys: null, endpointIds: null
+  hoverId: null, selectedId: null, matchIds: null, pathIds: null, pathKeys: null, endpointIds: null, reach: null
 }
 
 export const createGraphEngine = ({ canvas, reducedMotion = false, onPinsChange = null }) => {
@@ -277,6 +277,108 @@ export const createGraphEngine = ({ canvas, reducedMotion = false, onPinsChange 
     canvas.toBlob(blob => resolve(blob), 'image/png')
   })
 
+  // Renders an Archify-inspired 1200x630 Route / Reach / Overview Share Card PNG
+  const exportShareCard = (spec = {}) => new Promise(resolve => {
+    draw(performance.now())
+    const W = spec.width || 1200
+    const H = spec.height || 630
+    const card = document.createElement('canvas')
+    card.width = W
+    card.height = H
+    const cctx = card.getContext('2d')
+    if (!cctx) {
+      resolve(null)
+      return
+    }
+
+    const badgeColor = spec.badgeColor || style.accent || '#34d399'
+    const monoFont = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+
+    // 1. Midnight Canvas background (#020617)
+    cctx.fillStyle = '#020617'
+    cctx.fillRect(0, 0, W, H)
+
+    // 2. Top Evidence Header (#0f172a)
+    cctx.fillStyle = '#0f172a'
+    cctx.fillRect(0, 0, W, 84)
+    cctx.strokeStyle = '#1e293b'
+    cctx.lineWidth = 1
+    cctx.beginPath()
+    cctx.moveTo(0, 84.5)
+    cctx.lineTo(W, 84.5)
+    cctx.stroke()
+
+    // Left accent bar
+    cctx.fillStyle = badgeColor
+    cctx.fillRect(0, 0, 5, 84)
+
+    // Badge pill
+    const badgeText = String(spec.badge || 'EVIDENCE CONSOLE').toUpperCase()
+    cctx.font = `700 11px ${monoFont}`
+    const badgeW = cctx.measureText(badgeText).width + 20
+    cctx.fillStyle = 'rgba(2, 6, 23, 0.85)'
+    cctx.fillRect(24, 16, badgeW, 22)
+    cctx.strokeStyle = badgeColor
+    cctx.strokeRect(24, 16, badgeW, 22)
+    cctx.fillStyle = badgeColor
+    cctx.textBaseline = 'middle'
+    cctx.fillText(badgeText, 34, 27)
+
+    // Subtitle next to badge
+    cctx.font = `500 11.5px ${monoFont}`
+    cctx.fillStyle = '#94a3b8'
+    cctx.fillText(String(spec.subtitle || ''), 24 + badgeW + 12, 27)
+
+    // Main title
+    cctx.font = `700 19px ${monoFont}`
+    cctx.fillStyle = '#ffffff'
+    const titleStr = String(spec.title || 'Knowledge Graph')
+    cctx.fillText(titleStr.length > 62 ? `${titleStr.slice(0, 61)}…` : titleStr, 24, 59)
+
+    // Right-aligned metrics receipt capsule
+    if (spec.metricsText) {
+      cctx.font = `700 12px ${monoFont}`
+      const mText = String(spec.metricsText)
+      const mW = cctx.measureText(mText).width + 28
+      const mx = W - 24 - mW
+      cctx.fillStyle = '#020617'
+      cctx.fillRect(mx, 26, mW, 32)
+      cctx.strokeStyle = badgeColor
+      cctx.strokeRect(mx, 26, mW, 32)
+      cctx.fillStyle = badgeColor
+      cctx.fillText(mText, mx + 14, 42)
+    }
+
+    // 3. Graph viewport frame
+    const vx = 24
+    const vy = 98
+    const vw = W - 48
+    const vh = H - 140
+    cctx.fillStyle = '#050814'
+    cctx.fillRect(vx, vy, vw, vh)
+    if (canvas.width > 0 && canvas.height > 0) {
+      const scale = Math.min(vw / canvas.width, vh / canvas.height)
+      const dw = canvas.width * scale
+      const dh = canvas.height * scale
+      const dx = vx + (vw - dw) / 2
+      const dy = vy + (vh - dh) / 2
+      cctx.drawImage(canvas, dx, dy, dw, dh)
+    }
+    cctx.strokeStyle = '#1e293b'
+    cctx.lineWidth = 1.5
+    cctx.strokeRect(vx, vy, vw, vh)
+
+    // 4. Footer receipt bar
+    cctx.font = `600 11px ${monoFont}`
+    cctx.fillStyle = '#64748b'
+    cctx.fillText('CHELLA × ARCHIFY EVIDENCE CONSOLE • PORTABLE PROOF CARD (1200×630)', 24, H - 18)
+    const stamp = new Date().toISOString().slice(0, 10)
+    const stampW = cctx.measureText(stamp).width
+    cctx.fillText(stamp, W - 24 - stampW, H - 18)
+
+    card.toBlob(blob => resolve(blob), 'image/png')
+  })
+
   const destroy = () => {
     destroyed = true
     if (raf !== null) window.cancelAnimationFrame(raf)
@@ -302,6 +404,7 @@ export const createGraphEngine = ({ canvas, reducedMotion = false, onPinsChange 
     dragNode,
     endDrag,
     exportPng,
+    exportShareCard,
     destroy,
     markDirty,
     markUserMoved,

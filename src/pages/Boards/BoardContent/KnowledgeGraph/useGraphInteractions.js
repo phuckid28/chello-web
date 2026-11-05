@@ -216,6 +216,8 @@ export const useGraphInteractions = ({ engine, canvasRef, containerRef, handlers
     const keyActions = {
       f: () => engine.fit(),
       l: () => call('onToggleLocal'),
+      u: () => call('onToggleReach', 'upstream'),
+      d: () => call('onToggleReach', 'downstream'),
       Escape: () => call('onClear'),
       '+': () => engine.zoomBy(KEY_ZOOM_IN, undefined, undefined, true),
       '=': () => engine.zoomBy(KEY_ZOOM_IN, undefined, undefined, true),

@@ -3,7 +3,10 @@ import {
   applyQuery,
   applyVisibility,
   buildGraph,
+  buildShareCardSpec,
   computeInsights,
+  computeNodeEvidence,
+  computeReachability,
   filterByTime,
   getQuerySuggestions,
   getTimeline,
@@ -214,5 +217,78 @@ describe('KnowledgeGraph graphModel & query engine', () => {
     const clean = sanitizeSettings({ forces: { repel: 99999 }, colors: { sprint: '#123456', hack: 'javascript:1' } })
     expect(clean.forces.repel).toBe(500)
     expect(clean.colors).toEqual({ sprint: '#123456' })
+  })
+
+  it('computes Archify-style downstream and upstream reachability receipts with hop counts', () => {
+    const graph = makeSampleGraph()
+    const down = computeReachability(graph, 'cr-c1', 'downstream')
+    expect(down.direction).toBe('downstream')
+    expect(down.originId).toBe('cr-c1')
+    expect(down.color).toBe('#34d399')
+    // cr-c1 -> cr-c2 -> cr-c3, plus cr-c1 -> wiki-w1 -> tag-bnpl, plus cr-c1 -> member / frd
+    expect(down.nodeIds.has('cr-c1')).toBe(true)
+    expect(down.nodeIds.has('cr-c2')).toBe(true)
+    expect(down.nodeIds.has('cr-c3')).toBe(true)
+    expect(down.nodeIds.has('frd-doc-1')).toBe(true)
+    expect(down.nodeIds.has('cr-c4')).toBe(false)
+    expect(down.hopsByNode.get('cr-c2')).toBe(1)
+    expect(down.hopsByNode.get('cr-c3')).toBe(2)
+    expect(down.maxHops).toBeGreaterThanOrEqual(2)
+    expect(down.nodeCount).toBe(down.nodeIds.size - 1)
+    expect(down.linkCount).toBeGreaterThan(0)
+
+    const up = computeReachability(graph, 'cr-c2', 'upstream')
+    expect(up.direction).toBe('upstream')
+    expect(up.color).toBe('#a78bfa')
+    // Incoming to cr-c2: cr-c1 -> cr-c2, wiki-w1 -> cr-c2, topic-col-1 -> cr-c2, sprint-b1 -> topic-col-1
+    expect(up.nodeIds.has('cr-c1')).toBe(true)
+    expect(up.nodeIds.has('wiki-w1')).toBe(true)
+    expect(up.nodeIds.has('topic-col-1')).toBe(true)
+    expect(up.nodeIds.has('sprint-b1')).toBe(true)
+    expect(up.nodeIds.has('cr-c3')).toBe(false)
+  })
+
+  it('extracts Semantic Passport verified source evidence (SRC n) for nodes', () => {
+    const graph = makeSampleGraph()
+    const cr1 = graph.byId.get('cr-c1')
+    const ev1 = computeNodeEvidence(cr1, graph)
+    expect(ev1.count).toBeGreaterThanOrEqual(3)
+    expect(ev1.beaconLabel).toBe(`SRC ${ev1.count}`)
+    expect(ev1.sources.some(s => s.kind === 'frd' && s.label === 'FRD_BNPL_945.md')).toBe(true)
+    expect(ev1.sources.some(s => s.kind === 'wikilink' && s.label === 'BNPL-946')).toBe(true)
+
+    const orphanCr = graph.byId.get('cr-c4')
+    const evOrphan = computeNodeEvidence(orphanCr, graph)
+    expect(evOrphan.count).toBe(0)
+    expect(evOrphan.beaconLabel).toBeNull()
+  })
+
+  it('builds deterministic 1200x630 Share Card specifications for Reach, Route and Overview modes', () => {
+    const graph = makeSampleGraph()
+    const down = computeReachability(graph, 'cr-c1', 'downstream')
+    const reachSpec = buildShareCardSpec({
+      sprintName: 'Sprint 34',
+      selectedNode: graph.byId.get('cr-c1'),
+      reach: down,
+      routePath: null,
+      graph
+    })
+    expect(reachSpec.width).toBe(1200)
+    expect(reachSpec.height).toBe(630)
+    expect(reachSpec.badge).toBe('DOWNSTREAM REACH')
+    expect(reachSpec.badgeColor).toBe('#34d399')
+    expect(reachSpec.title).toContain('BNPL-945')
+    expect(reachSpec.metricsText).toContain('hop')
+
+    const routeSpec = buildShareCardSpec({
+      sprintName: 'Sprint 34',
+      selectedNode: null,
+      reach: null,
+      routePath: ['wiki-w1', 'cr-c2', 'cr-c3'],
+      graph
+    })
+    expect(routeSpec.badge).toBe('ROUTE SHARE CARD')
+    expect(routeSpec.title).toContain('Billing Spec')
+    expect(routeSpec.title).toContain('SET-101')
   })
 })

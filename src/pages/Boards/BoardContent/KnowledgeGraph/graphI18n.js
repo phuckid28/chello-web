@@ -76,7 +76,16 @@ export const GRAPH_TRANSLATIONS = {
     kgEmptyHint: 'Nhấp vào một nút bất kỳ để xem chi tiết, hoặc giữ chuột kéo để di chuyển đồ thị. Nhấp đúp vào nút để ghim vị trí.',
     kgExportedToast: 'Đã xuất ảnh PNG đồ thị tri thức!',
     kgMiniTitle: 'Local Graph • Mạng liên kết cục bộ',
-    kgMiniEmpty: 'Chưa có liên kết quanh mục này'
+    kgMiniEmpty: 'Chưa có liên kết quanh mục này',
+    kgPassportTitle: 'Semantic Passport',
+    kgEvidenceBeacon: 'Dẫn chứng xác thực',
+    kgUpstream: 'Upstream',
+    kgDownstream: 'Downstream',
+    kgReachSummary: '{nodes} nút • {links} liên kết • tối đa {hops} bước nhảy',
+    kgExportShareCard: 'Xuất thẻ Share Card (1200×630)',
+    kgShareCardToast: 'Đã xuất ảnh thẻ Share Card 1200×630!',
+    kgVerifiedSources: 'Dẫn chứng xác thực (SRC)',
+    kgNoEvidence: 'Chưa gắn tài liệu FRD hoặc [[WikiLink]]'
   },
   en: {
     kgTitle: 'Obsidian Knowledge Graph',
@@ -151,7 +160,16 @@ export const GRAPH_TRANSLATIONS = {
     kgEmptyHint: 'Click any node to inspect its links, or drag the canvas to explore. Double-click a node to pin its position.',
     kgExportedToast: 'Exported Knowledge Graph PNG!',
     kgMiniTitle: 'Local Graph • Neighbourhood',
-    kgMiniEmpty: 'No connections around this item yet'
+    kgMiniEmpty: 'No connections around this item yet',
+    kgPassportTitle: 'Semantic Passport',
+    kgEvidenceBeacon: 'Verified Evidence',
+    kgUpstream: 'Upstream',
+    kgDownstream: 'Downstream',
+    kgReachSummary: '{nodes} nodes • {links} links • max {hops} hop(s)',
+    kgExportShareCard: 'Export Share Card (1200×630)',
+    kgShareCardToast: 'Exported 1200×630 Share Card PNG!',
+    kgVerifiedSources: 'Verified Sources (SRC)',
+    kgNoEvidence: 'No FRD or [[WikiLink]] evidence attached'
   },
   ja: {
     kgTitle: 'Obsidian Knowledge Graph',
@@ -226,7 +244,16 @@ export const GRAPH_TRANSLATIONS = {
     kgEmptyHint: 'ノードをクリックして詳細を表示、ドラッグで移動、ダブルクリックで位置をピン留めできます。',
     kgExportedToast: 'ナレッジグラフを PNG 出力しました！',
     kgMiniTitle: 'Local Graph • 周辺リンク',
-    kgMiniEmpty: '周辺リンクはまだありません'
+    kgMiniEmpty: '周辺リンクはまだありません',
+    kgPassportTitle: 'Semantic Passport',
+    kgEvidenceBeacon: '検証済みエビデンス',
+    kgUpstream: 'Upstream',
+    kgDownstream: 'Downstream',
+    kgReachSummary: '{nodes} ノード • {links} リンク • 最大 {hops} ホップ',
+    kgExportShareCard: 'Share Card 出力 (1200×630)',
+    kgShareCardToast: '1200×630 Share Card を出力しました！',
+    kgVerifiedSources: '検証ソース (SRC)',
+    kgNoEvidence: 'FRD または [[WikiLink]] が未添付です'
   },
   ko: {
     kgTitle: 'Obsidian Knowledge Graph',
@@ -301,6 +328,15 @@ export const GRAPH_TRANSLATIONS = {
     kgEmptyHint: '노드를 클릭해 상세 정보를 보고, 드래그로 이동하며, 더블클릭으로 위치를 고정하세요.',
     kgExportedToast: '지식 그래프 PNG를 내보냈습니다!',
     kgMiniTitle: 'Local Graph • 주변 연결망',
-    kgMiniEmpty: '아직 주변 연결이 없습니다'
+    kgMiniEmpty: '아직 주변 연결이 없습니다',
+    kgPassportTitle: 'Semantic Passport',
+    kgEvidenceBeacon: '검증된 근거',
+    kgUpstream: 'Upstream',
+    kgDownstream: 'Downstream',
+    kgReachSummary: '{nodes} 노드 • {links} 링크 • 최대 {hops} 홉',
+    kgExportShareCard: 'Share Card 내보내기 (1200×630)',
+    kgShareCardToast: '1200×630 Share Card PNG를 내보냈습니다!',
+    kgVerifiedSources: '검증된 출처 (SRC)',
+    kgNoEvidence: '첨부된 FRD 또는 [[WikiLink]] 근거가 없습니다'
   }
 }

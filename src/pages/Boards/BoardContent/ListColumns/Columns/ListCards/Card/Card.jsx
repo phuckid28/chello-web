@@ -80,6 +80,7 @@ function Card({ card }) {
   const resourceUsed = getCardResourceUsed(card)
   const frdCount = card?.frdDocuments?.length || 0
   const linkedCount = card?.linkedCardIds?.length || 0
+  const srcEvidenceCount = frdCount + linkedCount
   const deadlineInfo = getDeadlineStatus(card)
   const priorityOpt = getPriorityOption(card?.priority)
   const statusOpt = getStatusOption(card?.baStatus)
@@ -190,32 +191,57 @@ function Card({ card }) {
             )}
           </Box>
 
-          <Tooltip title={tPrimary('openCrStudioTooltip')}>
-            <Box
-              component="span"
-              onClick={handleOpenCrStudio}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.2,
-                px: 0.65,
-                py: 0.15,
-                borderRadius: '5px',
-                fontFamily: '"JetBrains Mono", Consolas, monospace',
-                fontSize: '0.62rem',
-                fontWeight: 800,
-                color: 'primary.main',
-                border: '1px solid',
-                borderColor: 'divider',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'action.hover'
-                }
-              }}
-            >
-              Studio <NorthEastRoundedIcon sx={{ fontSize: 11 }} />
-            </Box>
-          </Tooltip>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.45 }}>
+            {srcEvidenceCount > 0 && (
+              <Tooltip title={`Verified Sources: ${frdCount} FRD • ${linkedCount} Linked`}>
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    px: 0.55,
+                    py: 0.12,
+                    borderRadius: '999px',
+                    fontFamily: '"JetBrains Mono", Consolas, monospace',
+                    fontSize: '0.58rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    bgcolor: 'rgba(15, 23, 42, 0.9)',
+                    color: '#34d399',
+                    border: '1px solid rgba(52, 211, 153, 0.55)'
+                  }}
+                >
+                  SRC {srcEvidenceCount}
+                </Box>
+              </Tooltip>
+            )}
+            <Tooltip title={tPrimary('openCrStudioTooltip')}>
+              <Box
+                component="span"
+                onClick={handleOpenCrStudio}
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.2,
+                  px: 0.65,
+                  py: 0.15,
+                  borderRadius: '5px',
+                  fontFamily: '"JetBrains Mono", Consolas, monospace',
+                  fontSize: '0.62rem',
+                  fontWeight: 800,
+                  color: 'primary.main',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                Studio <NorthEastRoundedIcon aria-hidden="true" sx={{ fontSize: 11 }} />
+              </Box>
+            </Tooltip>
+          </Box>
         </Box>
 
         {!!card?.labels?.length && (

@@ -58,6 +58,9 @@ const isOffscreen = (g, rect) =>
 const classifyLink = (link, view) => {
   const { source: a, target: b } = link
   if (view.pathKeys && view.pathKeys.has(edgePairKey(a.id, b.id))) return 'path'
+  if (view.reach?.edgeKeys) {
+    return view.reach.edgeKeys.has(edgePairKey(a.id, b.id)) ? 'reach' : 'dim'
+  }
   if (view.activeId && (a.id === view.activeId || b.id === view.activeId)) return 'highlight'
   if (view.pathKeys) return 'dim'
   if (view.focusIds) return 'dim'
@@ -107,8 +110,8 @@ export const drawEdges = (ctx, frame) => {
   const { links, camera, width, height, view, style, time } = frame
   const px = 1 / camera.k
   const rect = visibleWorldRect(camera, width, height, CULL_MARGIN)
-  const buckets = { structural: [], wiki: [], dim: [], highlight: [], path: [] }
-  const items = { highlight: [], path: [] }
+  const buckets = { structural: [], wiki: [], dim: [], highlight: [], path: [], reach: [] }
+  const items = { highlight: [], path: [], reach: [] }
 
   links.forEach(link => {
     const g = edgeGeometry(link)
@@ -120,7 +123,7 @@ export const drawEdges = (ctx, frame) => {
 
   ctx.save()
   ctx.lineCap = 'round'
-  const dimAlpha = view.hoverId || view.pathKeys ? 0.05 : 0.11
+  const dimAlpha = view.hoverId || view.pathKeys || view.reach ? 0.05 : 0.11
   strokeBucket(ctx, buckets.dim, `rgba(148, 163, 184, ${dimAlpha})`, px, [])
   strokeBucket(ctx, buckets.structural, 'rgba(148, 163, 184, 0.26)', px * 1.1, [])
   strokeBucket(ctx, buckets.wiki, withAlpha(WIKILINK_COLOR, 0.42), px * 1.3, camera.k > 0.5 ? [5 * px, 4 * px] : [])
@@ -128,6 +131,10 @@ export const drawEdges = (ctx, frame) => {
     const wiki = link.kind === 'wikilink'
     strokeBucket(ctx, [g], wiki ? withAlpha(WIKILINK_COLOR, 0.95) : withAlpha(style.accent, 0.9), px * 2.1, [])
   })
+  if (buckets.reach.length) {
+    const reachColor = view.reach?.color || '#34d399'
+    strokeBucket(ctx, buckets.reach, withAlpha(reachColor, 0.95), px * 2.7, [])
+  }
   strokeBucket(ctx, buckets.path, withAlpha(PATH_COLOR, 0.95), px * 3.2, [])
 
   if (style.display.arrows && camera.k >= ARROW_MIN_ZOOM) {
@@ -137,7 +144,8 @@ export const drawEdges = (ctx, frame) => {
     })
   }
 
-  const animating = !style.reducedMotion && drawParticles(ctx, items.highlight, time, px)
+  const particleSource = items.reach.length ? items.reach : items.highlight
+  const animating = !style.reducedMotion && drawParticles(ctx, particleSource, time, px)
   ctx.setLineDash([])
   ctx.restore()
   return animating

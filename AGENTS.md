@@ -45,7 +45,7 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
 
 ---
 
-## 4. Kiến trúc Hệ thống Hiện hành (v7 + v8 + v9 + v9.1 & Graphify — Cập nhật 2026-11-04)
+## 4. Kiến trúc Hệ thống Hiện hành (v7 + v8 + v9 + v9.1 + v9.2, Graphify & Archify — Cập nhật 2026-11-05)
 - **Hệ thống Người dùng & Cộng tác Đa tầng (User System v7)**:
   - **Workspaces Đa tầng (3 cấp)**: `Organization` (depth 0) $\rightarrow$ `Space` (depth 1) $\rightarrow$ `Team/Sub-space` (depth 2) với cơ chế kế thừa quyền tự động (`inheritPermissions`).
   - **Bảo mật & Định danh**: Quản lý phiên đăng nhập đa thiết bị (`sessions`), Xác thực 2 lớp TOTP (`RFC 6238` + 10 mã dự phòng băm SHA-256 có salt `userId`), khóa tạm thời chống brute-force, đặt lại mật khẩu và đổi email an toàn, CSRF header `X-Requested-With: XMLHttpRequest`.
@@ -63,8 +63,13 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
   - **Spatial Glass Piano & Key Tick (`swarmEngine.js`, `soundEffects.js`)**: Tổng hợp tiếng đàn Glass Piano 3 sóng hài (`sine` + `triangle` octave + `2.756x` glass bell partial) trên âm giai Ngũ cung Trưởng Mi (`E Major Pentatonic`: `E, F#, G#, B, C#`) kết hợp định vị âm thanh nổi `StereoPannerNode` (`[-0.8, 0.8]`) theo tọa độ ngang màn hình khi kéo-thả thẻ/cột và gõ phím cơ học (`playSpatialKeyTick`).
   - **Live Multiplayer Cursors & `🤖 Gemini AI` Co-Pilot Cursor (`presenceRoute.js`, `presenceService.js`, `presenceApi.js`, `FigmaCursorPointer.jsx`, `LiveBoardCursorsOverlay.jsx`, `CrAssistantPanel.jsx`)**: Đồng bộ tọa độ con trỏ thời gian thực (`cursor: { xPct, yPct, view, action }`) qua Socket.IO `BE_PRESENCE`, hiển thị con trỏ chuẩn Figma (`arrow`, `cross`, `dup`, `ibeam`) và con trỏ tác tử `🤖 Gemini AI` bay vào thao tác mỗi khi kích hoạt AI CR Assistant.
   - **Interactive Sprint Swarm Replay (`SprintSwarmReplayOverlay.jsx`, `BoardContent.jsx`, `ToolsMenu.jsx`)**: Tái hiện quá trình dựng Sprint theo thời gian thực (`Alt+Shift+S`) với thước đo Figma 20px, đường gióng Snap Guides đỏ (`#F24822`), đàn `6–14` con trỏ thành viên Sprint dựng cột, nhân bản thẻ `⌥-drag` (`⌥ +12px`), gõ tiêu đề CR và thanh điều khiển HUD (Pause/Resume, tốc độ `1×/2×/3×`, bật/tắt âm thanh, Replay).
-- **Đồ thị Tri thức Kiến trúc (`Graphify` / `graphifyy` v0.9.101)**:
-  - Thư mục `graphify-out/` trong mỗi repo (được loại trừ khỏi Git qua `.git/info/exclude`) chứa `GRAPH_REPORT.md`, `graph.json`, `graph.html`, `GRAPH_TREE.html` và `*-callflow.html`. Khi cần tra cứu kiến trúc tổng thể, God Nodes hoặc đường đi giữa các module, ưu tiên đọc `graphify-out/GRAPH_REPORT.md` hoặc dùng skill `~/.gemini/config/skills/graphify/SKILL.md`.
+- **Evidence Console, Authored Reachability (`Upstream` / `Downstream`), Semantic Passport & `1200×630` Share Card (Archify Experience v9.2 — Cập nhật 2026-11-05)**:
+  - **Authored Reachability (`computeReachability` trong `graphModel.js`, `ReachabilityBar` trong `GraphOverlays.jsx`, phím tắt `U` / `D`)**: Truy vết luồng phụ thuộc có hướng `Upstream` (Repository Violet `#a78bfa`) và `Downstream` (Proof Green `#34d399`), làm mờ các nút không liên quan và hiển thị biên nhận số nút, số liên kết và số bước nhảy tối đa (`maxHops`).
+  - **Semantic Passport & Verified Source Beacon (`SRC n` trong `graphRenderer.js`, `GraphInspector.jsx`, `Card.jsx`)**: Hiển thị viên thuốc dẫn chứng `SRC n` (`#34d399` trên nền `#0f172a`) ở góc phải nút đồ thị và trên thẻ CR Kanban, kèm thẻ **Semantic Passport** liệt kê danh sách tài liệu FRD, `[[WikiLink]]`, Backlinks và URL tham chiếu.
+  - **Portable Share Card Exporter (`exportShareCard` trong `graphEngine.js`, `buildShareCardSpec` trong `graphModel.js`)**: Xuất ảnh thẻ `1200×630` PNG chuẩn "Evidence Console" cho chế độ `Upstream/Downstream Reach`, `Shortest Route` hoặc toàn cảnh đồ thị Sprint.
+- **Đồ thị Tri thức Kiến trúc (`Graphify` v0.9.101) & Trình kết xuất Sơ đồ Tương tác (`Archify` v3.2.0)**:
+  - **Graphify (`~/.gemini/config/skills/graphify/SKILL.md`)**: Thư mục `graphify-out/` trong mỗi repo chứa `GRAPH_REPORT.md` và `graph.json` để tra cứu God Nodes và cấu trúc toàn cục.
+  - **Archify (`~/.gemini/config/skills/archify/SKILL.md`)**: Global Skill tạo sơ đồ tương tác độc lập (`architecture`, `workflow`, `sequence`, `dataflow`, `lifecycle`, `erd`, `class`, `tree`, `timeline`, `waterfall`) và trang giải thích `explainer` một trang `.html` (bản đồ mẫu: `docs/architecture/chella-system-architecture.html`).
 
 ---
 

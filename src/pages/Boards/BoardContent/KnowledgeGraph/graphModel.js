@@ -9,7 +9,14 @@ import {
   parseAssigneeList
 } from '~/utils/excelExporter'
 import { normalizePriority } from '~/utils/crMeta'
-import { LINK_KINDS } from './graphConstants'
+import {
+  DOWNSTREAM_COLOR,
+  LINK_KINDS,
+  PATH_COLOR,
+  SHARE_CARD_HEIGHT,
+  SHARE_CARD_WIDTH,
+  UPSTREAM_COLOR
+} from './graphConstants'
 
 export { parseQuery, matchNode, applyQuery, getQuerySuggestions } from './graphQuery'
 
@@ -64,7 +71,22 @@ export const createGraph = (nodes = [], edges = []) => {
       outLinks.get(n.id).length === 0 && inLinks.get(n.id).length === 0)
     .map(n => n.id))
 
-  return { nodes, edges: validEdges, byId, adjacency, outLinks, inLinks, degree, orphans }
+  const enrichedNodes = nodes.map(n => {
+    const frdCount = n.type === 'cr' ? (n.card?.frdDocuments || []).filter(Boolean).length : 0
+    const outCount = (outLinks.get(n.id) || []).length
+    const inCount = (inLinks.get(n.id) || []).length
+    const evidenceCount = (n.type === 'cr' || n.type === 'wiki')
+      ? frdCount + outCount + inCount
+      : (n.type === 'frd' ? (degree.get(n.id) || 0) : 0)
+    return {
+      ...n,
+      evidenceCount,
+      beaconLabel: evidenceCount > 0 ? `SRC ${evidenceCount}` : null
+    }
+  })
+  const enrichedById = new Map(enrichedNodes.map(n => [n.id, n]))
+
+  return { nodes: enrichedNodes, edges: validEdges, byId: enrichedById, adjacency, outLinks, inLinks, degree, orphans }
 }
 
 const createCrNode = ({ card, column, index, now }) => {
@@ -324,4 +346,219 @@ export const filterByTime = (graph, timestamp) => {
   const alive = createGraph(graph.nodes.filter(existed), graph.edges)
   const pruned = alive.nodes.filter(n => !DERIVED_TYPES.includes(n.type) || alive.degree.get(n.id) > 0)
   return pruned.length === alive.nodes.length ? alive : createGraph(pruned, alive.edges)
+}
+
+// Archify-inspired Authored Reachability: traverses directed incoming (upstream) or outgoing (downstream) edges
+export const computeReachability = (graph, originId, direction = 'downstream') => {
+  const dir = direction === 'upstream' ? 'upstream' : 'downstream'
+  const color = dir === 'upstream' ? UPSTREAM_COLOR : DOWNSTREAM_COLOR
+  if (!graph || !originId || !graph.byId?.has(originId)) {
+    return {
+      originId: originId || null,
+      direction: dir,
+      color,
+      nodeIds: new Set(),
+      edgeKeys: new Set(),
+      hopsByNode: new Map(),
+      nodeCount: 0,
+      linkCount: 0,
+      maxHops: 0
+    }
+  }
+
+  const directedAdj = new Map(graph.nodes.map(n => [n.id, []]))
+  graph.edges.forEach(edge => {
+    const from = dir === 'downstream' ? edge.source : edge.target
+    const to = dir === 'downstream' ? edge.target : edge.source
+    if (directedAdj.has(from) && graph.byId.has(to)) {
+      directedAdj.get(from).push(to)
+    }
+  })
+
+  const hopsByNode = new Map([[originId, 0]])
+  const edgeKeys = new Set()
+  const queue = [originId]
+
+  for (let head = 0; head < queue.length; head++) {
+    const current = queue[head]
+    const currentHops = hopsByNode.get(current) || 0
+    const nextList = directedAdj.get(current) || []
+    nextList.forEach(nextId => {
+      edgeKeys.add(edgePairKey(current, nextId))
+      if (!hopsByNode.has(nextId)) {
+        hopsByNode.set(nextId, currentHops + 1)
+        queue.push(nextId)
+      }
+    })
+  }
+
+  const nodeIds = new Set(hopsByNode.keys())
+  const maxHops = Math.max(0, ...Array.from(hopsByNode.values()))
+  return {
+    originId,
+    direction: dir,
+    color,
+    nodeIds,
+    edgeKeys,
+    hopsByNode,
+    nodeCount: Math.max(0, nodeIds.size - 1),
+    linkCount: edgeKeys.size,
+    maxHops
+  }
+}
+
+const URL_REGEX = /https?:\/\/[^\s)>\]]+/gi
+
+const extractTextUrls = (text) => {
+  if (!text) return []
+  return Array.from(new Set(String(text).match(URL_REGEX) || [])).slice(0, 5)
+}
+
+// Archify-inspired Semantic Passport & Verified Source Beacon (SRC n) extractor
+export const computeNodeEvidence = (node, graph) => {
+  if (!node || !graph) {
+    return { nodeId: null, beaconLabel: null, count: 0, sources: [] }
+  }
+  const sources = []
+  if (node.type === 'cr') {
+    const frdDocs = node.card?.frdDocuments || []
+    frdDocs.forEach((doc, idx) => {
+      if (!doc) return
+      const targetId = `frd-${doc.id || `${node.cardId}-${idx}`}`
+      sources.push({
+        id: `frd-${doc.id || idx}`,
+        kind: 'frd',
+        badge: 'FRD',
+        label: String(doc.name || 'FRD Document'),
+        subLabel: 'Specification Artifact',
+        targetId: graph.byId.has(targetId) ? targetId : null,
+        url: doc.url || doc.webViewLink || null
+      })
+    })
+  }
+
+  const outIds = graph.outLinks.get(node.id) || []
+  outIds.forEach(targetId => {
+    const target = graph.byId.get(targetId)
+    if (!target) return
+    sources.push({
+      id: `out-${targetId}`,
+      kind: 'wikilink',
+      badge: target.type === 'wiki' ? 'WIKI' : 'OUT',
+      label: target.label,
+      subLabel: target.subLabel || target.type.toUpperCase(),
+      targetId
+    })
+  })
+
+  const inIds = graph.inLinks.get(node.id) || []
+  inIds.forEach(sourceId => {
+    const src = graph.byId.get(sourceId)
+    if (!src) return
+    sources.push({
+      id: `in-${sourceId}`,
+      kind: 'backlink',
+      badge: 'IN',
+      label: src.label,
+      subLabel: src.subLabel || src.type.toUpperCase(),
+      targetId: sourceId
+    })
+  })
+
+  if (node.type === 'frd') {
+    Array.from(graph.adjacency.get(node.id) || []).forEach(nid => {
+      const neighbor = graph.byId.get(nid)
+      if (!neighbor) return
+      sources.push({
+        id: `ref-${nid}`,
+        kind: 'cr',
+        badge: 'CR',
+        label: neighbor.label,
+        subLabel: neighbor.subLabel || 'Linked CR',
+        targetId: nid
+      })
+    })
+  }
+
+  const rawText = node.type === 'cr'
+    ? `${node.card?.description || ''}\n${node.card?.note || ''}`
+    : (node.type === 'wiki' ? (node.page?.content || '') : '')
+
+  extractTextUrls(rawText).forEach((url, idx) => {
+    sources.push({
+      id: `url-${idx}`,
+      kind: 'url',
+      badge: 'URL',
+      label: url.replace(/^https?:\/\//i, '').slice(0, 40),
+      subLabel: url,
+      url
+    })
+  })
+
+  const count = sources.length
+  return {
+    nodeId: node.id,
+    beaconLabel: count > 0 ? `SRC ${count}` : null,
+    count,
+    sources
+  }
+}
+
+// Builds metadata for the 1200x630 Archify Route / Reach / Overview Share Card PNG export
+export const buildShareCardSpec = ({
+  sprintName = 'Sprint',
+  selectedNode = null,
+  reach = null,
+  routePath = null,
+  graph = null
+} = {}) => {
+  if (reach && reach.originId) {
+    const origin = graph?.byId?.get(reach.originId) || selectedNode
+    const isUp = reach.direction === 'upstream'
+    const label = origin?.label || reach.originId
+    return {
+      width: SHARE_CARD_WIDTH,
+      height: SHARE_CARD_HEIGHT,
+      badge: isUp ? 'UPSTREAM REACH' : 'DOWNSTREAM REACH',
+      badgeColor: isUp ? UPSTREAM_COLOR : DOWNSTREAM_COLOR,
+      title: `${label}${origin?.subLabel ? ` — ${origin.subLabel}` : ''}`,
+      subtitle: `${sprintName} • Authored Reachability (${isUp ? 'Incoming dependencies' : 'Outgoing impact'})`,
+      metricsText: `${reach.nodeCount} nodes • ${reach.linkCount} links • max ${reach.maxHops} hop(s)`,
+      fileName: `chella-${reach.direction}-reach-${slugify(label)}.png`
+    }
+  }
+
+  if (Array.isArray(routePath) && routePath.length >= 2) {
+    const fromNode = graph?.byId?.get(routePath[0])
+    const toNode = graph?.byId?.get(routePath[routePath.length - 1])
+    const hops = routePath.length - 1
+    const fromLabel = fromNode?.label || routePath[0]
+    const toLabel = toNode?.label || routePath[routePath.length - 1]
+    return {
+      width: SHARE_CARD_WIDTH,
+      height: SHARE_CARD_HEIGHT,
+      badge: 'ROUTE SHARE CARD',
+      badgeColor: PATH_COLOR,
+      title: `${fromLabel} → ${toLabel}`,
+      subtitle: `${sprintName} • Verified Shortest Knowledge Route`,
+      metricsText: `${routePath.length} nodes • ${hops} link(s) • ${hops} hop(s)`,
+      fileName: `chella-route-${slugify(fromLabel)}-to-${slugify(toLabel)}.png`
+    }
+  }
+
+  const totalNodes = graph?.nodes?.length || 0
+  const totalEdges = graph?.edges?.length || 0
+  const focusLabel = selectedNode
+    ? `${selectedNode.label}${selectedNode.subLabel ? ` — ${selectedNode.subLabel}` : ''}`
+    : sprintName
+  return {
+    width: SHARE_CARD_WIDTH,
+    height: SHARE_CARD_HEIGHT,
+    badge: 'EVIDENCE CONSOLE MAP',
+    badgeColor: '#38bdf8',
+    title: focusLabel,
+    subtitle: `${sprintName} • Chella × Archify Knowledge Topology`,
+    metricsText: `${totalNodes} nodes • ${totalEdges} links`,
+    fileName: `chella-share-card-${slugify(sprintName)}.png`
+  }
 }

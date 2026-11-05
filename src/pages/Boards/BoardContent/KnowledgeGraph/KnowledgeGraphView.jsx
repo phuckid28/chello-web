@@ -25,6 +25,8 @@ import {
   applyQuery,
   applyVisibility,
   buildGraph,
+  buildShareCardSpec,
+  computeReachability,
   filterByTime,
   getQuerySuggestions,
   getTimeline,
@@ -33,7 +35,7 @@ import {
   pathEdgeKeys,
   shortestPath
 } from './graphModel'
-import { GraphLegend, PathFinderBar, TimelapseBar } from './GraphOverlays'
+import { GraphLegend, PathFinderBar, ReachabilityBar, TimelapseBar } from './GraphOverlays'
 import GraphSearchBox from './GraphSearchBox'
 import { loadPins, loadSettings, savePins, saveSettings } from './graphSettings'
 import GraphToolbar from './GraphToolbar'
@@ -69,6 +71,7 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
 
   const [pathMode, setPathMode] = useState(false)
   const [pathEnds, setPathEnds] = useState({ fromId: null, toId: null })
+  const [reachMode, setReachMode] = useState(null)
   const [timelapse, setTimelapse] = useState({ on: false, playing: false, step: 0 })
 
   useEffect(() => {
@@ -135,6 +138,11 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
     return shortestPath(activeGraph, pathEnds.fromId, pathEnds.toId)
   }, [pathMode, pathEnds, activeGraph])
 
+  const activeReach = useMemo(() => {
+    if (!reachMode?.originId || !activeGraph.byId.has(reachMode.originId)) return null
+    return computeReachability(activeGraph, reachMode.originId, reachMode.direction)
+  }, [activeGraph, reachMode])
+
   // Create and tear down the imperative canvas engine once
   useEffect(() => {
     const canvas = canvasRef.current
@@ -175,9 +183,10 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
       matchIds,
       pathIds: routePath ? new Set(routePath) : null,
       pathKeys: routePath ? pathEdgeKeys(routePath) : null,
-      endpointIds
+      endpointIds,
+      reach: activeReach
     })
-  }, [engine, selectedId, matchIds, pathMode, pathEnds, routePath])
+  }, [engine, selectedId, matchIds, pathMode, pathEnds, routePath, activeReach])
 
   // Time-lapse playback timer
   useEffect(() => {
@@ -217,6 +226,18 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
     }
   }, [pathMode])
 
+  const handleToggleReach = useCallback((originId, direction = 'downstream') => {
+    const targetId = originId || selectedId
+    if (!targetId) return
+    playUiChime('sparkle')
+    setPathMode(false)
+    setReachMode(prev => (
+      prev && prev.originId === targetId && prev.direction === direction
+        ? null
+        : { originId: targetId, direction }
+    ))
+  }, [selectedId])
+
   useGraphInteractions({
     engine,
     canvasRef,
@@ -228,7 +249,8 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
       onOpen: openNodeTarget,
       onPinChange: () => playUiChime('sparkle'),
       onToggleLocal: () => setMode(m => (m === 'local' ? 'global' : 'local')),
-      onClear: () => { setQuery(''); setPathMode(false) },
+      onToggleReach: (dir) => handleToggleReach(selectedId, dir),
+      onClear: () => { setQuery(''); setPathMode(false); setReachMode(null) },
       onFocusSearch: () => searchInputRef.current?.focus()
     }
   })
@@ -247,6 +269,26 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
   }
 
   const selectedNode = selectedId ? activeGraph.byId.get(selectedId) : null
+
+  const handleExportShareCard = async () => {
+    if (!engine) return
+    const spec = buildShareCardSpec({
+      sprintName: sprintConfig.name || 'Sprint',
+      selectedNode,
+      reach: activeReach,
+      routePath,
+      graph: activeGraph
+    })
+    const blob = await engine.exportShareCard(spec)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = spec.fileName
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success(t('kgShareCardToast'))
+  }
 
   return (
     <Box
@@ -297,6 +339,7 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
           }}
           actions={{
             togglePath: () => {
+              setReachMode(null)
               setPathMode(v => !v)
               setPathEnds({ fromId: selectedId, toId: null })
             },
@@ -306,6 +349,7 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
             zoomOut: () => engine?.zoomBy(0.8, undefined, undefined, true),
             fit: () => engine?.fit({ animate: true }),
             exportPng: handleExportPng,
+            exportShareCard: handleExportShareCard,
             toggleFullscreen: () => setFullscreen(v => !v),
             toggleInspector: () => setInspectorOpen(v => !v)
           }}
@@ -331,7 +375,20 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
             path={routePath}
             onPickNode={(id) => focusNode(id, true)}
             onSwap={() => setPathEnds(p => ({ fromId: p.toId, toId: p.fromId }))}
+            onExportShareCard={handleExportShareCard}
             onClear={() => { setPathMode(false); setPathEnds({ fromId: null, toId: null }) }}
+          />
+        )}
+
+        {activeReach && !pathMode && (
+          <ReachabilityBar
+            t={t}
+            graph={activeGraph}
+            reach={activeReach}
+            onPickNode={(id) => focusNode(id, true)}
+            onDirectionChange={(direction) => setReachMode({ originId: activeReach.originId, direction })}
+            onExportShareCard={handleExportShareCard}
+            onClear={() => setReachMode(null)}
           />
         )}
 
@@ -383,9 +440,11 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
             isPinned={Boolean(selectedNode && pinnedMap[selectedNode.id])}
             accent={accent}
             secondary={secondary}
+            activeReach={activeReach}
             onSelectNode={(id) => focusNode(id, true)}
             onTogglePin={(id) => engine?.togglePin(id)}
             onOpenLocal={(id) => { focusNode(id, true); setMode(m => (m === 'local' ? 'global' : 'local')) }}
+            onToggleReach={handleToggleReach}
             onOpenCrStudio={(cardId) => navigate(`/boards/${boardId}/cr/${cardId}`)}
             onQuickEditCr={(card) => { dispatch(updateCurrentActiveCard(card)); dispatch(showModalActiveCard()) }}
             onOpenWikiPage={(pageId) => navigate(`/boards/${boardId}/wiki/${pageId}`)}
@@ -407,9 +466,11 @@ function KnowledgeGraphView({ columns = [], themeConfig = {} }) {
           isPinned={Boolean(selectedNode && pinnedMap[selectedNode.id])}
           accent={accent}
           secondary={secondary}
+          activeReach={activeReach}
           onSelectNode={(id) => focusNode(id, true)}
           onTogglePin={(id) => engine?.togglePin(id)}
           onOpenLocal={(id) => { focusNode(id, true); setMode(m => (m === 'local' ? 'global' : 'local')) }}
+          onToggleReach={handleToggleReach}
           onOpenCrStudio={(cardId) => navigate(`/boards/${boardId}/cr/${cardId}`)}
           onQuickEditCr={(card) => { dispatch(updateCurrentActiveCard(card)); dispatch(showModalActiveCard()) }}
           onOpenWikiPage={(pageId) => navigate(`/boards/${boardId}/wiki/${pageId}`)}

@@ -33,6 +33,11 @@ export const SPRINT_FALLBACK_COLOR = '#38bdf8'
 export const WIKILINK_COLOR = '#f5d061'
 export const PATH_COLOR = '#22d3ee'
 export const OVERDUE_COLOR = '#ef4444'
+export const UPSTREAM_COLOR = '#a78bfa'
+export const DOWNSTREAM_COLOR = '#34d399'
+export const EVIDENCE_BEACON_COLOR = '#34d399'
+export const SHARE_CARD_WIDTH = 1200
+export const SHARE_CARD_HEIGHT = 630
 
 export const DEFAULT_FILTERS = {
   topic: true,

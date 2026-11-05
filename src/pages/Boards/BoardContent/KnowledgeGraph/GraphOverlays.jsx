@@ -10,12 +10,15 @@ import PauseRoundedIcon from '@mui/icons-material/PauseRounded'
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
+import IosShareRoundedIcon from '@mui/icons-material/IosShareRounded'
+import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded'
+import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded'
 import { formatDateTime, formatMessage } from '~/utils/i18nV5'
-import { PATH_COLOR, TYPE_COLORS } from './graphConstants'
+import { DOWNSTREAM_COLOR, PATH_COLOR, TYPE_COLORS, UPSTREAM_COLOR } from './graphConstants'
 import { glassSx, TEXT_MUTED, TEXT_PRIMARY } from './graphUiStyles'
 
 // Shortest-path explorer banner shown when Path Finder mode is active
-export function PathFinderBar({ t, graph, fromId, toId, path, onPickNode, onSwap, onClear }) {
+export function PathFinderBar({ t, graph, fromId, toId, path, onPickNode, onSwap, onExportShareCard, onClear }) {
   const fromNode = fromId ? graph.byId.get(fromId) : null
   const toNode = toId ? graph.byId.get(toId) : null
   const hops = path && path.length > 1 ? path.length - 1 : 0
@@ -91,9 +94,174 @@ export function PathFinderBar({ t, graph, fromId, toId, path, onPickNode, onSwap
         </Typography>
       )}
 
-      <Button size="small" startIcon={<CloseRoundedIcon />} onClick={onClear} sx={{ textTransform: 'none', color: TEXT_MUTED, ml: 'auto', minWidth: 0 }}>
-        {t('kgPathClear')}
-      </Button>
+      <Box sx={{ ml: 'auto', display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+        {path && path.length > 1 && onExportShareCard && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<IosShareRoundedIcon aria-hidden="true" />}
+            onClick={onExportShareCard}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              minBlockSize: 28,
+              borderRadius: '8px',
+              borderColor: `${PATH_COLOR}88`,
+              color: PATH_COLOR
+            }}
+          >
+            {t('kgExportShareCard')}
+          </Button>
+        )}
+        <Button size="small" startIcon={<CloseRoundedIcon aria-hidden="true" />} onClick={onClear} sx={{ textTransform: 'none', color: TEXT_MUTED, minWidth: 0, minBlockSize: 28 }}>
+          {t('kgPathClear')}
+        </Button>
+      </Box>
+    </Box>
+  )
+}
+
+// Archify Authored Reachability banner (Upstream / Downstream receipt & Share Card trigger)
+export function ReachabilityBar({ t, graph, reach, onPickNode, onDirectionChange, onExportShareCard, onClear }) {
+  if (!reach || !reach.originId) return null
+  const originNode = graph.byId.get(reach.originId)
+  const isUp = reach.direction === 'upstream'
+  const badgeColor = isUp ? UPSTREAM_COLOR : DOWNSTREAM_COLOR
+
+  return (
+    <Box
+      role="status"
+      aria-live="polite"
+      sx={{
+        ...glassSx,
+        position: 'absolute',
+        top: 66,
+        left: 12,
+        zIndex: 3,
+        px: 1.5,
+        py: 0.85,
+        maxWidth: 'calc(100% - 24px)',
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 1,
+        borderLeft: `3px solid ${badgeColor}`
+      }}
+    >
+      <Chip
+        size="small"
+        label={isUp ? 'UPSTREAM' : 'DOWNSTREAM'}
+        sx={{
+          height: 22,
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '0.68rem',
+          fontWeight: 800,
+          bgcolor: `${badgeColor}26`,
+          color: badgeColor,
+          border: `1px solid ${badgeColor}88`
+        }}
+      />
+
+      <Chip
+        size="small"
+        label={originNode ? originNode.label : reach.originId}
+        onClick={() => originNode && onPickNode(originNode.id)}
+        sx={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontWeight: 700,
+          bgcolor: 'rgba(15, 23, 42, 0.85)',
+          color: TEXT_PRIMARY,
+          border: '1px solid rgba(148, 163, 184, 0.35)'
+        }}
+      />
+
+      <Typography
+        variant="caption"
+        sx={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontWeight: 700,
+          color: badgeColor,
+          px: 0.5
+        }}
+      >
+        {formatMessage(t('kgReachSummary'), {
+          nodes: reach.nodeCount,
+          links: reach.linkCount,
+          hops: reach.maxHops
+        })}
+      </Typography>
+
+      <Stack direction="row" spacing={0.5}>
+        <Button
+          size="small"
+          aria-pressed={isUp}
+          startIcon={<CallReceivedRoundedIcon aria-hidden="true" sx={{ fontSize: 15 }} />}
+          onClick={() => onDirectionChange('upstream')}
+          sx={{
+            textTransform: 'none',
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            minBlockSize: 28,
+            px: 1,
+            borderRadius: '8px',
+            bgcolor: isUp ? `${UPSTREAM_COLOR}28` : 'transparent',
+            color: isUp ? UPSTREAM_COLOR : TEXT_MUTED,
+            border: `1px solid ${isUp ? UPSTREAM_COLOR : 'rgba(148,163,184,0.24)'}`
+          }}
+        >
+          {t('kgUpstream')} (U)
+        </Button>
+        <Button
+          size="small"
+          aria-pressed={!isUp}
+          startIcon={<CallMadeRoundedIcon aria-hidden="true" sx={{ fontSize: 15 }} />}
+          onClick={() => onDirectionChange('downstream')}
+          sx={{
+            textTransform: 'none',
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            minBlockSize: 28,
+            px: 1,
+            borderRadius: '8px',
+            bgcolor: !isUp ? `${DOWNSTREAM_COLOR}28` : 'transparent',
+            color: !isUp ? DOWNSTREAM_COLOR : TEXT_MUTED,
+            border: `1px solid ${!isUp ? DOWNSTREAM_COLOR : 'rgba(148,163,184,0.24)'}`
+          }}
+        >
+          {t('kgDownstream')} (D)
+        </Button>
+      </Stack>
+
+      <Box sx={{ ml: 'auto', display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+        {onExportShareCard && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<IosShareRoundedIcon aria-hidden="true" />}
+            onClick={onExportShareCard}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              minBlockSize: 28,
+              borderRadius: '8px',
+              borderColor: `${badgeColor}88`,
+              color: badgeColor
+            }}
+          >
+            {t('kgExportShareCard')}
+          </Button>
+        )}
+        <Button
+          size="small"
+          startIcon={<CloseRoundedIcon aria-hidden="true" />}
+          onClick={onClear}
+          sx={{ textTransform: 'none', color: TEXT_MUTED, minWidth: 0, minBlockSize: 28 }}
+        >
+          {t('kgPathClear')}
+        </Button>
+      </Box>
     </Box>
   )
 }

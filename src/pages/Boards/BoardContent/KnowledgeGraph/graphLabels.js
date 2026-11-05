@@ -27,6 +27,7 @@ const isPriorityLabel = (node, view) => {
   if (type === 'sprint' || type === 'topic') return true
   const id = node.id
   if (id === view.hoverId || id === view.selectedId) return true
+  if (view.reach?.nodeIds && view.reach.nodeIds.has(id)) return true
   if (view.pathIds && view.pathIds.has(id)) return true
   if (view.hubIds && view.hubIds.has(id)) return true
   if (view.focusIds && view.focusIds.has(id)) return true
@@ -35,6 +36,7 @@ const isPriorityLabel = (node, view) => {
 
 const labelAlpha = (node, view, zoomAlpha, priority) => {
   if (view.matchIds && !view.matchIds.has(node.id)) return 0.25
+  if (view.reach?.nodeIds?.size && !view.reach.nodeIds.has(node.id)) return 0.24
   if (view.focusIds && !view.focusIds.has(node.id)) return 0.3
   return priority ? 1 : zoomAlpha
 }

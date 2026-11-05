@@ -1,6 +1,6 @@
 // Canvas 2D renderer: draws one complete frame (background, hulls, edges, nodes, labels)
 import {
-  BORN_DURATION_MS, DETAIL_ZOOM, OVERDUE_COLOR, PATH_COLOR
+  BORN_DURATION_MS, DETAIL_ZOOM, EVIDENCE_BEACON_COLOR, OVERDUE_COLOR, PATH_COLOR
 } from './graphConstants'
 import { easeOutBack, visibleWorldRect } from './graphCamera'
 import { drawBackground, getGlowSprite } from './graphBackground'
@@ -26,6 +26,7 @@ const DIM_PATH_ALPHA = 0.22
 const nodeAlpha = (node, view) => {
   let alpha = 1
   if (view.matchIds && !view.matchIds.has(node.id)) alpha = DIM_MATCH_ALPHA
+  else if (view.reach?.nodeIds?.size && !view.reach.nodeIds.has(node.id)) alpha = DIM_PATH_ALPHA
   else if (view.focusIds && !view.focusIds.has(node.id)) alpha = view.hoverId ? DIM_HOVER_ALPHA : DIM_SELECT_ALPHA
   if (view.pathIds && !view.pathIds.has(node.id)) alpha = Math.min(alpha, DIM_PATH_ALPHA)
   return alpha
@@ -89,17 +90,54 @@ const drawSelectionHalo = (ctx, node, r, view, style) => {
   const isSelected = node.id === view.selectedId
   const isHover = node.id === view.hoverId
   const isEndpoint = view.endpointIds && view.endpointIds.has(node.id)
-  if (!isSelected && !isHover && !isEndpoint) return
-  const color = isEndpoint ? PATH_COLOR : (isSelected ? style.accent : node.color)
+  const isReachNode = Boolean(view.reach?.nodeIds?.has(node.id))
+  const isReachOrigin = Boolean(view.reach && view.reach.originId === node.id)
+  if (!isSelected && !isHover && !isEndpoint && !isReachNode) return
+  const reachColor = view.reach?.color || EVIDENCE_BEACON_COLOR
+  const color = isEndpoint
+    ? PATH_COLOR
+    : (isReachNode ? reachColor : (isSelected ? style.accent : node.color))
   ctx.beginPath()
-  ctx.arc(node.x, node.y, r + 9, 0, TWO_PI)
-  ctx.fillStyle = withAlpha(node.color, isSelected ? 0.2 : 0.14)
+  ctx.arc(node.x, node.y, r + (isReachOrigin ? 10.5 : 9), 0, TWO_PI)
+  ctx.fillStyle = withAlpha(color, isSelected || isReachOrigin ? 0.24 : 0.15)
   ctx.fill()
   ctx.beginPath()
   ctx.arc(node.x, node.y, r + 6.5, 0, TWO_PI)
   ctx.strokeStyle = withAlpha(color, 0.95)
-  ctx.lineWidth = isSelected || isEndpoint ? 2.2 : 1.6
+  ctx.lineWidth = isSelected || isEndpoint || isReachOrigin ? 2.3 : 1.6
   ctx.stroke()
+}
+
+// Archify Verified Source Beacon (SRC n) capsule in upper-right corner of evidence-backed nodes
+const drawEvidenceBeacon = (ctx, node, r, px) => {
+  const label = node.model?.beaconLabel
+  if (!label) return
+  const fontSize = Math.max(7.5, Math.min(10, 8.5 * px))
+  ctx.font = `700 ${fontSize}px "JetBrains Mono", ui-monospace, monospace`
+  const padX = 4.2 * px
+  const boxH = 11.5 * px
+  const textW = ctx.measureText(label).width
+  const boxW = textW + padX * 2
+  const bx = node.x + r * 0.65
+  const by = node.y - r * 0.95 - boxH
+
+  const radius = boxH / 2
+  ctx.beginPath()
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(bx, by, boxW, boxH, radius)
+  } else {
+    ctx.rect(bx, by, boxW, boxH)
+  }
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.94)'
+  ctx.fill()
+  ctx.strokeStyle = withAlpha(EVIDENCE_BEACON_COLOR, 0.88)
+  ctx.lineWidth = 1.1 * px
+  ctx.stroke()
+
+  ctx.fillStyle = EVIDENCE_BEACON_COLOR
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, bx + boxW / 2, by + boxH / 2 + 0.3 * px)
 }
 
 const drawNode = (ctx, node, frame, born) => {
@@ -126,6 +164,7 @@ const drawNode = (ctx, node, frame, born) => {
   if (isCr && camera.k >= DETAIL_ZOOM) drawProgressRing(ctx, node, r)
   if (isCr && node.model.deadlineCode === 'overdue') drawOverdueDot(ctx, node, r, px)
   if (node.pinned) drawPin(ctx, node, r, px)
+  if (camera.k >= DETAIL_ZOOM && node.model?.beaconLabel) drawEvidenceBeacon(ctx, node, r, px)
 }
 
 const drawNodes = (ctx, frame) => {
