@@ -45,7 +45,7 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
 
 ---
 
-## 4. Kiến trúc Hệ thống Hiện hành (v7 + v8 + v9 + v9.1 + v9.2, Graphify & Archify — Cập nhật 2026-11-05)
+## 4. Kiến trúc Hệ thống Hiện hành (v7 + v8 + v9 + v9.1 + v9.2 + v9.3, Graphify, Archify, Spec-Kit & Baoyu-Design — Cập nhật 2026-11-09)
 - **Hệ thống Người dùng & Cộng tác Đa tầng (User System v7)**:
   - **Workspaces Đa tầng (3 cấp)**: `Organization` (depth 0) $\rightarrow$ `Space` (depth 1) $\rightarrow$ `Team/Sub-space` (depth 2) với cơ chế kế thừa quyền tự động (`inheritPermissions`).
   - **Bảo mật & Định danh**: Quản lý phiên đăng nhập đa thiết bị (`sessions`), Xác thực 2 lớp TOTP (`RFC 6238` + 10 mã dự phòng băm SHA-256 có salt `userId`), khóa tạm thời chống brute-force, đặt lại mật khẩu và đổi email an toàn, CSRF header `X-Requested-With: XMLHttpRequest`.
@@ -72,6 +72,9 @@ $$\text{Research} \rightarrow \text{Plan} \rightarrow \text{Test (RED)} \rightar
   - **Archify (`~/.gemini/config/skills/archify/SKILL.md`)**: Global Skill tạo sơ đồ tương tác độc lập (`architecture`, `workflow`, `sequence`, `dataflow`, `lifecycle`, `erd`, `class`, `tree`, `timeline`, `waterfall`) và trang giải thích `explainer` một trang `.html` (bản đồ mẫu: `docs/architecture/chella-system-architecture.html`).
   - **Spec-Kit SDD & Convergence Gate (`specKitAudit.js`, `SpecKitConvergencePanel.jsx`, `Card.jsx`, `GraphInspector.jsx`, Global Skill `spec-kit`, CLI `specify`)**: Kiểm toán độ hội tụ Đặc tả – Triển khai theo chuẩn GitHub Spec-Kit v1.3.1 (`converged | partial | needs-clarification | contradicts`), phát hiện điểm mơ hồ `[NEEDS CLARIFICATION: ...]`, đối chiếu yêu cầu `FR-###` / `SC-###` / kịch bản `Given-When-Then` với Subtasks thực thi, hiển thị huy hiệu `SPEC ✓` / `CLARIFY n` / `GAP n` trên thẻ Kanban & Knowledge Graph Inspector, và tự động sinh các nhiệm vụ hội tụ (`[Converge]`) theo cơ chế chỉ-thêm (`append-only`).
   - **Baoyu-Design OKLab/CVD Dataviz & Traceable KPI Sources (`datavizPalette.js`, `DataLineageDrawer.jsx`, `BoardAnalyticsView.jsx`, `designs/chella-design-system/`)**: Kiểm định bảng màu biểu đồ bằng khoảng cách cảm nhận `OKLab ΔE` (trên cả 3 mô phỏng mù màu Deuteranopia, Protanopia, Tritanopia) & tương phản `WCAG 2.1`, tích hợp ngăn kéo truy xuất nguồn gốc chỉ số **Data Sources & Lineage** (`data-source`, `data-field`, `data-where`) kèm tải xuống JSON/CSV trong `BoardAnalyticsView`, và đóng gói **Chella Enterprise Design System** (`designs/chella-design-system/project/design-system.json`, `tokens.json`) đạt chuẩn `claude-design-system` (`0 problems`).
+  - **Hệ sinh thái 10 Global Skills & 9 Plugins (`~/.gemini/config/`)**:
+    - **10 Global Skills (`~/.gemini/config/skills/`)**: `graphify`, `archify`, `spec-kit`, `dataviz`, `claude-design`, `claude-design-system`, `claude-dashboard`, `claude-slides`, `claude-motion`, `motion-director`.
+    - **9 Plugins (`~/.gemini/config/plugins/`)**: `ecc-core`, `ui-ux-skills` (`impeccable`, `design-taste-frontend`), `modern-web-guidance-plugin`, `gemini-api` (`v2.4.0`: `gemini-api-dev`, `gemini-live-api-dev`, `gemini-omni-flash-api`), `gdrive` (`v0.0.11`), `firebase` (`v1.0.3`), `flutter` (`v1.0.7`), `science` (`v1.4.0`), `google-antigravity-sdk` (`v0.0.9`).
 
 ---
 

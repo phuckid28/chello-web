@@ -58,24 +58,29 @@ Write-Host "Đã khôi phục .env và cấu hình AGY thành công!" -Foregroun
 
 ---
 
-## 3. Đồng bộ Global Rules (`ecc-core`, Plugins & User Settings) giữa 2 máy
+## 3. Đồng bộ Global Rules (`ecc-core`, 9 Plugins, 10 Global Skills & User Settings) giữa 2 máy
 
-Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ khung kỹ thuật **`ecc-core`** (chứa quy tắc TDD, Code Review, Security Checklist) cùng các plugins:
-- `ecc-core`
-- `modern-web-guidance-plugin`
-- `gemini-api`
-- `firebase`
-- `gdrive`
-- `flutter`
-- `science`
-- `google-antigravity-sdk`
+Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ khung kỹ thuật **`ecc-core`** (chứa quy tắc TDD, Code Review, Security Checklist) cùng 9 Plugins và 10 Global Skills:
+- **9 Plugins (`~/.gemini/config/plugins/`)**:
+  - `ecc-core`
+  - `ui-ux-skills` (`impeccable`, `design-taste-frontend`)
+  - `modern-web-guidance-plugin`
+  - `gemini-api` (`v2.4.0`: `gemini-api-dev`, `gemini-live-api-dev`, `gemini-omni-flash-api`)
+  - `firebase` (`v1.0.3`)
+  - `gdrive` (`v0.0.11`)
+  - `flutter` (`v1.0.7`)
+  - `science` (`v1.4.0`)
+  - `google-antigravity-sdk` (`v0.0.9`)
+- **10 Global Skills (`~/.gemini/config/skills/`)**:
+  - `graphify`, `archify`, `spec-kit`, `dataviz`, `claude-design`, `claude-design-system`, `claude-dashboard`, `claude-slides`, `claude-motion`, `motion-director`
 
-**Để máy thứ 2 có y hệt bộ Global Rules này:**
-1. Mở Antigravity ở máy thứ 2 → đăng nhập cùng tài khoản Google.
-2. Copy thư mục `C:\Users\thanhphuc\.gemini\config\plugins` và file `C:\Users\thanhphuc\.gemini\config\config.json` từ máy 1 sang máy 2 (qua Google Drive/OneDrive hoặc repo Private ở mục 2).
-3. **Lưu ý quan trọng khi copy `config.json` giữa 2 máy**:
-   - Trong `config.json` có trường `"remoteControlHostname"` và đường dẫn tuyệt đối trong `"sidecars"`. Nếu tên user Windows ở máy 2 khác `thanhphuc`, hãy dùng biến đường dẫn tương ứng trên máy 2 hoặc chỉ copy khối `"plugins"` trong `config.json`.
-   - Ngoài ra, mọi quy tắc cốt lõi nhất của `ecc-core` đã được trích xuất và nhúng thẳng vào file **`AGENTS.md`** tại gốc repo `chello-web` và `chello-api`. Nhờ vậy, kể cả khi máy 2 chưa kịp cài plugin, AI vẫn tuân thủ 100% quy tắc của bạn!
+**Để máy thứ 2 có y hệt bộ Global Rules, Plugins, Skills, `.env` và `graphify-out/` này:**
+1. Sử dụng trực tiếp kho lưu trữ Private `antiantigravity-synchronization`:
+   - Trên Máy 1 (trước khi rời máy): `powershell -ExecutionPolicy Bypass -File "C:\Users\thanhphuc\Documents\GitHub\antiantigravity-synchronization\scripts\sync-push.ps1"`
+   - Trên Máy 2 (khi bắt đầu làm việc): `powershell -ExecutionPolicy Bypass -File "C:\Users\thanhphuc\Documents\GitHub\antiantigravity-synchronization\scripts\sync-pull.ps1"`
+2. **Lưu ý quan trọng khi đồng bộ `config.json` giữa 2 máy**:
+   - Script `sync-pull.ps1` tự động gộp (`merge`) khối `"plugins"` vào `~/.gemini/config/config.json` trên máy đích mà vẫn bảo toàn `"remoteControlHostname"`, `"sidecars"` và `"userSettings"` cục bộ của từng máy.
+   - Ngoài ra, mọi quy tắc cốt lõi nhất của `ecc-core`, `Graphify`, `Archify`, `Spec-Kit` và `Baoyu-Design` đã được trích xuất và nhúng thẳng vào file **`AGENTS.md`** tại gốc repo `chello-web` và `chello-api`. Nhờ vậy, kể cả khi máy 2 chưa kịp chạy script, AI vẫn tuân thủ 100% quy tắc của bạn!
 
 ---
 
