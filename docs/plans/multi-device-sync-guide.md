@@ -58,12 +58,14 @@ Write-Host "Đã khôi phục .env và cấu hình AGY thành công!" -Foregroun
 
 ---
 
-## 3. Đồng bộ Global Rules (`ecc-core`, 9 Plugins, 10 Global Skills & User Settings) giữa 2 máy
+## 3. Đồng bộ Global Rules (`ecc-core`, 11 Plugins, 10 Global Skills & User Settings) giữa 2 máy
 
-Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ khung kỹ thuật **`ecc-core`** (chứa quy tắc TDD, Code Review, Security Checklist) cùng 9 Plugins và 10 Global Skills:
-- **9 Plugins (`~/.gemini/config/plugins/`)**:
+Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ khung kỹ thuật **`ecc-core`** (chứa quy tắc TDD, Code Review, Security Checklist) cùng 11 Plugins và 10 Global Skills:
+- **11 Plugins (`~/.gemini/config/plugins/`)**:
   - `ecc-core`
   - `ui-ux-skills` (`impeccable`, `design-taste-frontend`)
+  - `ponytail` (`ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`)
+  - `pro-workflows` (`systematic-debugging`, `brainstorming`, `context-optimization`, `context-compression`, `tool-design`, `multi-agent-patterns`, `copywriting`, `onboarding`, `cro`, `remotion-best-practices`)
   - `modern-web-guidance-plugin`
   - `gemini-api` (`v2.4.0`: `gemini-api-dev`, `gemini-live-api-dev`, `gemini-omni-flash-api`)
   - `firebase` (`v1.0.3`)
