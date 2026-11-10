@@ -10,12 +10,13 @@ import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded'
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded'
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
+import SlideshowRoundedIcon from '@mui/icons-material/SlideshowRounded'
 import VpnLockIcon from '@mui/icons-material/VpnLock'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { capitalizeFirstLetter } from '~/utils/formatters'
 import { triggerSprintSwarmReplay } from '~/fx/fxEvents'
 
-// Groups workspace utilities, import/export, Pomodoro, Swarm Replay, and visibility actions so the BoardBar never overflows
+// Groups workspace utilities, import/export, Pomodoro, Swarm Replay, Sprint Wrapped Deck, and visibility actions so the BoardBar never overflows
 function ToolsMenu({
   anchorEl,
   onClose,
@@ -23,6 +24,7 @@ function ToolsMenu({
   onExportExcel,
   onExportCsv,
   onReport,
+  onOpenRecapDeck,
   onOpenHub,
   onOpenPomodoro,
   onToggleBoardType,
@@ -33,6 +35,7 @@ function ToolsMenu({
 
   const items = [
     { key: 'hub', label: tPrimary('knowledgeHubBtn'), Icon: MenuBookRoundedIcon, color: '#a78bfa', action: onOpenHub },
+    { key: 'recap', label: '🎬 Sprint Wrapped / Slide Deck', Icon: SlideshowRoundedIcon, color: '#38bdf8', action: onOpenRecapDeck },
     { key: 'report', label: tPrimary('sprintReportBtn'), Icon: SummarizeRoundedIcon, color: '#f472b6', action: onReport },
     { key: 'swarm', label: '✨ Sprint Swarm Replay (Alt+Shift+S)', Icon: AutoAwesomeRoundedIcon, color: '#c084fc', action: () => triggerSprintSwarmReplay() },
     { key: 'pomodoro', label: `⏱️ ${pomodoroLabel}`, Icon: TimerOutlinedIcon, color: '#fb7185', action: onOpenPomodoro, dividerAfter: true },

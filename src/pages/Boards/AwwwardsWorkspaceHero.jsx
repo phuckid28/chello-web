@@ -4,11 +4,17 @@ import Grid from '@mui/material/Unstable_Grid2'
 import Button from '@mui/material/Button'
 import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
+import Tooltip from '@mui/material/Tooltip'
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import NorthEastRoundedIcon from '@mui/icons-material/NorthEastRounded'
 import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
-import { DEFAULT_SPRINT_TEMPLATE } from '~/utils/animeTheme'
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
+import { DEFAULT_SPRINT_TEMPLATE, PRIMARY_THEMES_LIST } from '~/utils/animeTheme'
 import { SoraRibbonIcon } from '~/components/Icons/SoraBunnyIcon'
+import { runWithReveal } from '~/fx/themeReveal'
+import { fxBurst } from '~/fx/fxEvents'
+import { playUiChime, isMusicBoxActive, playOstTrack, getDefaultTrackForTheme } from '~/utils/soundEffects'
+import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
 
 function AwwwardsWorkspaceHero({
   themeConfig,
@@ -18,13 +24,32 @@ function AwwwardsWorkspaceHero({
   onOpenCreateModal,
   t
 }) {
+  const { personaKey, changePersona } = usePersonaTheme()
   const chapterIndex = themeConfig.chapterIndex || '03'
   const awwwardsLabel = themeConfig.awwwardsLabel || 'Swiss Editorial Grid • Distant Sky'
   const archetypeCode = (themeConfig.styleArchetype || 'achromatic-ledger').toUpperCase()
+  const signatureLabel = themeConfig.interactiveTokens?.signatureLabel || themeConfig.archetypeLabel
+
+  const handleHeroPointerMove = (e) => {
+    const el = e.currentTarget
+    const rect = el.getBoundingClientRect()
+    el.style.setProperty('--spot-x', `${Math.round(e.clientX - rect.left)}px`)
+    el.style.setProperty('--spot-y', `${Math.round(e.clientY - rect.top)}px`)
+  }
+
+  const handleQuickSwitchTheme = (nextKey, event) => {
+    if (nextKey === personaKey) return
+    playUiChime('theme')
+    if (event?.currentTarget) fxBurst(event.currentTarget, 14)
+    runWithReveal(event, () => changePersona(nextKey))
+    if (isMusicBoxActive()) playOstTrack(getDefaultTrackForTheme(nextKey))
+  }
 
   return (
     <Box sx={{ mx: { xs: 2, md: 4 }, mt: 2.5, mb: 3 }}>
       <Box
+        className="chella-interactive-surface"
+        onMouseMove={handleHeroPointerMove}
         sx={{
           position: 'relative',
           borderRadius: '20px',
@@ -34,7 +59,8 @@ function AwwwardsWorkspaceHero({
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           border: `1px solid ${themeConfig.columnBorder}`,
-          boxShadow: '0 20px 52px rgba(0, 0, 0, 0.36)'
+          boxShadow: '0 22px 56px rgba(0, 0, 0, 0.38)',
+          transition: 'border-color 0.3s ease, box-shadow 0.3s ease'
         }}
       >
         {/* Top Swiss Editorial Index Hairline Bar */}
@@ -449,11 +475,95 @@ function AwwwardsWorkspaceHero({
                   <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: themeConfig.accentColor, mt: 0.15 }}>
                     {archetypeCode}
                   </Typography>
+                  {signatureLabel && (
+                    <Typography variant="caption" sx={{ display: 'block', fontSize: '0.64rem', color: 'rgba(248, 250, 252, 0.72)' }}>
+                      {signatureLabel}
+                    </Typography>
+                  )}
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                   <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: themeConfig.accentColor }} />
                   <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: themeConfig.secondaryAccent }} />
                 </Box>
+              </Box>
+            </Box>
+
+            {/* 1-Click Interactive 7-Theme Studio Switcher Strip */}
+            <Box
+              sx={{
+                p: 1.15,
+                borderRadius: '12px',
+                bgcolor: 'rgba(15, 23, 42, 0.72)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 0.75,
+                flexWrap: 'wrap'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <PaletteOutlinedIcon sx={{ fontSize: 15, color: themeConfig.accentColor }} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", Consolas, monospace',
+                    fontSize: '0.62rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    color: 'rgba(248, 250, 252, 0.85)'
+                  }}
+                >
+                  7 THEMES
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.55, flexWrap: 'wrap' }}>
+                {PRIMARY_THEMES_LIST.map((item) => {
+                  const isActive = item.id === personaKey
+                  return (
+                    <Tooltip key={item.id} title={`${item.chapterIndex} • ${item.name} (${item.interactiveTokens?.signatureLabel || item.element})`}>
+                      <Box
+                        component="button"
+                        type="button"
+                        onClick={(e) => handleQuickSwitchTheme(item.id, e)}
+                        sx={{
+                          px: 0.75,
+                          py: 0.3,
+                          borderRadius: '999px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.45,
+                          fontFamily: '"JetBrains Mono", Consolas, monospace',
+                          fontSize: '0.62rem',
+                          fontWeight: 800,
+                          color: isActive ? '#0f172a' : '#f8fafc',
+                          bgcolor: isActive ? item.accentColor : 'rgba(255, 255, 255, 0.08)',
+                          border: `1px solid ${isActive ? item.accentColor : 'rgba(255, 255, 255, 0.18)'}`,
+                          transition: 'transform 0.2s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), background-color 0.2s ease',
+                          '&:hover': {
+                            transform: 'translateY(-1.5px) scale(1.04)',
+                            borderColor: item.accentColor
+                          },
+                          '&:active': {
+                            transform: 'scale(0.96)'
+                          }
+                        }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: '50%',
+                            bgcolor: isActive ? '#0f172a' : item.accentColor
+                          }}
+                        />
+                        {item.chapterIndex}
+                      </Box>
+                    </Tooltip>
+                  )
+                })}
               </Box>
             </Box>
 

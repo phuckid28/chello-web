@@ -4,7 +4,7 @@ import { DEFAULT_FX_SETTINGS, normalizeFxSettings } from '~/fx/fxSettings'
 import { getRevealRadius } from '~/fx/themeReveal'
 import { buildBurst, capParticles, createParticle, getMotion, particleAlpha, shouldEmitTrail, stepParticle } from '~/fx/particles'
 import { buildCursorValues } from '~/fx/cursorArt'
-import { PRIMARY_THEME_KEYS } from '~/utils/animeTheme'
+import { ANIME_THEMES, PRIMARY_THEME_KEYS, getThemeInteractiveTokens } from '~/utils/animeTheme'
 
 describe('route transitions', () => {
   it('maps routes to a tone', () => {
@@ -79,5 +79,32 @@ describe('cursor art', () => {
       expect(pointerCursor).toMatch(/, pointer$/)
       expect(defaultCursor).not.toBe(pointerCursor)
     })
+  })
+})
+
+describe('7-theme interactive surface & motion tokens', () => {
+  it('defines complete interactiveTokens and motionProfile for all 7 themes', () => {
+    expect(PRIMARY_THEME_KEYS).toHaveLength(7)
+    PRIMARY_THEME_KEYS.forEach(key => {
+      const theme = ANIME_THEMES[key]
+      expect(theme).toBeDefined()
+      const tokens = getThemeInteractiveTokens(key)
+      expect(tokens.springCurve).toMatch(/cubic-bezier/)
+      expect(tokens.cardHoverLift).toMatch(/px$/)
+      expect(Number(tokens.cardActiveScale)).toBeGreaterThan(0.95)
+      expect(Number(tokens.cardActiveScale)).toBeLessThan(1)
+      expect(tokens.spotlightColor).toMatch(/^rgba\(/)
+      expect(tokens.cardHoverShadowLight.length).toBeGreaterThan(10)
+      expect(tokens.cardHoverShadowDark.length).toBeGreaterThan(10)
+      expect(tokens.accentGradient).toMatch(/^linear-gradient\(/)
+      expect(tokens.glassBlur).toMatch(/px$/)
+      expect(tokens.signatureLabel.length).toBeGreaterThan(5)
+    })
+  })
+
+  it('falls back safely when given an unknown theme key', () => {
+    const fallback = getThemeInteractiveTokens('non-existent-theme')
+    expect(fallback.springCurve).toMatch(/cubic-bezier/)
+    expect(fallback.accentGradient).toMatch(/^linear-gradient\(/)
   })
 })

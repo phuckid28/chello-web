@@ -63,9 +63,55 @@ const FX_STYLES = {
     '100%': { transform: 'scaleX(1)', opacity: 0 }
   },
 
-  // ---------- Card micro-interactions ----------
+  // ---------- Card micro-interactions & interactive spotlight ----------
   '@keyframes fxBarGrow': { from: { transform: 'scaleY(0.1)', opacity: 0 }, to: { transform: 'scaleY(1)', opacity: 1 } },
   '@keyframes fxPop': { '0%': { transform: 'scale(1)' }, '40%': { transform: 'scale(1.18)' }, '100%': { transform: 'scale(1)' } },
+  '@keyframes fxBlurBridgeIn': {
+    '0%': { opacity: 0, filter: 'blur(3px)', transform: 'translateY(6px) scale(0.985)' },
+    '100%': { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0) scale(1)' }
+  },
+
+  '.chella-interactive-surface': {
+    position: 'relative',
+    isolation: 'isolate',
+    transition: 'transform 0.24s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), box-shadow 0.24s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), border-color 0.2s ease'
+  },
+  '.chella-interactive-surface::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 'inherit',
+    pointerEvents: 'none',
+    opacity: 0,
+    transition: 'opacity 0.28s ease',
+    background: 'radial-gradient(280px circle at var(--spot-x, 50%) var(--spot-y, 30%), var(--chella-spotlight-color, rgba(56, 189, 248, 0.14)), transparent 75%)'
+  },
+  '.chella-interactive-surface:hover::after': {
+    opacity: 1
+  },
+  '.chella-blur-enter': {
+    animation: 'fxBlurBridgeIn 0.26s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)) both'
+  },
+
+  // ---------- 7-Archetype Distinctive Surface Signatures ----------
+  'html[data-chella-archetype="data-terminal"] .chella-kanban-column': {
+    borderTop: '2px solid var(--fx-accent, #e5c058)'
+  },
+  'html[data-chella-archetype="framed-sheet"] .chella-kanban-column': {
+    backdropFilter: 'blur(var(--chella-glass-blur, 13px))'
+  },
+  'html[data-chella-archetype="true-black-flat"] .chella-kanban-column': {
+    boxShadow: '0 8px 28px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(167, 139, 250, 0.22)'
+  },
+  'html[data-chella-archetype="pastel-consumer"] .chella-kanban-column': {
+    borderWidth: '1.5px'
+  },
+  'html[data-chella-archetype="accent-ladder"] .chella-kanban-column': {
+    borderTop: '2.5px solid var(--fx-accent, #0284c7)'
+  },
+  'html[data-chella-archetype="editorial-greeting"] .chella-kanban-column': {
+    borderLeft: '2.5px solid var(--fx-accent, #10b981)'
+  },
 
   // ---------- Theme reveal (View Transitions API) ----------
   '::view-transition-old(root), ::view-transition-new(root)': {

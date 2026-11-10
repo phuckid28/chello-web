@@ -67,6 +67,17 @@ export const ANIME_THEMES = {
       cardRadius: '10px',
       controlRadius: '8px'
     },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      cardHoverLift: '-2.5px',
+      cardActiveScale: '0.985',
+      spotlightColor: 'rgba(229, 192, 88, 0.16)',
+      cardHoverShadowLight: '0 12px 28px -6px rgba(180, 83, 9, 0.18), 0 0 0 1px rgba(229, 192, 88, 0.50)',
+      cardHoverShadowDark: '0 14px 34px -6px rgba(2, 6, 23, 0.78), 0 0 20px rgba(229, 192, 88, 0.24)',
+      accentGradient: 'linear-gradient(135deg, #e5c058 0%, #818cf8 55%, #c084fc 100%)',
+      glassBlur: '14px',
+      signatureLabel: 'Deep-Space Telemetry • Astral Gold Radar Glow'
+    },
     particleSymbols: ['✦', '🌌', '♈', '♌', '♎', '♓', '⭐']
   },
   'wind-chime': {
@@ -104,6 +115,17 @@ export const ANIME_THEMES = {
       raisedDark: '#0f2536',
       cardRadius: '12px',
       controlRadius: '9px'
+    },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      cardHoverLift: '-2.5px',
+      cardActiveScale: '0.984',
+      spotlightColor: 'rgba(14, 165, 233, 0.14)',
+      cardHoverShadowLight: '0 12px 28px -8px rgba(14, 165, 233, 0.22), 0 0 0 1px rgba(14, 165, 233, 0.45)',
+      cardHoverShadowDark: '0 14px 32px -6px rgba(4, 47, 46, 0.70), 0 0 18px rgba(14, 165, 233, 0.22)',
+      accentGradient: 'linear-gradient(135deg, #0ea5e9 0%, #14b8a6 55%, #10b981 100%)',
+      glassBlur: '13px',
+      signatureLabel: 'Engawa Breeze • Kinetic Framed Sheet'
     },
     particleSymbols: ['🎐', '🍃', '☁️', '🌿', '✧']
   },
@@ -143,6 +165,17 @@ export const ANIME_THEMES = {
       cardRadius: '11px',
       controlRadius: '8px'
     },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      cardHoverLift: '-2.5px',
+      cardActiveScale: '0.985',
+      spotlightColor: 'rgba(56, 189, 248, 0.15)',
+      cardHoverShadowLight: '0 12px 26px -6px rgba(14, 165, 233, 0.20), 0 0 0 1px rgba(56, 189, 248, 0.48)',
+      cardHoverShadowDark: '0 14px 32px -6px rgba(2, 6, 23, 0.76), 0 0 18px rgba(56, 189, 248, 0.22)',
+      accentGradient: 'linear-gradient(135deg, #38bdf8 0%, #60a5fa 50%, #ec4899 100%)',
+      glassBlur: '14px',
+      signatureLabel: 'Swiss Horizon Ledger • Crisp Specular Hairlines'
+    },
     particleSymbols: ['🕊️', '☁️', '🐰', '🎀', '✦']
   },
   'sora-twilight': {
@@ -180,6 +213,17 @@ export const ANIME_THEMES = {
       raisedDark: '#12151e',
       cardRadius: '10px',
       controlRadius: '8px'
+    },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      cardHoverLift: '-2px',
+      cardActiveScale: '0.986',
+      spotlightColor: 'rgba(167, 139, 250, 0.16)',
+      cardHoverShadowLight: '0 12px 26px -6px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(167, 139, 250, 0.48)',
+      cardHoverShadowDark: '0 14px 34px -6px rgba(0, 0, 0, 0.85), 0 0 20px rgba(167, 139, 250, 0.24)',
+      accentGradient: 'linear-gradient(135deg, #a78bfa 0%, #f472b6 55%, #818cf8 100%)',
+      glassBlur: '16px',
+      signatureLabel: 'OLED Twilight Ribbon • Violet-Silver Specular Rim'
     },
     particleSymbols: ['🎀', '🌙', '🐰', '✧', '🕊️']
   },
@@ -219,6 +263,17 @@ export const ANIME_THEMES = {
       cardRadius: '14px',
       controlRadius: '10px'
     },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      cardHoverLift: '-3px',
+      cardActiveScale: '0.978',
+      spotlightColor: 'rgba(236, 72, 153, 0.16)',
+      cardHoverShadowLight: '0 14px 30px -8px rgba(219, 39, 119, 0.22), 0 0 0 1.5px rgba(236, 72, 153, 0.50)',
+      cardHoverShadowDark: '0 16px 36px -6px rgba(15, 7, 28, 0.78), 0 0 22px rgba(236, 72, 153, 0.26)',
+      accentGradient: 'linear-gradient(135deg, #ec4899 0%, #c084fc 55%, #38bdf8 100%)',
+      glassBlur: '16px',
+      signatureLabel: 'Tactile Plush Spring • Bouncy Usagi Cushion'
+    },
     particleSymbols: ['🐰', '🎀', '🌸', '✦', '🍬']
   },
   furina: {
@@ -256,6 +311,17 @@ export const ANIME_THEMES = {
       raisedDark: '#0f223d',
       cardRadius: '12px',
       controlRadius: '9px'
+    },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      cardHoverLift: '-2.5px',
+      cardActiveScale: '0.984',
+      spotlightColor: 'rgba(56, 189, 248, 0.16)',
+      cardHoverShadowLight: '0 12px 28px -6px rgba(2, 132, 199, 0.22), 0 0 0 1px rgba(56, 189, 248, 0.52)',
+      cardHoverShadowDark: '0 16px 36px -6px rgba(2, 12, 27, 0.82), 0 0 22px rgba(56, 189, 248, 0.25)',
+      accentGradient: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 55%, #fbbf24 100%)',
+      glassBlur: '16px',
+      signatureLabel: 'Grand Opera Hydro • Sapphire & Gold Stage Spotlight'
     },
     particleSymbols: ['💧', '🎩', '🍰', '✨', '🌊']
   },
@@ -295,11 +361,28 @@ export const ANIME_THEMES = {
       cardRadius: '12px',
       controlRadius: '9px'
     },
+    interactiveTokens: {
+      springCurve: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      cardHoverLift: '-2.5px',
+      cardActiveScale: '0.984',
+      spotlightColor: 'rgba(16, 185, 129, 0.15)',
+      cardHoverShadowLight: '0 12px 28px -6px rgba(16, 185, 129, 0.20), 0 0 0 1px rgba(16, 185, 129, 0.48)',
+      cardHoverShadowDark: '0 14px 34px -6px rgba(5, 22, 14, 0.78), 0 0 20px rgba(16, 185, 129, 0.24)',
+      accentGradient: 'linear-gradient(135deg, #10b981 0%, #84cc16 55%, #2dd4bf 100%)',
+      glassBlur: '14px',
+      signatureLabel: 'Sumeru Sanctuary • Organic Botanical Dew Glow'
+    },
     particleSymbols: ['🌿', '🍀', '✨', '📖', '🌱']
   }
 }
 
 export const PRIMARY_THEMES_LIST = PRIMARY_THEME_KEYS.map(key => ANIME_THEMES[key])
+
+export const getThemeInteractiveTokens = (themeKey) => {
+  const normalized = PRIMARY_THEME_KEYS.includes(themeKey) ? themeKey : 'sora-sky'
+  const theme = ANIME_THEMES[normalized] || ANIME_THEMES['sora-sky']
+  return theme.interactiveTokens || ANIME_THEMES['sora-sky'].interactiveTokens
+}
 
 export const ELEMENTAL_LABELS = [
   { id: 'cosmos', title: '🌌 Astral Zodiac • Core Architecture', color: '#8b5cf6' },

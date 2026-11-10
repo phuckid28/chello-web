@@ -152,20 +152,20 @@ function Columns({ column }) {
           maxWidth: '304px',
           overflow: 'hidden',
           bgcolor: (theme) => (theme.palette.mode === 'dark'
-            ? '#121826'
-            : '#f1f5f9'),
+            ? 'var(--chella-surface-dark, #121826)'
+            : 'var(--chella-surface-light, #f1f5f9)'),
           border: (theme) => (theme.palette.mode === 'dark'
-            ? '1px solid rgba(148, 163, 184, 0.16)'
-            : '1px solid rgba(15, 23, 42, 0.09)'),
+            ? '1px solid var(--chella-border, rgba(148, 163, 184, 0.18))'
+            : '1px solid var(--chella-border, rgba(15, 23, 42, 0.10))'),
           boxShadow: (theme) => (theme.palette.mode === 'dark'
-            ? '0 4px 16px rgba(0, 0, 0, 0.28)'
-            : '0 1px 4px rgba(15, 23, 42, 0.04)'),
+            ? '0 6px 20px rgba(0, 0, 0, 0.34)'
+            : '0 2px 8px rgba(15, 23, 42, 0.05)'),
           ml: 1.75,
           borderRadius: 'var(--chella-radius-card, 12px)',
           height: 'fit-content',
           maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - 66px)`,
-          animation: 'chelloFadeSlideUp 0.24s cubic-bezier(0.22, 1, 0.36, 1)',
-          transition: 'border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1)',
+          animation: 'chelloFadeSlideUp 0.26s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1))',
+          transition: 'border-color 0.22s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), box-shadow 0.22s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1))',
           '&:hover': {
             borderColor: 'var(--fx-accent, #38bdf8)'
           }

@@ -58,161 +58,12 @@ import { fxCelebrate } from '~/fx/fxEvents'
 import { setBoardThemeOverride } from '~/fx/fxThemeStore'
 import { playUiChime } from '~/utils/soundEffects'
 import { toast } from 'react-toastify'
-
-const buildSimulationModel = (card, columnTitle = 'Usage Limit') => {
-  const crCode = card?.crCode || 'BNPL-945'
-  const title = card?.title || 'Usage Limit - Monthly 1 time synchronized update for user'
-  const isUsageLimit = /usage\s*limit|monthly|sync/i.test(title) || /945/.test(crCode)
-
-  const steps = [
-    {
-      id: 'step-1',
-      stage: '1. Trigger & Actor',
-      actor: 'User / Client App',
-      component: 'Client & Edge Trigger',
-      summary: isUsageLimit
-        ? 'User opens Usage Limit screen or triggers monthly synchronized update'
-        : `Client initiates request for [${crCode}]`,
-      happy: {
-        status: 'PASS',
-        input: `{ "ticket": "${crCode}", "userId": "usr_88412", "requestedMonth": "2026-10", "action": "SYNC_MONTHLY_LIMIT" }`,
-        rule: 'Verify authenticated session & valid user profile state',
-        mutation: 'Session validated • Request correlationId generated',
-        output: 'Forward to API Gateway (Latency: 12ms)'
-      },
-      edge: {
-        status: 'PASS',
-        input: `{ "ticket": "${crCode}", "userId": "usr_88412", "requestedMonth": "2026-10", "attempt": 2 }`,
-        rule: 'User initiates 2nd sync request within the same calendar month',
-        mutation: 'Request accepted for quota check',
-        output: 'Forward to API Gateway'
-      },
-      error: {
-        status: 'PASS',
-        input: `{ "ticket": "${crCode}", "userId": "usr_88412", "concurrentRequests": 2 }`,
-        rule: 'Duplicate parallel requests sent within 50ms',
-        mutation: 'Both requests reach gateway simultaneously',
-        output: 'Forward to Idempotency Guard'
-      }
-    },
-    {
-      id: 'step-2',
-      stage: '2. Gateway & Lock',
-      actor: 'API Gateway / Redis Lock',
-      component: 'Idempotency & Schema Guard',
-      summary: 'Acquire distributed lock & validate request payload parameters',
-      happy: {
-        status: 'PASS',
-        input: 'Lock Key: redis://usage_limit_sync:usr_88412:2026-10 (TTL: 30s)',
-        rule: 'BR-02: Acquire atomic SETNX lock to prevent race conditions',
-        mutation: 'Lock acquired (SETNX = 1)',
-        output: 'Proceed to Business Rule Engine'
-      },
-      edge: {
-        status: 'PASS',
-        input: 'Lock Key: redis://usage_limit_sync:usr_88412:2026-10',
-        rule: 'Schema & lock check passed',
-        mutation: 'Lock acquired for quota inspection',
-        output: 'Proceed to Business Rule Engine'
-      },
-      error: {
-        status: 'WARN',
-        input: 'Lock Key: redis://usage_limit_sync:usr_88412:2026-10 (Already Locked!)',
-        rule: 'BR-02: Reject parallel duplicate execution while lock is active',
-        mutation: '2nd concurrent thread blocked by Redis lock',
-        output: '429 Too Many Concurrent Requests (Safe Abort)'
-      }
-    },
-    {
-      id: 'step-3',
-      stage: '3. Business Rule Engine',
-      actor: `${columnTitle} Service`,
-      component: 'Quota & Policy Evaluator',
-      summary: isUsageLimit
-        ? 'Check monthly 1-time synchronization quota (last_sync_month vs current_month)'
-        : 'Evaluate core business rules & eligibility conditions',
-      happy: {
-        status: 'PASS',
-        input: '{ "last_sync_month": "2026-09", "current_month": "2026-10", "monthly_quota": 1, "used_this_month": 0 }',
-        rule: 'BR-01: User is allowed maximum 1 synchronized update per calendar month',
-        mutation: 'Quota check PASSED (0/1 used in 2026-10)',
-        output: 'Authorize Core DB Synchronization'
-      },
-      edge: {
-        status: 'BLOCKED',
-        input: '{ "last_sync_month": "2026-10", "current_month": "2026-10", "monthly_quota": 1, "used_this_month": 1 }',
-        rule: 'BR-01: Reject if user already performed 1 synchronized update in current month',
-        mutation: 'Execution halted • No DB write performed',
-        output: '409 Conflict: MONTHLY_SYNC_LIMIT_REACHED'
-      },
-      error: {
-        status: 'PASS',
-        input: '{ "last_sync_month": "2026-09", "current_month": "2026-10" }',
-        rule: 'Primary thread passes business rule check',
-        mutation: 'Proceeding to downstream database commit',
-        output: 'Invoke Core Ledger Sync'
-      }
-    },
-    {
-      id: 'step-4',
-      stage: '4. Core DB & State Sync',
-      actor: 'Core Database / Ledger',
-      component: 'Transactional Persistence',
-      summary: 'Persist updated usage limit & mark monthly sync timestamp atomically',
-      happy: {
-        status: 'PASS',
-        input: 'UPDATE user_usage_limits SET limit_amount = 15000000, last_sync_month = "2026-10", sync_count = sync_count + 1',
-        rule: 'BR-03: Atomic transaction across Profile & Usage Limit tables',
-        mutation: 'Committed row v42 • last_sync_month = "2026-10"',
-        output: 'DB Commit OK (18ms)'
-      },
-      edge: {
-        status: 'SKIPPED',
-        input: 'Skipped due to BR-01 Quota Block at Stage 3',
-        rule: 'Database remains untouched on quota violation',
-        mutation: 'Zero state mutation (Safe)',
-        output: 'Return cached current limit state'
-      },
-      error: {
-        status: 'FAIL',
-        input: 'Core DB Connection Timeout after 3000ms',
-        rule: 'Rollback transaction & release Redis lock so user can retry',
-        mutation: 'Transaction ROLLED BACK • last_sync_month remains "2026-09"',
-        output: '503 Service Unavailable (Retry-After: 5s)'
-      }
-    },
-    {
-      id: 'step-5',
-      stage: '5. Audit & Client Output',
-      actor: 'Audit Log & UI Response',
-      component: 'Telemetry & Client State',
-      summary: 'Record audit trail & return synchronized state to user interface',
-      happy: {
-        status: 'PASS',
-        input: '{ "auditEvent": "USAGE_LIMIT_SYNCED", "status": 200, "nextEligibleSync": "2026-11-01" }',
-        rule: 'Emit audit log & refresh client usage limit badge',
-        mutation: 'UI displays updated limit + "Synced for Oct 2026" badge',
-        output: '200 OK — Monthly Synchronized Update Complete!'
-      },
-      edge: {
-        status: 'BLOCKED',
-        input: '{ "auditEvent": "USAGE_LIMIT_SYNC_REJECTED", "reason": "MONTHLY_QUOTA_EXCEEDED" }',
-        rule: 'Display friendly notice: Next sync available on 01/11/2026',
-        mutation: 'Audit logged as blocked attempt',
-        output: '409 Conflict — Handled Gracefully'
-      },
-      error: {
-        status: 'FAIL',
-        input: '{ "auditEvent": "USAGE_LIMIT_SYNC_TIMEOUT_ROLLBACK", "lockReleased": true }',
-        rule: 'Quota NOT consumed on system error; user can retry safely',
-        mutation: 'Alert sent to monitoring channel',
-        output: '503 Error — Safe Rollback Verified'
-      }
-    }
-  ]
-
-  return steps
-}
+import {
+  SIMULATION_PRESETS,
+  detectSimulationPreset,
+  getSimulationPresetMeta,
+  buildSimulationModel
+} from './simulationPresets'
 
 function CrStudio() {
   const { boardId, cardId } = useParams()
@@ -223,6 +74,7 @@ function CrStudio() {
   const { t, tPrimary, formatMessage } = useTranslation()
 
   const [scenario, setScenario] = useState('happy') // 'happy' | 'edge' | 'error'
+  const [presetOverride, setPresetOverride] = useState(null)
   const [activeStepIdx, setActiveStepIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
 
@@ -264,12 +116,23 @@ function CrStudio() {
       setDevProgressVal(getCardDevProgress(card))
       setResourceUsedVal(getCardResourceUsed(card))
       setNoteVal(card.note || '')
+      setPresetOverride(null)
+      setActiveStepIdx(0)
     }
   }, [card])
 
+  const activePresetId = useMemo(
+    () => presetOverride || detectSimulationPreset(card, columnTitle),
+    [presetOverride, card, columnTitle]
+  )
+  const activePresetMeta = useMemo(
+    () => getSimulationPresetMeta(activePresetId),
+    [activePresetId]
+  )
+
   const simulationSteps = useMemo(
-    () => buildSimulationModel(card, columnTitle),
-    [card, columnTitle]
+    () => buildSimulationModel(card, columnTitle, activePresetId),
+    [card, columnTitle, activePresetId]
   )
 
   useEffect(() => {
@@ -491,7 +354,7 @@ function CrStudio() {
                 />
                 <Chip
                   icon={<WarningAmberRoundedIcon />}
-                  label="2. Quota / Rule Block (409)"
+                  label="2. Quota / Rule Block (409/429)"
                   onClick={() => { setScenario('edge'); playUiChime('sparkle') }}
                   color={scenario === 'edge' ? 'warning' : 'default'}
                   variant={scenario === 'edge' ? 'filled' : 'outlined'}
@@ -500,13 +363,86 @@ function CrStudio() {
                 />
                 <Chip
                   icon={<ErrorOutlineRoundedIcon />}
-                  label="3. Race / Timeout Rollback (503)"
+                  label="3. Race / Breaker / DLQ (503)"
                   onClick={() => { setScenario('error'); playUiChime('sparkle') }}
                   color={scenario === 'error' ? 'error' : 'default'}
                   variant={scenario === 'error' ? 'filled' : 'outlined'}
                   clickable
                   sx={{ fontWeight: 800 }}
                 />
+              </Stack>
+            </Box>
+
+            {/* ByteByteGo System-Design-101 Pattern Preset Selector */}
+            <Box
+              sx={{
+                p: 1.35,
+                mb: 2,
+                borderRadius: '12px',
+                bgcolor: 'rgba(15, 23, 42, 0.62)',
+                border: `1px solid ${themeConfig.columnBorder}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+                  <Chip
+                    size="small"
+                    label="SYSTEM DESIGN 101"
+                    sx={{
+                      height: 20,
+                      fontFamily: '"JetBrains Mono", Consolas, monospace',
+                      fontSize: '0.62rem',
+                      fontWeight: 900,
+                      color: '#0f172a',
+                      bgcolor: themeConfig.accentColor
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ color: '#f8fafc', fontWeight: 800 }}>
+                    {activePresetMeta.patternName}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={activePresetMeta.badge}
+                    variant="outlined"
+                    sx={{ height: 20, fontSize: '0.64rem', fontWeight: 700, color: '#bae6fd', borderColor: 'rgba(56, 189, 248, 0.45)' }}
+                  />
+                </Stack>
+                <Typography variant="caption" sx={{ color: 'rgba(248, 250, 252, 0.75)' }}>
+                  {activePresetMeta.description}
+                </Typography>
+              </Box>
+
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                {SIMULATION_PRESETS.map((preset) => {
+                  const selected = preset.id === activePresetId
+                  return (
+                    <Chip
+                      key={preset.id}
+                      size="small"
+                      label={preset.label}
+                      clickable
+                      onClick={() => {
+                        playUiChime('sparkle')
+                        setIsPlaying(false)
+                        setPresetOverride(preset.id)
+                        setActiveStepIdx(0)
+                      }}
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: '0.7rem',
+                        color: selected ? '#0f172a' : '#e2e8f0',
+                        bgcolor: selected ? themeConfig.accentColor : 'rgba(255, 255, 255, 0.08)',
+                        border: `1px solid ${selected ? themeConfig.accentColor : 'rgba(148, 163, 184, 0.28)'}`,
+                        '&:hover': {
+                          bgcolor: selected ? themeConfig.accentColor : 'rgba(255, 255, 255, 0.16)'
+                        }
+                      }}
+                    />
+                  )
+                })}
               </Stack>
             </Box>
 

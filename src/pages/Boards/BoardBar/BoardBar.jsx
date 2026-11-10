@@ -23,6 +23,7 @@ import InviteBoardUser from './InviteBoardUser'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
 import ImportMarkdownModal from '~/components/Modal/ImportMarkdownModal'
 import SprintReportDialog from '~/components/Modal/SprintReportDialog'
+import SprintRecapModal from '~/components/Modal/SprintRecapModal'
 import { runWithReveal } from '~/fx/themeReveal'
 import { fxBurst } from '~/fx/fxEvents'
 import ViewSwitcher from './parts/ViewSwitcher'
@@ -80,6 +81,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
   const [anchors, setAnchors] = useState({})
   const [openImportMdModal, setOpenImportMdModal] = useState(false)
   const [openReport, setOpenReport] = useState(false)
+  const [openRecapDeck, setOpenRecapDeck] = useState(false)
   const [openActivity, setOpenActivity] = useState(false)
   const toolsChipRef = useRef(null)
 
@@ -170,6 +172,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
     }}>
       <ImportMarkdownModal open={openImportMdModal} onClose={() => setOpenImportMdModal(false)} accentColor={themeConfig.accentColor} />
       <SprintReportDialog open={openReport} onClose={() => setOpenReport(false)} board={board} />
+      <SprintRecapModal open={openRecapDeck} onClose={() => setOpenRecapDeck(false)} board={board} />
       <BoardActivityDrawer open={openActivity} onClose={() => setOpenActivity(false)} boardId={board?._id} />
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0, minWidth: 0 }}>
@@ -337,6 +340,7 @@ function BoardBar({ board, filters, setFilters, filterStats, boardViewMode = 'ov
         anchorEl={anchors.tools}
         onClose={closeAnchor('tools')}
         onOpenHub={openKnowledgeHub}
+        onOpenRecapDeck={() => { playUiChime('sparkle'); setOpenRecapDeck(true) }}
         onReport={() => setOpenReport(true)}
         onImport={() => setOpenImportMdModal(true)}
         onExportExcel={handleExport(exportSprintCrsToExcel, 'Excel')}

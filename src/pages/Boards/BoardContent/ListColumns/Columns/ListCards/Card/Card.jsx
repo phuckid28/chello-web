@@ -109,19 +109,30 @@ function Card({ card }) {
   const isSeededTemplateCover = card?.crCode === 'BNPL-945' && TEMPLATE_DEFAULT_COVER_KEYS.has(card?.cover)
   const coverUrl = isSeededTemplateCover ? themeConfig.heroImage : resolveCardCoverUrl(card?.cover)
 
+  const handleCardPointerMove = (e) => {
+    const el = e.currentTarget
+    const rect = el.getBoundingClientRect()
+    el.style.setProperty('--spot-x', `${Math.round(e.clientX - rect.left)}px`)
+    el.style.setProperty('--spot-y', `${Math.round(e.clientY - rect.top)}px`)
+  }
+
   return (
     <MuiCard
+      className="chella-interactive-surface"
       onClick={setActiveCard}
+      onMouseMove={handleCardPointerMove}
       ref={setNodeRef} style={dndKitCardStyle} {...attributes} {...listeners}
       sx={{
         cursor: 'pointer',
         borderRadius: 'var(--chella-radius-card, 10px)',
-        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#171f30' : '#ffffff'),
+        bgcolor: (theme) => (theme.palette.mode === 'dark'
+          ? 'var(--chella-raised-dark, #171f30)'
+          : 'var(--chella-raised-light, #ffffff)'),
         boxShadow: card?.FE_PlaceholderCard
           ? 'none'
           : (theme) => (theme.palette.mode === 'dark'
-            ? '0 1px 3px rgba(0, 0, 0, 0.35)'
-            : '0 1px 2px rgba(15, 23, 42, 0.06)'),
+            ? '0 2px 6px rgba(0, 0, 0, 0.38)'
+            : '0 1px 3px rgba(15, 23, 42, 0.06)'),
         overflow: 'hidden',
         height: card?.FE_PlaceholderCard ? '0px' : 'unset',
         pointerEvents: card?.FE_PlaceholderCard ? 'none' : 'unset',
@@ -130,19 +141,24 @@ function Card({ card }) {
           : deadlineInfo.code === 'overdue'
             ? '1.5px solid rgba(239, 68, 68, 0.65)'
             : (theme) => (theme.palette.mode === 'dark'
-              ? '1px solid rgba(148, 163, 184, 0.16)'
+              ? '1px solid var(--chella-border, rgba(148, 163, 184, 0.18))'
               : '1px solid rgba(15, 23, 42, 0.09)'),
-        transition: 'transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s ease',
+        transition: 'transform 0.24s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), box-shadow 0.24s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), border-color 0.2s ease',
         '& .card-cover-img': {
-          transition: 'transform 0.36s cubic-bezier(0.22, 1, 0.36, 1)'
+          transition: 'transform 0.42s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1))'
         },
         '&:hover': {
-          transform: 'translateY(-1.5px)',
+          transform: 'translateY(var(--chella-card-lift, -2.5px))',
           borderColor: 'var(--fx-accent, #38bdf8)',
-          boxShadow: '0 6px 16px -4px rgba(15, 23, 42, 0.18)',
+          boxShadow: (theme) => (theme.palette.mode === 'dark'
+            ? 'var(--chella-card-hover-shadow-dark, 0 12px 28px -6px rgba(2, 6, 23, 0.72))'
+            : 'var(--chella-card-hover-shadow-light, 0 10px 24px -6px rgba(15, 23, 42, 0.16))'),
           '& .card-cover-img': {
-            transform: 'scale(1.03)'
+            transform: 'scale(1.035)'
           }
+        },
+        '&:active': {
+          transform: 'scale(var(--chella-card-active-scale, 0.985))'
         }
       }}
     >

@@ -68,13 +68,13 @@ const theme = extendTheme({
           letterSpacing: '-0.005em',
           borderRadius: 'var(--chella-radius-control, 8px)',
           borderWidth: '1px',
-          transition: `transform 0.18s ${CHELLA_EASE_OUT}, background-color 0.18s ${CHELLA_EASE_OUT}, border-color 0.18s ${CHELLA_EASE_OUT}, box-shadow 0.18s ${CHELLA_EASE_OUT}`,
+          transition: `transform 0.2s var(--chella-spring-curve, ${CHELLA_EASE_OUT}), background-color 0.18s ${CHELLA_EASE_OUT}, border-color 0.18s ${CHELLA_EASE_OUT}, box-shadow 0.2s var(--chella-spring-curve, ${CHELLA_EASE_OUT})`,
           '&:hover': {
             borderWidth: '1px',
             transform: 'translateY(-1px)'
           },
           '&:active': {
-            transform: 'translateY(0px) scale(0.985)'
+            transform: 'translateY(0px) scale(var(--chella-card-active-scale, 0.985))'
           }
         }
       }
@@ -83,7 +83,30 @@ const theme = extendTheme({
       styleOverrides: {
         root: {
           fontVariantNumeric: 'tabular-nums',
-          letterSpacing: '-0.005em'
+          letterSpacing: '-0.005em',
+          transition: `transform 0.18s var(--chella-spring-curve, ${CHELLA_EASE_OUT}), background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease`,
+          '&.MuiChip-clickable:hover': {
+            transform: 'translateY(-1px)'
+          },
+          '&.MuiChip-clickable:active': {
+            transform: 'scale(0.97)'
+          }
+        }
+      }
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: '16px',
+          animation: `chelloFadeSlideUp 0.26s var(--chella-spring-curve, ${CHELLA_EASE_OUT})`
+        }
+      }
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          borderRadius: '12px',
+          backdropFilter: 'blur(var(--chella-glass-blur, 14px))'
         }
       }
     },

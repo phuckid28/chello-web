@@ -18,11 +18,14 @@ import Stepper from '@mui/material/Stepper'
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import { toast } from 'react-toastify'
+import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded'
 import PageShell from '~/components/Layout/PageShell'
 import { surfaceSx, MONO_FONT } from '~/components/Layout/surface'
 import { useTranslation } from '~/customHooks/useTranslation'
 import { usePersonaTheme } from '~/customHooks/usePersonaTheme'
-import { PRIMARY_THEMES_LIST } from '~/utils/animeTheme'
+import { PRIMARY_THEMES_LIST, DEFAULT_SPRINT_TEMPLATE } from '~/utils/animeTheme'
+import { runWithReveal } from '~/fx/themeReveal'
+import { playUiChime } from '~/utils/soundEffects'
 import {
   ONBOARDING_STEPS,
   MAX_INVITE_EMAILS,
@@ -35,7 +38,12 @@ import {
 } from '~/utils/onboarding'
 import { selectCurrentUser, setCurrentUser } from '~/redux/user/userSlice'
 import { createWorkspace, selectWorkspace } from '~/redux/workspaces/workspacesSlice'
-import { updatePreferencesAPI, inviteToWorkspaceByEmailAPI, createWorkspaceInviteLinkAPI } from '~/apis'
+import {
+  updatePreferencesAPI,
+  inviteToWorkspaceByEmailAPI,
+  createWorkspaceInviteLinkAPI,
+  createNewBoardAPI
+} from '~/apis'
 import StepHeading from './StepHeading'
 import { optionCardSx, optionGridSx } from './onboardingStyles'
 
@@ -75,7 +83,7 @@ function OnboardingPage() {
     headingRef.current?.focus?.()
   }, [activeStep])
 
-  const completeOnboarding = async (nextSteps = stepsState) => {
+  const completeOnboarding = async (nextSteps = stepsState, targetPath = '/boards') => {
     setFinishing(true)
     const patch = buildOnboardingPatch(nextSteps, true)
     try {
@@ -86,7 +94,27 @@ function OnboardingPage() {
       toast.warning(tPrimary('onbSaveFailed'))
     } finally {
       setFinishing(false)
-      navigate('/boards')
+      navigate(targetPath)
+    }
+  }
+
+  // Minimum Path to Value (<30s): 1-click launch a full sample Sprint board with seeded BNPL-945/946/947 CRs & FRDs
+  const handleQuickLaunchSampleSprint = async () => {
+    setFinishing(true)
+    playUiChime('complete')
+    try {
+      const createdBoard = await createNewBoardAPI({
+        title: 'Sprint 01 • Quản lý CR & Đặc tả FRD',
+        description: DEFAULT_SPRINT_TEMPLATE.description,
+        type: 'public',
+        theme: personaKey,
+        useTemplate: true,
+        ...(createdWorkspace?._id ? { workspaceId: createdWorkspace._id } : {})
+      })
+      const targetUrl = createdBoard?._id ? `/boards/${createdBoard._id}` : '/boards?create=1'
+      await completeOnboarding({ ...stepsState, theme: true, language: true }, targetUrl)
+    } catch {
+      await completeOnboarding(stepsState, '/boards?create=1')
     }
   }
 
@@ -183,9 +211,22 @@ function OnboardingPage() {
       subtitle={tPrimary('onbSubtitle')}
       maxWidth={880}
       actions={
-        <Button variant='outlined' size='small' disabled={finishing} onClick={() => completeOnboarding(stepsState)} sx={{ fontWeight: 700 }}>
-          {tPrimary('onbSkipAll')}
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            variant='contained'
+            size='small'
+            color='secondary'
+            startIcon={<RocketLaunchRoundedIcon fontSize='small' />}
+            disabled={finishing}
+            onClick={handleQuickLaunchSampleSprint}
+            sx={{ fontWeight: 800 }}
+          >
+            ⚡ Khởi tạo nhanh Sprint mẫu (30s)
+          </Button>
+          <Button variant='outlined' size='small' disabled={finishing} onClick={() => completeOnboarding(stepsState)} sx={{ fontWeight: 700 }}>
+            {tPrimary('onbSkipAll')}
+          </Button>
+        </Box>
       }
     >
       <Box sx={{ mb: 3 }}>
@@ -214,8 +255,9 @@ function OnboardingPage() {
                     role='radio'
                     aria-checked={selected}
                     aria-label={formatMessage('onbThemeSelect', { name: theme.name })}
-                    onClick={() => {
-                      changePersona(theme.id)
+                    onClick={(e) => {
+                      playUiChime('theme')
+                      runWithReveal(e, () => changePersona(theme.id))
                       setStepsState((prev) => ({ ...prev, theme: true }))
                     }}
                     sx={{ ...optionCardSx(selected, theme.accentColor), p: 1.5, display: 'block' }}

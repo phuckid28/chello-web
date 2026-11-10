@@ -12,6 +12,7 @@ import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded'
 import RadarRoundedIcon from '@mui/icons-material/RadarRounded'
+import ArchitectureRoundedIcon from '@mui/icons-material/ArchitectureRounded'
 import { toast } from 'react-toastify'
 import { requestSubtaskSuggestions } from '~/utils/crAssistant'
 import { generateAiCrAssistanceAPI } from '~/apis'
@@ -33,7 +34,8 @@ const GEMINI_MODEL_OPTIONS = [
 const AI_MODE_BADGES = {
   subtasks: '✨ Generating Subtasks',
   frd: '📝 Drafting FRD Spec',
-  conflict_check: '🛡️ Scanning CR Conflicts'
+  conflict_check: '🛡️ Scanning CR Conflicts',
+  architecture_review: '🏛️ Reviewing System Architecture'
 }
 
 function CrAssistantPanel({
@@ -51,6 +53,7 @@ function CrAssistantPanel({
   const [aiBusyMode, setAiBusyMode] = useState('')
   const [aiMarkdown, setAiMarkdown] = useState('')
   const [aiMarkdownType, setAiMarkdownType] = useState('')
+  const [aiRubric, setAiRubric] = useState(null)
   const [lastModelInfo, setLastModelInfo] = useState(null)
 
   useEffect(() => {
@@ -58,6 +61,7 @@ function CrAssistantPanel({
     setSuggestions([])
     setAiMarkdown('')
     setAiMarkdownType('')
+    setAiRubric(null)
     setLastModelInfo(null)
   }, [card?._id])
 
@@ -92,11 +96,18 @@ function CrAssistantPanel({
     setSuggestions((prev) => prev.filter((s) => !addedKeys.has(s.key)))
   }
 
+  // Context-Optimization: structured compact index covering up to 20 sibling CRs (~40% fewer tokens)
   const buildBoardContextSummary = () => {
     return (boardCards || [])
-      .filter((c) => c._id !== card?._id)
-      .slice(0, 12)
-      .map((c) => `- [${c.crCode || 'CR'}] ${c.title} (Status: ${c.baStatus || 'Processing'})`)
+      .filter((c) => c._id !== card?._id && !c.FE_PlaceholderCard)
+      .slice(0, 20)
+      .map((c) => {
+        const code = c.crCode || 'CR'
+        const status = c.baStatus || 'Processing'
+        const prio = c.priority ? `|${c.priority}` : ''
+        const links = c.linkedCardIds?.length ? `|links:${c.linkedCardIds.length}` : ''
+        return `[${code}] ${c.title} |${status}${prio}${links}`
+      })
       .join('\n')
   }
 
@@ -111,6 +122,7 @@ function CrAssistantPanel({
       durationMs: 3200
     })
     try {
+      const needsBoardContext = mode === 'conflict_check' || mode === 'architecture_review'
       const res = await generateAiCrAssistanceAPI({
         mode,
         crCode: card.crCode || 'CR-001',
@@ -120,7 +132,7 @@ function CrAssistantPanel({
         sprint: card.sprint || 'Current Sprint',
         lang,
         model: selectedModel,
-        boardContext: mode === 'conflict_check' ? buildBoardContextSummary() : ''
+        boardContext: needsBoardContext ? buildBoardContextSummary() : ''
       })
 
       setLastModelInfo({
@@ -140,6 +152,7 @@ function CrAssistantPanel({
       } else if (res.markdown) {
         setAiMarkdown(res.markdown)
         setAiMarkdownType(mode)
+        setAiRubric(res.rubric || null)
         toast.success(
           formatMessage(
             mode === 'frd' ? tPrimary('aiFrdDoneToast') : tPrimary('aiConflictDoneToast'),
@@ -272,6 +285,19 @@ function CrAssistantPanel({
             >
               {tPrimary('aiConflictCheckBtn')}
             </LoadingButton>
+
+            <LoadingButton
+              size="small"
+              variant="outlined"
+              color="info"
+              loading={aiBusyMode === 'architecture_review'}
+              loadingLabel="Đang đánh giá kiến trúc..."
+              startIcon={<ArchitectureRoundedIcon />}
+              onClick={(e) => handleRunGeminiAi('architecture_review', e)}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', whiteSpace: 'nowrap' }}
+            >
+              Architecture Review
+            </LoadingButton>
           </Stack>
 
           {aiMarkdown && (
@@ -285,11 +311,23 @@ function CrAssistantPanel({
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75, flexWrap: 'wrap', gap: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                  {aiMarkdownType === 'frd'
-                    ? tPrimary('aiFrdDraftLabel')
-                    : tPrimary('aiConflictReportLabel')}
-                </Typography>
+                <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                    {aiMarkdownType === 'frd'
+                      ? tPrimary('aiFrdDraftLabel')
+                      : aiMarkdownType === 'architecture_review'
+                        ? '🏛️ System Design 101 & Architecture Review'
+                        : tPrimary('aiConflictReportLabel')}
+                  </Typography>
+                  {aiRubric && (
+                    <Chip
+                      size="small"
+                      color={aiRubric.score >= 80 ? 'success' : aiRubric.score >= 60 ? 'warning' : 'error'}
+                      label={`Rubric: ${aiRubric.score}/100 (Grade ${aiRubric.grade})`}
+                      sx={{ height: 20, fontSize: '0.66rem', fontWeight: 800 }}
+                    />
+                  )}
+                </Stack>
                 <Stack direction="row" spacing={0.75}>
                   {onApplyMarkdownToDescription && (
                     <Button
@@ -311,7 +349,9 @@ function CrAssistantPanel({
                       onClick={() => {
                         const fileName = aiMarkdownType === 'frd'
                           ? `FRD_${card?.crCode || 'CR'}_Gemini.md`
-                          : `Conflict_Analysis_${card?.crCode || 'CR'}.md`
+                          : aiMarkdownType === 'architecture_review'
+                            ? `Architecture_Review_${card?.crCode || 'CR'}.md`
+                            : `Conflict_Analysis_${card?.crCode || 'CR'}.md`
                         onAttachMarkdownAsFrd(fileName, aiMarkdown)
                       }}
                       sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.74rem', py: 0.25 }}
@@ -322,13 +362,27 @@ function CrAssistantPanel({
                   <Button
                     size="small"
                     color="inherit"
-                    onClick={() => setAiMarkdown('')}
+                    onClick={() => { setAiMarkdown(''); setAiRubric(null) }}
                     sx={{ textTransform: 'none', fontSize: '0.74rem', py: 0.25 }}
                   >
                     {tPrimary('hideBtn')}
                   </Button>
                 </Stack>
               </Box>
+              {aiRubric?.dimensions?.length > 0 && (
+                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 0.85 }}>
+                  {aiRubric.dimensions.map((dim) => (
+                    <Chip
+                      key={dim.key}
+                      size="small"
+                      variant="outlined"
+                      color={dim.passed ? 'success' : 'warning'}
+                      label={`${dim.passed ? '✓' : '⚠'} ${dim.label}`}
+                      sx={{ height: 20, fontSize: '0.64rem', fontWeight: 700 }}
+                    />
+                  ))}
+                </Stack>
+              )}
               <Box
                 component="pre"
                 sx={{

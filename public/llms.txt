@@ -1,0 +1,10 @@
+# Chella — Enterprise Sprint, CR Studio, FRD & Knowledge Graph Platform
+
+> Chella ("C"onfluence - tr"ELL"o - jir"A") is an integrated agile workspace for Product Managers, Business Analysts (BA), Solution Architects, and Engineering teams.
+
+## Core Modules & Capabilities
+- **Sprint Command Center & Matrix (`/boards/:boardId`)**: Unified Sprint Matrix, Resource Capacity Roster, Kanban CR Board, Gantt Timeline, Analytics & OKLCH Dataviz, and Obsidian Bidirectional `[[WikiLink]]` Knowledge Graph.
+- **CR Studio & System Design 101 Simulator (`/boards/:boardId/cr/:cardId`)**: Interactive 5-stage sequence simulator with 5 ByteByteGo architectural presets (`usage-limit-lock`, `idempotent-payment`, `ekyc-circuit-breaker`, `auto-debit-dlq`, `rate-limited-api`) across Happy Path (`200 OK`), Policy/Quota Block (`409/429`), and Race/Breaker/DLQ Rollback (`503/504`) scenarios, plus A4 printable FRD PDF export.
+- **Confluence-Style Knowledge Hub (`/boards/:boardId/wiki`)**: Hierarchical documentation with 9 BA/Architect templates (FRD Spec, ADR Decision Log, System Architecture & Sequence Blueprint, API Contract & Idempotency Matrix, Meeting Notes, Retrospective, Release Notes) and backlink graph.
+- **Gemini AI CR Co-Pilot**: Context-optimized AI assistant with 4 modes: `subtasks`, `frd`, `conflict_check`, and `architecture_review` (with deterministic 5-pillar System Design rubric scoring).
+- **Enterprise SOC & Governance (`/admin`)**: Real-time DDoS / Traffic Radar, Tamper-Evident SHA-256 Audit Hash Chain, Dynamic RBAC Permission Matrix, Cron Job Orchestrator, and PII-Scrubbed API Request Inspector.

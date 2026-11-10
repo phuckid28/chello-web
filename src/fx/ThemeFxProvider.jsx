@@ -3,6 +3,7 @@ import FxGlobalStyles from '~/fx/FxGlobalStyles'
 import { useFxTheme } from '~/fx/fxThemeStore'
 import { getFxSettings, isFinePointer, isMotionReduced, subscribeFxSettings } from '~/fx/fxSettings'
 import { buildCursorValues } from '~/fx/cursorArt'
+import { getThemeInteractiveTokens } from '~/utils/animeTheme'
 import { FX_BURST_EVENT, FX_CELEBRATE_EVENT } from '~/fx/fxEvents'
 import {
   buildBurst,
@@ -29,10 +30,11 @@ function ThemeFxProvider() {
     [key, theme.accentColor, theme.secondaryAccent]
   )
 
-  // Theme attributes + craft design tokens + cursor variables on <html>
+  // Theme attributes + craft design tokens + interactive physics variables on <html>
   useEffect(() => {
     const root = document.documentElement
     const tokens = theme.surfaceTokens || {}
+    const interactive = getThemeInteractiveTokens(key)
     const displayFont = '"Be Vietnam Pro", "Plus Jakarta Sans", "Noto Sans JP", sans-serif'
     root.dataset.fxTheme = key
     root.dataset.chellaArchetype = theme.styleArchetype || 'achromatic-ledger'
@@ -51,6 +53,14 @@ function ThemeFxProvider() {
     root.style.setProperty('--chella-raised-dark', tokens.raisedDark || '#111623')
     root.style.setProperty('--chella-radius-card', tokens.cardRadius || '10px')
     root.style.setProperty('--chella-radius-control', tokens.controlRadius || '8px')
+    root.style.setProperty('--chella-spring-curve', interactive.springCurve)
+    root.style.setProperty('--chella-card-lift', interactive.cardHoverLift)
+    root.style.setProperty('--chella-card-active-scale', interactive.cardActiveScale)
+    root.style.setProperty('--chella-spotlight-color', interactive.spotlightColor)
+    root.style.setProperty('--chella-card-hover-shadow-light', interactive.cardHoverShadowLight)
+    root.style.setProperty('--chella-card-hover-shadow-dark', interactive.cardHoverShadowDark)
+    root.style.setProperty('--chella-accent-gradient', interactive.accentGradient)
+    root.style.setProperty('--chella-glass-blur', interactive.glassBlur)
     return () => { root.dataset.fxCursor = 'off' }
   }, [key, cursorOn, cursorValues, theme])
 

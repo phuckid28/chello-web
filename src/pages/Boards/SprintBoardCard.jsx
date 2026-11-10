@@ -32,8 +32,17 @@ function SprintBoardCard({
   const sprintIdx = extractSprintNumberOnly(b?.sprintConfig?.sprintNumber || b?.title) || String(idx + 1).padStart(2, '0')
   const isPinnedCurrent = b._id === activeBoardId
 
+  const handleCardPointerMove = (e) => {
+    const el = e.currentTarget
+    const rect = el.getBoundingClientRect()
+    el.style.setProperty('--spot-x', `${Math.round(e.clientX - rect.left)}px`)
+    el.style.setProperty('--spot-y', `${Math.round(e.clientY - rect.top)}px`)
+  }
+
   return (
     <Card
+      className='chella-interactive-surface'
+      onMouseMove={handleCardPointerMove}
       sx={{
         height: '100%',
         display: 'flex',
@@ -47,11 +56,13 @@ function SprintBoardCard({
         border: isPinnedCurrent
           ? `2px solid ${themeConfig.accentColor}`
           : '1px solid var(--chella-border, rgba(148, 163, 184, 0.24))',
-        transition: 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+        transition: 'transform 0.24s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1)), border-color 0.22s ease, box-shadow 0.24s var(--chella-spring-curve, cubic-bezier(0.22, 1, 0.36, 1))',
         '&:hover': {
-          transform: 'translateY(-3px)',
+          transform: 'translateY(var(--chella-card-lift, -3px))',
           borderColor: themeConfig.accentColor,
-          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.20)'
+          boxShadow: (theme) => (theme.palette.mode === 'dark'
+            ? 'var(--chella-card-hover-shadow-dark, 0 14px 32px rgba(0, 0, 0, 0.45))'
+            : 'var(--chella-card-hover-shadow-light, 0 12px 28px rgba(0, 0, 0, 0.16))')
         }
       }}
     >

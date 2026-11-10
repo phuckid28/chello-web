@@ -178,6 +178,112 @@ const TEMPLATES = {
       vi: '## Phiên bản\n- **Sprint**: {sprint}\n- **Ngày phát hành**: {date}\n\n## Tính năng mới\n- [[{crCode}]] — \n\n## Sửa lỗi\n- \n\n## Lưu ý triển khai\n- ',
       en: '## Version\n- **Sprint**: {sprint}\n- **Release date**: {date}\n\n## New features\n- [[{crCode}]] — \n\n## Bug fixes\n- \n\n## Deployment notes\n- '
     }
+  },
+  systemArch: {
+    icon: '🏛️',
+    titleKey: 'tplSystemArch',
+    body: {
+      vi: [
+        '## 1. Tổng quan Kiến trúc (System Design 101)',
+        '- **CR liên quan**: [[{crCode}]] ({sprint})',
+        '- **Mẫu thiết kế áp dụng**: Distributed Lock / Circuit Breaker / Transactional Outbox',
+        '- **SLA mục tiêu**: Latency p99 < 300ms • Availability >= 99.95%',
+        '',
+        '## 2. Sơ đồ Luồng Tuần tự (Sequence Blueprint)',
+        '```mermaid',
+        'sequenceDiagram',
+        '  autonumber',
+        '  actor Client',
+        '  participant Gateway as API Gateway',
+        '  participant Redis as Redis Lock / Cache',
+        '  participant Service as Core Service',
+        '  participant DB as Core Ledger DB',
+        '  Client->>Gateway: POST /v1/action (Idempotency-Key)',
+        '  Gateway->>Redis: SET lock_key NX PX 30000',
+        '  Redis-->>Gateway: OK (Lock Acquired)',
+        '  Gateway->>Service: Execute Business Rule',
+        '  Service->>DB: Atomic Transaction + Outbox Event',
+        '  DB-->>Service: Commit OK',
+        '  Service-->>Client: 200 OK (Synchronized)',
+        '```',
+        '',
+        '## 3. Chiến lược Chịu lỗi & Phục hồi (Resilience & Failure Modes)',
+        '| Kịch bản lỗi | Cơ chế bảo vệ | Hành vi Rollback / Fallback |',
+        '| --- | --- | --- |',
+        '| Race Condition (2 request song song) | Redis `SETNX` + Fencing Token | Chặn luồng thứ 2 với `409/429` |',
+        '| Đối tác thứ 3 phản hồi chậm (>1.5s) | Circuit Breaker (`OPEN` 30s) | Chuyển sang hàng đợi Fallback / Degraded Mode |',
+        '| Timeout DB khi đang ghi | Atomic Rollback + Giải phóng Lock | Không trừ hạn mức, cho phép Retry an toàn |'
+      ].join('\n'),
+      en: [
+        '## 1. Architecture Overview (System Design 101)',
+        '- **Related CR**: [[{crCode}]] ({sprint})',
+        '- **Applied Patterns**: Distributed Lock / Circuit Breaker / Transactional Outbox',
+        '- **Target SLA**: Latency p99 < 300ms • Availability >= 99.95%',
+        '',
+        '## 2. Sequence Blueprint',
+        '```mermaid',
+        'sequenceDiagram',
+        '  autonumber',
+        '  actor Client',
+        '  participant Gateway as API Gateway',
+        '  participant Redis as Redis Lock / Cache',
+        '  participant Service as Core Service',
+        '  participant DB as Core Ledger DB',
+        '  Client->>Gateway: POST /v1/action (Idempotency-Key)',
+        '  Gateway->>Redis: SET lock_key NX PX 30000',
+        '  Redis-->>Gateway: OK (Lock Acquired)',
+        '  Gateway->>Service: Execute Business Rule',
+        '  Service->>DB: Atomic Transaction + Outbox Event',
+        '  DB-->>Service: Commit OK',
+        '  Service-->>Client: 200 OK (Synchronized)',
+        '```',
+        '',
+        '## 3. Resilience & Failure Modes',
+        '| Failure Mode | Protection Pattern | Rollback / Fallback Behavior |',
+        '| --- | --- | --- |',
+        '| Concurrent duplicate requests | Redis `SETNX` + Fencing Token | Reject 2nd thread with `409/429` |',
+        '| Upstream partner latency (>1.5s) | Circuit Breaker (`OPEN` 30s) | Route to Fallback Queue / Degraded Mode |',
+        '| Database write timeout | Atomic Rollback + Lock Release | Quota preserved, safe client retry |'
+      ].join('\n')
+    }
+  },
+  apiMatrix: {
+    icon: '🔌',
+    titleKey: 'tplApiMatrix',
+    body: {
+      vi: [
+        '## 1. Đặc tả Endpoint & Idempotency',
+        '- **CR**: [[{crCode}]] ({sprint})',
+        '- **Endpoint**: `POST /v1/bnpl/usage-limit/sync`',
+        '- **Idempotency Header**: `Idempotency-Key: <UUIDv7>` (TTL: 24h)',
+        '- **Rate Limit**: Token Bucket `100 req/phút/user` (`Retry-After` khi `429`)',
+        '',
+        '## 2. Ma trận Mã Trạng thái & Xử lý Lỗi (Error Matrix)',
+        '| HTTP Status | Error Code | Nguyên nhân | Hành động phía Client / Retry |',
+        '| --- | --- | --- | --- |',
+        '| `200 OK` | `SYNC_COMPLETED` | Đồng bộ thành công | Cập nhật UI badge & lưu cache |',
+        '| `409 Conflict` | `MONTHLY_QUOTA_REACHED` | Đã dùng hết 1 lần đồng bộ trong tháng | Không retry; hiển thị ngày đầu tháng kế tiếp |',
+        '| `422 Unprocessable` | `IDEMPOTENCY_MISMATCH` | Trùng `Idempotency-Key` nhưng khác payload | Sinh `Idempotency-Key` mới |',
+        '| `429 Too Many Req` | `RATE_LIMIT_EXCEEDED` | Vượt ngưỡng Token Bucket hoặc đang giữ Lock | Retry sau `Retry-After` giây |',
+        '| `503 Unavailable` | `UPSTREAM_TIMEOUT` | Timeout DB / Đối tác thứ 3 | Exponential Backoff + Full Jitter (tối đa 3 lần) |'
+      ].join('\n'),
+      en: [
+        '## 1. Endpoint & Idempotency Specification',
+        '- **CR**: [[{crCode}]] ({sprint})',
+        '- **Endpoint**: `POST /v1/bnpl/usage-limit/sync`',
+        '- **Idempotency Header**: `Idempotency-Key: <UUIDv7>` (TTL: 24h)',
+        '- **Rate Limit**: Token Bucket `100 req/min/user` (`Retry-After` on `429`)',
+        '',
+        '## 2. Status Code & Error Recovery Matrix',
+        '| HTTP Status | Error Code | Root Cause | Client Recovery / Retry Policy |',
+        '| --- | --- | --- | --- |',
+        '| `200 OK` | `SYNC_COMPLETED` | Synchronized successfully | Refresh UI state & cache |',
+        '| `409 Conflict` | `MONTHLY_QUOTA_REACHED` | Monthly 1-time quota already used | Do not retry; display next eligible month |',
+        '| `422 Unprocessable` | `IDEMPOTENCY_MISMATCH` | Same `Idempotency-Key` with different payload | Generate a fresh `Idempotency-Key` |',
+        '| `429 Too Many Req` | `RATE_LIMIT_EXCEEDED` | Token bucket empty or lock active | Backoff for `Retry-After` seconds |',
+        '| `503 Unavailable` | `UPSTREAM_TIMEOUT` | DB or upstream partner timeout | Exponential Backoff + Full Jitter (max 3 attempts) |'
+      ].join('\n')
+    }
   }
 }
 
