@@ -8,17 +8,17 @@
 
 | # | Repository | Stars | Bản chất thực tế (qua kiểm tra mã nguồn) | Độ hợp với **Chella** | Độ hợp **Dự án khác** | Trạng thái trong `antiantigravity-synchronization` |
 | :-: | :--- | :---: | :--- | :---: | :---: | :--- |
-| **1** | `google-labs-code/design.md` | 28.8k | Chuẩn đặc tả `DESIGN.md` của Google Labs cho AI Agent | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã áp dụng chuẩn** tại `chello-web/DESIGN.md` |
-| **2** | `imskyleen/animate-ui` | 4.9k | Thư viện React component động (Tailwind + Motion + Shadcn) + 1 skill | ⭐⭐ *(Khác stack)* | ⭐⭐⭐⭐⭐ *(Dự án Tailwind)* | **Không cài vào Chella** (do Chella dùng MUI v5 + Emotion); dùng cho dự án Tailwind mới |
+| **1** | `google-labs-code/design.md` | 28.8k | Chuẩn đặc tả `DESIGN.md` của Google Labs cho AI Agent | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã cài Global Skill `design-md`** (`~/.gemini/config/skills/design-md`) kèm `spec.md`, `examples/` & `subskills/` |
+| **2** | `imskyleen/animate-ui` | 4.9k | Thư viện React component động (Tailwind + Motion + Shadcn) + 1 skill | ⭐⭐ *(Khác stack)* | ⭐⭐⭐⭐⭐ *(Dự án Tailwind)* | **Đã cài Global Skill `animate-ui`** (`~/.gemini/config/skills/animate-ui`) chỉ định rõ cho dự án Tailwind/Shadcn |
 | **3** | `nextlevelbuilder/ui-ux-pro-max-skill` | 147k | Skill + CLI Python tra cứu 80 UI styles, 192 bảng màu, 74 font | ⭐⭐ *(Xung đột)* | ⭐⭐⭐⭐ | **Không bật cùng lúc với `ui-ux-skills`** để tránh phá vỡ 7 theme của Chella |
-| **4** | `ByteByteGoHq/system-design-101` | 91k | Kho bài viết & sơ đồ kiến trúc hệ thống (chưa có `SKILL.md`) | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Lên kế hoạch chuyển hóa** thành kịch bản mẫu cho `CrStudio.jsx` & `wikiTemplates.js` (Xem Phần 3) |
+| **4** | `ByteByteGoHq/system-design-101` | 91k | Kho bài viết & sơ đồ kiến trúc hệ thống | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã đóng gói Global Skill `system-design-101`** (`~/.gemini/config/skills/system-design-101`) + tích hợp kịch bản mẫu (Xem Phần 3) |
 | **5** | `tailucanh/offload-mcp-server` | 17 | MCP Server giúp Claude Code gọi nhờ CLI Antigravity đọc file | ⭐ *(Dư thừa)* | ⭐ | **Bỏ qua** — Antigravity đã có sẵn công cụ gốc `invoke_subagent(TypeName: 'research')` |
-| **6** | `coreyhaines31/marketingskills` | 59.4k | 53 skills về Copywriting, CRO, Onboarding, Pricing, Launch | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã cherry-pick 3 skills** (`copywriting`, `onboarding`, `cro`) vào plugin `pro-workflows` |
-| **7** | `AgriciDaniel/claude-seo` | 27.6k | 26 skills + 19 agents kiểm toán SEO, Schema, GEO, `llms.txt` | ⭐⭐ *(SPA sau login)* | ⭐⭐⭐⭐⭐ *(Web public)* | Chỉ cài cục bộ theo workspace cho dự án Landing Page / Next.js SSR |
+| **6** | `coreyhaines31/marketingskills` | 59.4k | 53 skills về Copywriting, CRO, Onboarding, Pricing, Launch | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã cài 4 skills chính** (`copywriting`, `onboarding`, `cro`, `product-marketing` + 11 sub-skills SaaS trong `subskills/`) vào `pro-workflows` |
+| **7** | `AgriciDaniel/claude-seo` | 27.6k | 26 skills + 19 agents kiểm toán SEO, Schema, GEO, `llms.txt` | ⭐⭐ *(SPA sau login)* | ⭐⭐⭐⭐⭐ *(Web public)* | **Đã cài Global Skill router `seo`** (`~/.gemini/config/skills/seo` kèm trọn bộ 25 `seo-*` sub-skills trong `subskills/` & 19 `agents/`, chỉ tốn 1 slot skill) |
 | **8** | `ant-design/ant-design` | 100k | Thư viện UI Ant Design (`.agents/skills` là skill nội bộ cho maintainer) | ⭐ *(Xung đột MUI)* | ⭐⭐⭐⭐ *(App ERP mới)* | **Không cài vào Chella** (tránh trộn `antd` với `@mui/material`) |
 | **9** | `obra/superpowers` | 315k | 15 skills quy trình TDD, Debugging, Planning, Subagents | ⭐⭐⭐ *(Trùng 75%)* | ⭐⭐⭐⭐ | **Đã cherry-pick 2 skills** (`systematic-debugging`, `brainstorming`) vào plugin `pro-workflows` |
 | **10** | `remotion-dev/remotion` | 71.9k | Framework tạo video MP4 bằng React + skill `remotion-best-practices` | ⭐⭐⭐ *(Tách module)* | ⭐⭐⭐⭐⭐ | **Đã cài `remotion-best-practices`** (kèm 11 sub-modules nội bộ) vào plugin `pro-workflows` |
-| **11** | `muratcankoylan/Agent-Skills-for-Context-Engineering` | 18.3k | 18 skills về Context Engineering, Multi-Agent, Tool Design | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã cherry-pick 4 skills** (`context-optimization`, `context-compression`, `tool-design`, `multi-agent-patterns`) vào `pro-workflows` |
+| **11** | `muratcankoylan/Agent-Skills-for-Context-Engineering` | 18.3k | 18 skills về Context Engineering, Multi-Agent, Tool Design | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã cài 5 skills chính** (`context-optimization`, `context-compression`, `tool-design`, `multi-agent-patterns`, `evaluation` + 8 sub-skills trong `subskills/`) vào `pro-workflows` |
 | **12** | `DietrichGebert/ponytail` | 187k | 6 skills triết lý *"Senior Dev tối giản"*: gọt code thừa, audit nợ kỹ thuật | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | **Đã cài trọn bộ 6 skills** vào plugin `ponytail` |
 
 ---

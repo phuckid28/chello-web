@@ -58,14 +58,14 @@ Write-Host "Đã khôi phục .env và cấu hình AGY thành công!" -Foregroun
 
 ---
 
-## 3. Đồng bộ Global Rules (`ecc-core`, 11 Plugins, 10 Global Skills & User Settings) giữa 2 máy
+## 3. Đồng bộ Global Rules (`ecc-core`, 11 Plugins, 14 Global Skills & User Settings) giữa 2 máy
 
-Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ khung kỹ thuật **`ecc-core`** (chứa quy tắc TDD, Code Review, Security Checklist) cùng 11 Plugins và 10 Global Skills:
+Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ khung kỹ thuật **`ecc-core`** (chứa quy tắc TDD, Code Review, Security Checklist) cùng 11 Plugins và 14 Global Skills:
 - **11 Plugins (`~/.gemini/config/plugins/`)**:
   - `ecc-core`
   - `ui-ux-skills` (`impeccable`, `design-taste-frontend`)
   - `ponytail` (`ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`)
-  - `pro-workflows` (`systematic-debugging`, `brainstorming`, `context-optimization`, `context-compression`, `tool-design`, `multi-agent-patterns`, `copywriting`, `onboarding`, `cro`, `remotion-best-practices`)
+  - `pro-workflows` (12 skills: `systematic-debugging`, `brainstorming`, `context-optimization`, `context-compression`, `tool-design`, `multi-agent-patterns`, `evaluation` [+8 subskills], `copywriting`, `onboarding`, `cro`, `product-marketing` [+11 subskills], `remotion-best-practices` [+11 subskills])
   - `modern-web-guidance-plugin`
   - `gemini-api` (`v2.4.0`: `gemini-api-dev`, `gemini-live-api-dev`, `gemini-omni-flash-api`)
   - `firebase` (`v1.0.3`)
@@ -73,8 +73,8 @@ Trong file `~/.gemini/config/config.json` của bạn hiện đang bật bộ kh
   - `flutter` (`v1.0.7`)
   - `science` (`v1.4.0`)
   - `google-antigravity-sdk` (`v0.0.9`)
-- **10 Global Skills (`~/.gemini/config/skills/`)**:
-  - `graphify`, `archify`, `spec-kit`, `dataviz`, `claude-design`, `claude-design-system`, `claude-dashboard`, `claude-slides`, `claude-motion`, `motion-director`
+- **14 Global Skills (`~/.gemini/config/skills/`)**:
+  - `graphify`, `archify`, `spec-kit`, `dataviz`, `claude-design`, `claude-design-system`, `claude-dashboard`, `claude-slides`, `claude-motion`, `motion-director`, `system-design-101`, `seo` (`claude-seo` v2.5.0 router + 25 subskills + 19 agents), `animate-ui`, `design-md`
 
 **Để máy thứ 2 có y hệt bộ Global Rules, Plugins, Skills, `.env` và `graphify-out/` này:**
 1. Sử dụng trực tiếp kho lưu trữ Private `antiantigravity-synchronization`:
